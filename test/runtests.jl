@@ -170,4 +170,7 @@ using Downloads
 
     # Ray intersection validation using real asteroid shape models and SPICE
     include("ray_intersection_vs_spice.jl")
+    
+    # Visibility and view factor tests
+    include("test_find_visiblefacets.jl")
 end
