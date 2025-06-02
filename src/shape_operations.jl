@@ -11,7 +11,7 @@ Load a shape model from a Wavefront OBJ file.
 - `find_visible_facets` : Switch to find visible facets
 - `show_progress`       : Switch to show a progress meter
 """
-function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false, show_progress=true)
+function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     nodes, faces = loadobj(shapepath; scale = scale, message = false)
 
     face_centers = [face_center(nodes[face]) for face in faces]
@@ -21,7 +21,7 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false, show_pr
     visiblefacets = [VisibleFacet[] for _ in faces]
 
     shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
-    find_visible_facets && find_visiblefacets!(shape; show_progress)
+    find_visible_facets && find_visiblefacets!(shape)
     
     return shape
 end
