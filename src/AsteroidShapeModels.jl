@@ -30,4 +30,7 @@ export view_factor, find_visiblefacets!, isilluminated
 include("geometry_utils.jl")
 export angle_rad, angle_deg, solar_phase_angle, solar_elongation_angle
 
+include("roughness.jl")
+export crater_curvature_radius, concave_spherical_segment
+
 end # module AsteroidShapeModels
