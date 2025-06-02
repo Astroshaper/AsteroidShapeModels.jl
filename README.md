@@ -19,7 +19,7 @@ This package consolidates the geometric functionality for asteroid shape models 
 
 ```julia
 using Pkg
-  Pkg.add(url="https://github.com/Astroshaper/AsteroidShapeModels.jl")
+Pkg.add(url="https://github.com/Astroshaper/AsteroidShapeModels.jl")
 ```
 
 ## Usage Example
