@@ -12,7 +12,7 @@ using Downloads
     include("test_geometry_utils.jl")
     
     # Validation tests against external tools
-    include("ray_intersection_vs_spice.jl")
+    include("test_ray_intersection_vs_spice.jl")
     
     # Visibility and view factor tests
     include("test_find_visiblefacets.jl")
