@@ -1,0 +1,16 @@
+.DS_Store
+/Manifest.toml
+/dev/
+/docs/build/
+/docs/site/
+/docs/Manifest.toml
+.ipynb_checkpoints
+
+/test/kernel
+/test/shape/*
+
+# Keep these shape models
+!fractal_v2572_f5000.obj
+!icosahedron.obj
+!ryugu_test.obj
+!single_face.obj
