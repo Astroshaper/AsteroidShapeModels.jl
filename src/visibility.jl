@@ -5,16 +5,33 @@
 """
     view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
 
-View factor from facet i to j, assuming Lambertian emission.
+Calculate the view factor from facet i to facet j, assuming Lambertian emission.
 
-- ---------------
-- (i)   fᵢⱼ   (j)
--  △    -->    △
-- ---------------
--  cᵢ          cⱼ  : Center of each face
--  n̂ᵢ          n̂ⱼ  : Normal vector of each face
--  -           aⱼ  : Area of j-th face
-- ---------------
+# Arguments
+- `cᵢ::StaticVector{3}`: Center position of facet i
+- `cⱼ::StaticVector{3}`: Center position of facet j
+- `n̂ᵢ::StaticVector{3}`: Unit normal vector of facet i
+- `n̂ⱼ::StaticVector{3}`: Unit normal vector of facet j
+- `aⱼ::Real`           : Area of facet j
+
+# Returns
+- `fᵢⱼ::Real`: View factor from facet i to facet j
+- `dᵢⱼ::Real`: Distance between facet centers
+- `d̂ᵢⱼ::StaticVector{3}`: Unit direction vector from facet i to facet j
+
+# Notes
+The view factor is calculated using the formula:
+```
+fᵢⱼ = (cosθᵢ * cosθⱼ) / (π * dᵢⱼ²) * aⱼ
+```
+where θᵢ and θⱼ are the angles between the line connecting the facets
+and the respective normal vectors.
+
+# Visual representation
+```
+(i)   fᵢⱼ   (j)
+ △    -->    △
+```
 """
 function view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)
     dᵢⱼ = norm(cⱼ - cᵢ)

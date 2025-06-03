@@ -5,8 +5,27 @@
 """
     raycast(A, B, C, R) -> Bool
 
-Intersection detection between ray R and triangle ABC.
-Note that the starting point of the ray is the origin (0, 0, 0).
+Perform ray-triangle intersection test using a simplified Möller–Trumbore algorithm.
+
+# Arguments
+- `A::StaticVector{3}`: 1st vertex of the triangle
+- `B::StaticVector{3}`: 2nd vertex of the triangle
+- `C::StaticVector{3}`: 3rd vertex of the triangle
+- `R::StaticVector{3}`: Ray direction vector (from origin)
+
+# Returns
+- `Bool`: `true` if the ray intersects the triangle, `false` otherwise
+
+# Algorithm
+Uses the Möller–Trumbore ray-triangle intersection algorithm:
+1. Computes edge vectors E1 = B - A, E2 = C - A
+2. Calculates barycentric coordinates (u, v) and ray parameter t
+3. Tests if intersection point lies within triangle bounds
+
+# Notes
+- Ray origin is assumed to be at (0, 0, 0)
+- Returns true only if t > 0 (intersection in positive ray direction)
+- Triangle vertices should be in counter-clockwise order for consistent results
 """
 function raycast(A::StaticVector{3}, B::StaticVector{3}, C::StaticVector{3}, R::StaticVector{3})
     E1 = B - A

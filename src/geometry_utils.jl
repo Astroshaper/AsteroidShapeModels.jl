@@ -30,8 +30,46 @@ Calculate the angle between two vectors in degrees.
 """
 angle_deg(v1::AbstractVector{<:Real}, v2::AbstractVector{<:Real}) = rad2deg(angle_rad(v1, v2))
 
-# Broadcast versions for vector arrays
+"""
+    angle_rad(v1::AbstractVector{<:AbstractVector}, v2::AbstractVector{<:AbstractVector}) -> Vector{Float64}
+
+Calculate angles between corresponding pairs of vectors in two arrays (broadcast version).
+
+# Arguments
+- `v1`: Array of first vectors
+- `v2`: Array of second vectors (must have same length as v1)
+
+# Returns
+- Array of angles in radians between corresponding vector pairs
+
+# Examples
+```julia
+v1s = [SA[1,0,0], SA[0,1,0]]
+v2s = [SA[0,1,0], SA[1,0,0]]
+angles = angle_rad(v1s, v2s)  # Returns [π/2, π/2]
+```
+"""
 angle_rad(v1::AbstractVector{<:AbstractVector{<:Real}}, v2::AbstractVector{<:AbstractVector{<:Real}}) = angle_rad.(v1, v2)
+
+"""
+    angle_deg(v1::AbstractVector{<:AbstractVector}, v2::AbstractVector{<:AbstractVector}) -> Vector{Float64}
+
+Calculate angles between corresponding pairs of vectors in two arrays (broadcast version).
+
+# Arguments
+- `v1`: Array of first vectors
+- `v2`: Array of second vectors (must have same length as v1)
+
+# Returns
+- Array of angles in degrees between corresponding vector pairs
+
+# Examples
+```julia
+v1s = [SA[1,0,0], SA[0,1,0]]
+v2s = [SA[0,1,0], SA[1,0,0]]
+angles = angle_deg(v1s, v2s)  # Returns [90.0, 90.0]
+```
+"""
 angle_deg(v1::AbstractVector{<:AbstractVector{<:Real}}, v2::AbstractVector{<:AbstractVector{<:Real}}) = angle_deg.(v1, v2)
 
 """

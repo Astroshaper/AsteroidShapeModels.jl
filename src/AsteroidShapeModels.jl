@@ -1,3 +1,41 @@
+"""
+    AsteroidShapeModels
+
+A Julia package for geometric processing and analysis of asteroid shape models.
+
+This package provides comprehensive tools for working with polyhedral shape models of asteroids,
+including loading from OBJ files, computing geometric properties, ray-shape intersection,
+visibility analysis, and surface roughness modeling.
+
+# Main Types
+- `ShapeModel`: Core data structure for polyhedral shapes
+- `Ray`, `BoundingBox`: Ray casting and acceleration structures
+- `VisibleFacet`: Face-to-face visibility relationships
+
+# Key Functions
+- Shape I/O: `load_shape_obj`, `loadobj`, `load_shape_grid`
+- Geometric properties: `face_center`, `face_normal`, `face_area`, `polyhedron_volume`
+- Ray intersection: `raycast`, `intersect_ray_shape`
+- Visibility: `find_visiblefacets!`, `isilluminated`, `view_factor`
+- Shape analysis: `equivalent_radius`, `maximum_radius`, `minimum_radius`
+
+# Example
+```julia
+using AsteroidShapeModels
+
+# Load asteroid shape model
+shape = load_shape_obj("ryugu.obj", scale=1000)  # Convert km to m
+
+# Compute visibility between faces
+find_visiblefacets!(shape)
+
+# Check illumination
+sun_position = SA[1.0, 0.0, 0.0]  # Sun along +x axis
+illuminated = isilluminated(shape, sun_position, 1)  # Check face 1
+```
+
+See the documentation for detailed usage examples and API reference.
+"""
 module AsteroidShapeModels
 
 using LinearAlgebra
