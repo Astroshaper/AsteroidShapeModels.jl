@@ -4,6 +4,7 @@ using StaticArrays
 using LinearAlgebra
 using SPICE
 using Downloads
+using BenchmarkTools
 
 @testset "AsteroidShapeModels.jl" begin
     # Core functionality tests
@@ -26,4 +27,7 @@ using Downloads
     
     # Validation tests against external tools
     include("test_ray_intersection_vs_spice.jl")
+    
+    # Ryugu shape model test
+    include("test_ryugu_shape_model.jl")
 end
