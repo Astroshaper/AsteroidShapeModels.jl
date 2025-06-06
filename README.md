@@ -1,10 +1,15 @@
 # AsteroidShapeModels.jl
 
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://astroshaper.github.io/AsteroidShapeModels.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://astroshaper.github.io/AsteroidShapeModels.jl/dev/)
+[![Build Status](https://github.com/Astroshaper/AsteroidShapeModels.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Astroshaper/AsteroidShapeModels.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/Astroshaper/AsteroidShapeModels.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Astroshaper/AsteroidShapeModels.jl)
+
 A Julia package for geometric processing of asteroid shape models.
 
 ## Overview
 
-This package consolidates the geometric functionality for asteroid shape models that was duplicated across AsteroidThermoPhysicalModels.jl and FOVSimulator.jl.
+AsteroidShapeModels.jl provides comprehensive tools for working with polyhedral shape models of asteroids. This package consolidates the geometric functionality that was previously duplicated across multiple asteroid analysis packages.
 
 ## Key Features
 
@@ -22,28 +27,24 @@ using Pkg
 Pkg.add(url="https://github.com/Astroshaper/AsteroidShapeModels.jl")
 ```
 
-## Usage Example
+## Quick Start
 
 ```julia
 using AsteroidShapeModels
+using StaticArrays
 
-# Load shape model from OBJ file
-shape = load_shape_obj("path/to/asteroid.obj", scale=1000.0)
+# Load an asteroid shape model with face-face visibility
+shape = load_shape_obj("path/to/asteroid.obj", scale=1000, find_visible_facets=true)  # Convert km to m
 
-# Display basic shape information
-println(shape)
-
-# Ray-shape intersection detection
-ray = Ray([0.0, 0.0, 10.0], [0.0, 0.0, -1.0])
-bbox = compute_bounding_box(shape)
-result = intersect_ray_shape(ray, shape, bbox)
-
-if result.hit
-    println("Intersection point: ", result.point)
-    println("Distance: ", result.distance)
-    println("Face index: ", result.face_index)
-end
+# Access to face properties
+shape.face_centers  # Center position of each face
+shape.face_normals  # Normal vector of each face
+shape.face_areas    # Area of of each face
 ```
+
+## Documentation
+
+For detailed usage and API reference, please visit the [documentation](https://astroshaper.github.io/AsteroidShapeModels.jl/dev/).
 
 ## License
 
