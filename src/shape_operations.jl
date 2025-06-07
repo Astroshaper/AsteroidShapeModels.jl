@@ -25,15 +25,9 @@ shape = load_shape_obj("asteroid_km.obj", scale=1000, find_visible_facets=true)
 See also: [`load_shape_grid`](@ref), [`loadobj`](@ref)
 """
 function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
-    nodes, faces = loadobj(shapepath; scale = scale, message = false)
-
-    face_centers = [face_center(nodes[face]) for face in faces]
-    face_normals = [face_normal(nodes[face]) for face in faces]
-    face_areas   = [face_area(nodes[face])   for face in faces]
-
-    visiblefacets = [VisibleFacet[] for _ in faces]
-
-    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+    nodes, faces = loadobj(shapepath; scale=scale, message=false)
+    
+    shape = ShapeModel(nodes, faces)
     find_visible_facets && find_visiblefacets!(shape)
     
     return shape
@@ -137,13 +131,7 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
     nodes, faces = grid_to_faces(xs, ys, zs)
     nodes .*= scale
     
-    face_centers = [face_center(nodes[face]) for face in faces]
-    face_normals = [face_normal(nodes[face]) for face in faces]
-    face_areas   = [face_area(nodes[face])   for face in faces]
-
-    visiblefacets = [VisibleFacet[] for _ in faces]
-
-    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+    shape = ShapeModel(nodes, faces)
     find_visible_facets && find_visiblefacets!(shape)
     
     return shape

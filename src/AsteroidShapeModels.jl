@@ -44,15 +44,15 @@ using FileIO
 import MeshIO
 import GeometryBasics
 
+include("face_properties.jl")
+export face_center, face_normal, face_area
+
 include("types.jl")
 export ShapeModel, VisibleFacet, Ray, BoundingBox
 export RayTriangleIntersectionResult, RayShapeIntersectionResult
 
 include("obj_io.jl")
 export loadobj, isobj
-
-include("face_properties.jl")
-export face_center, face_normal, face_area
 
 include("ray_intersection.jl")
 export raycast, intersect_ray_triangle, intersect_ray_shape
