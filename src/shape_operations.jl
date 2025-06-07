@@ -26,11 +26,7 @@ See also: [`load_shape_grid`](@ref), [`loadobj`](@ref)
 """
 function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     nodes, faces = loadobj(shapepath; scale=scale, message=false)
-    
-    shape = ShapeModel(nodes, faces)
-    find_visible_facets && find_visiblefacets!(shape)
-    
-    return shape
+    return ShapeModel(nodes, faces; find_visible_facets=find_visible_facets)
 end
 
 ################################################################
@@ -131,10 +127,7 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
     nodes, faces = grid_to_faces(xs, ys, zs)
     nodes .*= scale
     
-    shape = ShapeModel(nodes, faces)
-    find_visible_facets && find_visiblefacets!(shape)
-    
-    return shape
+    return ShapeModel(nodes, faces; find_visible_facets=find_visible_facets)
 end
 
 ################################################################

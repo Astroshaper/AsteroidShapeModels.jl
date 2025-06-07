@@ -41,7 +41,7 @@ mutable struct ShapeModel
 end
 
 """
-    ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}) -> ShapeModel
+    ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}; find_visible_facets=false) -> ShapeModel
 
 Construct a ShapeModel from nodes and faces, automatically computing face properties.
 
@@ -49,8 +49,11 @@ Construct a ShapeModel from nodes and faces, automatically computing face proper
 - `nodes`: Vector of vertex positions
 - `faces`: Vector of triangular face definitions (vertex indices)
 
+# Keyword Arguments
+- `find_visible_facets::Bool=false`: Whether to compute face-to-face visibility
+
 # Returns
-- `ShapeModel`: Shape model with computed face centers, normals, areas, and empty visiblefacets
+- `ShapeModel`: Shape model with computed face centers, normals, areas, and optionally populated visiblefacets
 
 # Examples
 ```julia
@@ -58,15 +61,21 @@ Construct a ShapeModel from nodes and faces, automatically computing face proper
 nodes = [SA[0,0,0], SA[1,0,0], SA[0,1,0], SA[0,0,1]]
 faces = [SA[1,2,3], SA[1,2,4], SA[1,3,4], SA[2,3,4]]
 shape = ShapeModel(nodes, faces)
+
+# Create with visibility computation
+shape = ShapeModel(nodes, faces, find_visible_facets=true)
 ```
 """
-function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}})
+function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}; find_visible_facets=false)
     face_centers = [face_center(nodes[face]) for face in faces]
     face_normals = [face_normal(nodes[face]) for face in faces]
     face_areas   = [face_area(nodes[face])   for face in faces]
     visiblefacets = [VisibleFacet[] for _ in faces]
     
-    return ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+    find_visible_facets && find_visiblefacets!(shape)
+    
+    return shape
 end
 
 """

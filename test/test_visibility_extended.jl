@@ -143,7 +143,7 @@
                 illuminated = isilluminated(shape, sun_pos, i)
                 
                 # Only faces with positive z-component of normal should be illuminated
-                if face_normals[i][3] > 0
+                if shape.face_normals[i][3] > 0
                     @test illuminated == true
                 else
                     @test illuminated == false
@@ -159,7 +159,7 @@
             for i in 1:length(faces)
                 illuminated = isilluminated(shape, sun_pos, i)
                 # Faces with negative z-component of normal should be illuminated
-                if face_normals[i][3] < 0
+                if shape.face_normals[i][3] < 0
                     @test illuminated == true
                 else
                     @test illuminated == false
