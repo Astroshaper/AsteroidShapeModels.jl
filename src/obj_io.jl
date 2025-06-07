@@ -54,10 +54,6 @@ This function uses the FileIO/MeshIO packages to load OBJ files.
 Only triangular faces are supported.
 """
 function loadobj(shapepath::String; scale=1, message=true)
-
-    nodes = SVector{3,Float64}[]
-    faces = SVector{3,Int64}[]
-
     mesh = load(shapepath)
     nodes = Vector{SVector{3, Float64}}(GeometryBasics.coordinates(mesh))
     faces = [SVector{3,Int}(convert.(Int, face)) for face in GeometryBasics.faces(mesh)]

@@ -107,9 +107,9 @@
             
             f12, _, _ = view_factor(c1, c2, n1, n2, area)
             
-            # View factor should be negative (faces can't see each other)
-            # cos(180°) * cos(180°) / π = 1/π > 0, but physically meaningless
-            @test f12 > 0.0  # Mathematically positive, but physically invalid configuration
+            # View factor should be zero (faces can't see each other)
+            # Faces are facing away from each other, so physically no energy exchange
+            @test f12 == 0.0  # Physically correct: no view factor when faces face away
         end
     end
     
