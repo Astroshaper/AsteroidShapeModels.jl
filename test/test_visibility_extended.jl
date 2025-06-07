@@ -129,12 +129,7 @@
             SA[3, 1, 4]   # Side 3
         ]
         
-        face_centers = [face_center(nodes[face]) for face in faces]
-        face_normals = [face_normal(nodes[face]) for face in faces]
-        face_areas = [face_area(nodes[face]) for face in faces]
-        visiblefacets = [AsteroidShapeModels.VisibleFacet[] for _ in faces]
-        
-        shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+        shape = ShapeModel(nodes, faces)
         
         # Compute visibility for shadow testing
         find_visiblefacets!(shape)
@@ -209,13 +204,7 @@
                 SA[5, 7, 6], SA[5, 8, 7]   # Horizontal floor (facing +z)
             ]
             
-            face_centers_shadow = [face_center(nodes_shadow[face]) for face in faces_shadow]
-            face_normals_shadow = [face_normal(nodes_shadow[face]) for face in faces_shadow]
-            face_areas_shadow = [face_area(nodes_shadow[face]) for face in faces_shadow]
-            visiblefacets_shadow = [AsteroidShapeModels.VisibleFacet[] for _ in faces_shadow]
-            
-            shape_shadow = ShapeModel(nodes_shadow, faces_shadow, face_centers_shadow, 
-                                    face_normals_shadow, face_areas_shadow, visiblefacets_shadow)
+            shape_shadow = ShapeModel(nodes_shadow, faces_shadow)
             
             find_visiblefacets!(shape_shadow)
             

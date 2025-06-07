@@ -134,12 +134,7 @@
             ]
             
             # Create shape model
-            face_centers = [face_center(nodes[face]) for face in faces]
-            face_normals = [face_normal(nodes[face]) for face in faces]
-            face_areas = [face_area(nodes[face]) for face in faces]
-            visiblefacets = [AsteroidShapeModels.VisibleFacet[] for _ in faces]
-            
-            shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+            shape = ShapeModel(nodes, faces)
             
             r_eq = equivalent_radius(shape)
             vol = polyhedron_volume(shape)
@@ -178,12 +173,7 @@
             ]
             faces = [SA[1, 2, 3]]
             
-            face_centers = [face_center(nodes[face]) for face in faces]
-            face_normals = [face_normal(nodes[face]) for face in faces]
-            face_areas = [face_area(nodes[face]) for face in faces]
-            visiblefacets = [AsteroidShapeModels.VisibleFacet[] for _ in faces]
-            
-            shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+            shape = ShapeModel(nodes, faces)
             
             r_max = maximum_radius(shape)
             @test r_max ≈ 4.0 atol=1e-10
