@@ -41,6 +41,35 @@ mutable struct ShapeModel
 end
 
 """
+    ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}) -> ShapeModel
+
+Construct a ShapeModel from nodes and faces, automatically computing face properties.
+
+# Arguments
+- `nodes`: Vector of vertex positions
+- `faces`: Vector of triangular face definitions (vertex indices)
+
+# Returns
+- `ShapeModel`: Shape model with computed face centers, normals, areas, and empty visiblefacets
+
+# Examples
+```julia
+# Create a simple tetrahedron
+nodes = [SA[0,0,0], SA[1,0,0], SA[0,1,0], SA[0,0,1]]
+faces = [SA[1,2,3], SA[1,2,4], SA[1,3,4], SA[2,3,4]]
+shape = ShapeModel(nodes, faces)
+```
+"""
+function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}})
+    face_centers = [face_center(nodes[face]) for face in faces]
+    face_normals = [face_normal(nodes[face]) for face in faces]
+    face_areas   = [face_area(nodes[face])   for face in faces]
+    visiblefacets = [VisibleFacet[] for _ in faces]
+    
+    return ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+end
+
+"""
     Base.show(io::IO, shape::ShapeModel)
 
 Custom display method for ShapeModel objects.
