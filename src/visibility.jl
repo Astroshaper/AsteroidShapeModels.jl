@@ -127,10 +127,14 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
 
     n̂ᵢ ⋅ r̂☉ < 0 && return false
 
+    ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
+
     for visiblefacet in shape.visiblefacets[i]
         face = shape.faces[visiblefacet.id]
-        A, B, C = shape.nodes[face[1]], shape.nodes[face[2]], shape.nodes[face[3]]
-        ray = Ray(cᵢ, r̂☉)
+        A = shape.nodes[face[1]]
+        B = shape.nodes[face[2]]
+        C = shape.nodes[face[3]]
+
         intersect_ray_triangle(ray, A, B, C).hit && return false
     end
     return true
