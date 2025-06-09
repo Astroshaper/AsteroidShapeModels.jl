@@ -12,6 +12,9 @@ using BenchmarkTools
     include("test_ray_intersection.jl")
     include("test_geometry_utils.jl")
     
+    # Raycast migration validation
+    include("test_raycast_migration.jl")
+    
     # Shape operations tests (volume, radii calculations)
     include("test_shape_operations.jl")
     
