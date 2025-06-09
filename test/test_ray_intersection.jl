@@ -45,9 +45,7 @@
         R = @SVector [0.0, 0.0, -1.0]  # Ray direction (downward)
         O = @SVector [0.1, 0.1, 1.0]   # Ray origin above the triangle
         
-        @test raycast(A, B, C, R, O) == true
-        
-        # Also test with intersect_ray_triangle for consistency
+        # Test with intersect_ray_triangle
         ray = Ray(O, R)
         @test intersect_ray_triangle(ray, A, B, C).hit == true
     end

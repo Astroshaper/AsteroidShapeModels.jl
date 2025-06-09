@@ -7,7 +7,6 @@ CurrentModule = AsteroidShapeModels
 ## High-Level Functions
 
 ```@docs
-raycast
 intersect_ray_shape
 ```
 

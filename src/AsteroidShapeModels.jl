@@ -55,7 +55,7 @@ include("face_properties.jl")
 export face_center, face_normal, face_area
 
 include("ray_intersection.jl")
-export raycast, intersect_ray_triangle, intersect_ray_shape
+export intersect_ray_triangle, intersect_ray_shape
 export intersect_ray_bounding_box, compute_bounding_box
 
 include("shape_operations.jl")
