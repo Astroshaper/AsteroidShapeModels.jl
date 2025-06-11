@@ -9,7 +9,7 @@ A Julia package for geometric processing of asteroid shape models.
 
 ## Overview
 
-AsteroidShapeModels.jl provides comprehensive tools for working with polyhedral shape models of asteroids. This package consolidates the geometric functionality that was previously duplicated across multiple asteroid analysis packages.
+`AsteroidShapeModels.jl` provides comprehensive tools for working with polyhedral shape models of asteroids. This package consolidates the geometric functionality that was previously duplicated across multiple asteroid analysis packages.
 
 ## Key Features
 
@@ -31,10 +31,9 @@ Pkg.add(url="https://github.com/Astroshaper/AsteroidShapeModels.jl")
 
 ```julia
 using AsteroidShapeModels
-using StaticArrays
 
 # Load an asteroid shape model with face-face visibility
-shape = load_shape_obj("path/to/asteroid.obj", scale=1000, find_visible_facets=true)  # Convert km to m
+shape = load_shape_obj("path/to/shape.obj", scale=1000, find_visible_facets=true)  # Convert km to m
 
 # Access to face properties
 shape.face_centers  # Center position of each face

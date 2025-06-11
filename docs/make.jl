@@ -8,7 +8,7 @@ makedocs(;
     authors="Masanori Kanamaru <kanamaru-masanori@hotmail.co.jp>",
     sitename="AsteroidShapeModels.jl",
     format=Documenter.HTML(;
-        canonical="https://github.com/Astroshaper/AsteroidShapeModels.jl",
+        canonical="https://astroshaper.github.io/AsteroidShapeModels.jl",
         edit_link="main",
         assets=String[],
     ),
@@ -24,6 +24,7 @@ makedocs(;
             "Surface Roughness" => "api/roughness.md",
         ],
     ],
+    checkdocs=:exports,
 )
 
 deploydocs(;

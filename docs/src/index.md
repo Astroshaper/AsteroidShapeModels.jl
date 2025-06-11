@@ -28,19 +28,14 @@ Pkg.add("AsteroidShapeModels")
 
 ```julia
 using AsteroidShapeModels
-using StaticArrays
 
 # Load an asteroid shape model with face-face visibility
-shape = load_shape_obj("path/to/asteroid.obj", scale=1000, find_visible_facets=true)  # Convert km to m
+shape = load_shape_obj("path/to/shape.obj", scale=1000, find_visible_facets=true)  # Convert km to m
 
 # Access to face properties
 shape.face_centers  # Center position of each face
 shape.face_normals  # Normal vector of each face
 shape.face_areas    # Area of of each face
-
-# Check illumination
-sun_position = SA[1.0, 0.0, 0.0]  # Sun along +x axis
-illuminated = isilluminated(shape, sun_position, 1)  # true or false
 ```
 
 ## Features
@@ -71,14 +66,14 @@ illuminated = isilluminated(shape, sun_position, 1)  # true or false
 
 ## Package Structure
 
-- [`types.jl`](@ref) - Core data structures
-- [`obj_io.jl`](@ref) - OBJ file I/O
-- [`face_properties.jl`](@ref) - Face geometric properties
-- [`shape_operations.jl`](@ref) - Shape-level operations
-- [`ray_intersection.jl`](@ref) - Ray casting algorithms
-- [`visibility.jl`](@ref) - Visibility computations
-- [`geometry_utils.jl`](@ref) - Geometric utilities
-- [`roughness.jl`](@ref) - Surface roughness modeling
+- `types.jl` - Core data structures and type definitions
+- `obj_io.jl` - OBJ file loading and parsing
+- `face_properties.jl` - Face geometric computations (center, normal, area)
+- `shape_operations.jl` - Shape-level operations (volume, radius calculations)
+- `ray_intersection.jl` - Ray casting and intersection algorithms
+- `visibility.jl` - Face-to-face visibility and illumination analysis
+- `geometry_utils.jl` - Geometric helper functions and angle calculations
+- `roughness.jl` - Surface roughness and crater modeling
 
 ## Index
 

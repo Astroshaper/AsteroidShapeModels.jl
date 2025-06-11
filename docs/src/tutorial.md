@@ -60,6 +60,6 @@ bbox = compute_bounding_box(shape)
 
 ## Next Steps
 
-- See the [API Reference](@ref) for detailed function documentation
+- See the API Reference pages for detailed function documentation
 - Check the test suite for more examples
 - Explore integration with [SPICE.jl](https://github.com/JuliaAstro/SPICE.jl) for ephemeris data
