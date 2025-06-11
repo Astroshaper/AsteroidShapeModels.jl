@@ -43,7 +43,9 @@ shape.face_areas    # Area of of each face
 
 ## Documentation
 
-For detailed usage and API reference, please visit the [documentation](https://astroshaper.github.io/AsteroidShapeModels.jl/dev/).
+For detailed documentation, please visit:
+- [Stable Documentation](https://Astroshaper.github.io/AsteroidShapeModels.jl/stable)
+- [Development Documentation](https://Astroshaper.github.io/AsteroidShapeModels.jl/dev)
 
 ## License
 

@@ -4,11 +4,13 @@ CurrentModule = AsteroidShapeModels
 
 # AsteroidShapeModels.jl
 
-A Julia package for geometric processing and analysis of asteroid shape models.
+```@docs
+AsteroidShapeModels
+```
 
 ## Overview
 
-AsteroidShapeModels.jl provides comprehensive tools for working with polyhedral shape models of asteroids. The package supports:
+`AsteroidShapeModels.jl` provides comprehensive tools for working with polyhedral shape models of asteroids. The package supports:
 
 - Loading shape models from OBJ files
 - Computing geometric properties (area, volume, normals)

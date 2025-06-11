@@ -23,15 +23,13 @@ visibility analysis, and surface roughness modeling.
 ```julia
 using AsteroidShapeModels
 
-# Load asteroid shape model
-shape = load_shape_obj("ryugu.obj", scale=1000)  # Convert km to m
+# Load an asteroid shape model with face-face visibility
+shape = load_shape_obj("path/to/shape.obj", scale=1000, find_visible_facets=true)  # Convert km to m
 
-# Compute visibility between faces
-find_visiblefacets!(shape)
-
-# Check illumination
-sun_position = SA[1.0, 0.0, 0.0]  # Sun along +x axis
-illuminated = isilluminated(shape, sun_position, 1)  # Check face 1
+# Access to face properties
+shape.face_centers  # Center position of each face
+shape.face_normals  # Normal vector of each face
+shape.face_areas    # Area of of each face
 ```
 
 See the documentation for detailed usage examples and API reference.
