@@ -101,8 +101,8 @@
             ray_origin = SA[0.0, 0.0, 0.0]
             
             # Should not intersect (ray is in the plane)
-            hit = raycast(v1, v2, v3, ray_dir)
-            @test hit == false
+            ray = Ray(ray_origin, ray_dir)
+            @test intersect_ray_triangle(ray, v1, v2, v3).hit == false
         end
         
         @testset "Ray through triangle edge" begin
@@ -114,8 +114,9 @@
             # The ray origin is at (0, 0, -0.5)
             ray_dir = SA[0.5, 0.0, 0.5]
             ray_origin = SA[0.0, 0.0, -0.5]
-            hit = raycast(v1, v2, v3, ray_dir, ray_origin)
-            @test hit == true  # Should hit on edge
+            # Should hit on edge
+            ray = Ray(ray_origin, ray_dir)
+            @test intersect_ray_triangle(ray, v1, v2, v3).hit == true
         end
         
         @testset "Ray through triangle vertex" begin
@@ -126,8 +127,9 @@
             # Ray through vertex v1 from below
             ray_dir = SA[0.0, 0.0, 1.0]
             ray_origin = SA[0.0, 0.0, -1.0]
-            hit = raycast(v1, v2, v3, ray_dir, ray_origin)
-            @test hit == true  # Should hit on vertex
+            # Should hit on vertex
+            ray = Ray(ray_origin, ray_dir)
+            @test intersect_ray_triangle(ray, v1, v2, v3).hit == true
         end
         
         @testset "Nearly parallel ray" begin
@@ -137,8 +139,10 @@
             
             # Ray almost parallel to triangle
             ray_dir = SA[1.0, 0.0, 1e-10]  # Tiny z component
-            hit = raycast(v1, v2, v3, ray_dir)
-            # Result depends on numerical precision
+            ray = Ray(SA[0.0, 0.0, 0.0], ray_dir)
+            # Result depends on numerical precision - just verify it doesn't crash
+            result = intersect_ray_triangle(ray, v1, v2, v3)
+            @test isa(result, RayTriangleIntersectionResult)
         end
     end
     

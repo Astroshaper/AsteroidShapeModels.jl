@@ -104,7 +104,10 @@ function find_visiblefacets!(shape::ShapeModel)
                 
                 dᵢⱼ < dᵢₖ && continue
                 
-                if raycast(nodes[faces[k]]..., Rᵢⱼ, cᵢ)
+                ray = Ray(cᵢ, Rᵢⱼ)
+                A, B, C = nodes[faces[k][1]], nodes[faces[k][2]], nodes[faces[k][3]]
+                intersection = intersect_ray_triangle(ray, A, B, C)
+                if intersection.hit
                     blocked = true
                     break
                 end
@@ -134,9 +137,15 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
 
     n̂ᵢ ⋅ r̂☉ < 0 && return false
 
+    ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
+
     for visiblefacet in shape.visiblefacets[i]
-        A, B, C = shape.nodes[shape.faces[visiblefacet.id]]
-        raycast(A, B, C, r̂☉, cᵢ) && return false
+        face = shape.faces[visiblefacet.id]
+        A = shape.nodes[face[1]]
+        B = shape.nodes[face[2]]
+        C = shape.nodes[face[3]]
+
+        intersect_ray_triangle(ray, A, B, C).hit && return false
     end
     return true
 end

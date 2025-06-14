@@ -53,7 +53,7 @@ include("obj_io.jl")
 export loadobj, isobj
 
 include("ray_intersection.jl")
-export raycast, intersect_ray_triangle, intersect_ray_shape
+export intersect_ray_triangle, intersect_ray_shape
 export intersect_ray_bounding_box, compute_bounding_box
 
 include("shape_operations.jl")
