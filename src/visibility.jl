@@ -5,27 +5,32 @@
 """
     view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
 
-Calculate the view factor from facet i to facet j, assuming Lambertian emission.
+Calculate the view factor from face i to face j, assuming Lambertian emission.
 
 # Arguments
-- `cᵢ::StaticVector{3}`: Center position of facet i
-- `cⱼ::StaticVector{3}`: Center position of facet j
-- `n̂ᵢ::StaticVector{3}`: Unit normal vector of facet i
-- `n̂ⱼ::StaticVector{3}`: Unit normal vector of facet j
-- `aⱼ::Real`           : Area of facet j
+- `cᵢ::StaticVector{3}`: Center position of face i
+- `cⱼ::StaticVector{3}`: Center position of face j
+- `n̂ᵢ::StaticVector{3}`: Unit normal vector of face i
+- `n̂ⱼ::StaticVector{3}`: Unit normal vector of face j
+- `aⱼ::Real`           : Area of face j
 
 # Returns
-- `fᵢⱼ::Real`: View factor from facet i to facet j
-- `dᵢⱼ::Real`: Distance between facet centers
-- `d̂ᵢⱼ::StaticVector{3}`: Unit direction vector from facet i to facet j
+- `fᵢⱼ::Real`: View factor from face i to face j
+- `dᵢⱼ::Real`: Distance between face centers
+- `d̂ᵢⱼ::StaticVector{3}`: Unit direction vector from face i to face j
 
 # Notes
 The view factor is calculated using the formula:
 ```
 fᵢⱼ = (cosθᵢ * cosθⱼ) / (π * dᵢⱼ²) * aⱼ
 ```
-where θᵢ and θⱼ are the angles between the line connecting the facets
+where θᵢ and θⱼ are the angles between the line connecting the faces
 and the respective normal vectors.
+
+The view factor is automatically zero when:
+- Face i is facing away from face j (cosθᵢ ≤ 0)
+- Face j is facing away from face i (cosθⱼ ≤ 0)
+- Both conditions ensure that only mutually visible faces have non-zero view factors
 
 # Visual representation
 ```
@@ -34,14 +39,19 @@ and the respective normal vectors.
 ```
 """
 function view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)
-    dᵢⱼ = norm(cⱼ - cᵢ)
-    d̂ᵢⱼ = normalize(cⱼ - cᵢ)
+    cᵢⱼ = cⱼ - cᵢ    # Vector from face i to face j
+    dᵢⱼ = norm(cᵢⱼ)  # Distance between face centers
+    d̂ᵢⱼ = cᵢⱼ / dᵢⱼ  # Unit direction vector from face i to face j (more efficient than normalize())
 
-    cosθᵢ = n̂ᵢ ⋅ d̂ᵢⱼ
-    cosθⱼ = n̂ⱼ ⋅ (-d̂ᵢⱼ)
+    # Calculate cosines of angles between normals and the line connecting faces
+    # cosθᵢ: How much face i is oriented towards face j (positive if facing towards)
+    # cosθⱼ: How much face j is oriented towards face i (negative dot product because we need the opposite direction)
+    cosθᵢ = max(0.0,  n̂ᵢ ⋅ d̂ᵢⱼ)  # Zero if face i is facing away from face j
+    cosθⱼ = max(0.0, -n̂ⱼ ⋅ d̂ᵢⱼ)  # Zero if face j is facing away from face i
 
-    fᵢⱼ = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
-    fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
+    # View factor is zero if either face is not facing the other
+    fᵢⱼ = cosθᵢ * cosθⱼ * aⱼ / (π * dᵢⱼ^2)
+    return fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
 end
 
 """

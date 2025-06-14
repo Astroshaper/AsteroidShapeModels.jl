@@ -64,21 +64,10 @@ Compute the bounding box of a shape model.
 - `BoundingBox` object representing the bounding box
 """
 function compute_bounding_box(shape::ShapeModel)
-    min_x, min_y, min_z =  Inf,  Inf,  Inf
-    max_x, max_y, max_z = -Inf, -Inf, -Inf
+    isempty(shape.nodes) && error("Shape has no nodes")
     
-    for node in shape.nodes
-        min_x = min(min_x, node[1])
-        min_y = min(min_y, node[2])
-        min_z = min(min_z, node[3])
-        
-        max_x = max(max_x, node[1])
-        max_y = max(max_y, node[2])
-        max_z = max(max_z, node[3])
-    end
-    
-    min_point = SVector{3, Float64}(min_x, min_y, min_z)
-    max_point = SVector{3, Float64}(max_x, max_y, max_z)
+    min_point = SVector{3}(minimum(node[i] for node in shape.nodes) for i in 1:3)
+    max_point = SVector{3}(maximum(node[i] for node in shape.nodes) for i in 1:3)
     
     return BoundingBox(min_point, max_point)
 end
@@ -108,9 +97,7 @@ function intersect_ray_bounding_box(ray::Ray, bbox::BoundingBox)
         t1 = (bbox.min_point[1] - ray.origin[1]) / ray.direction[1]
         t2 = (bbox.max_point[1] - ray.origin[1]) / ray.direction[1]
         
-        if t1 > t2
-            t1, t2 = t2, t1
-        end
+        t1, t2 = minmax(t1, t2)
         
         t_min = max(t_min, t1)
         t_max = min(t_max, t2)
@@ -239,7 +226,7 @@ function intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox)
     end
     
     min_distance   = Inf
-    closest_point  = @SVector zeros(3)
+    closest_point  = SVector{3, Float64}(0.0, 0.0, 0.0)
     hit_face_index = 0
     hit_any        = false
     
