@@ -2,7 +2,7 @@
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://astroshaper.github.io/AsteroidShapeModels.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://astroshaper.github.io/AsteroidShapeModels.jl/dev/)
-[![Build Status](https://github.com/Astroshaper/AsteroidShapeModels.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Astroshaper/AsteroidShapeModels.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Build Status](https://github.com/Astroshaper/AsteroidShapeModels.jl/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Astroshaper/AsteroidShapeModels.jl/actions/workflows/ci.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/Astroshaper/AsteroidShapeModels.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Astroshaper/AsteroidShapeModels.jl)
 [![PkgEval](https://JuliaCI.github.io/NanosoldierReports/pkgeval_badges/A/AsteroidShapeModels.svg)](https://JuliaCI.github.io/NanosoldierReports/pkgeval_badges/report.html)
 
