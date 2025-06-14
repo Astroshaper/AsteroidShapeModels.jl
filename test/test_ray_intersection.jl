@@ -149,14 +149,8 @@
         nodes = [v1, v2, v3]
         faces = [@SVector([1, 2, 3])]  # Single face with vertex indices
         
-        # Compute face properties
-        face_centers  = [face_center(nodes[face]) for face in faces]
-        face_normals  = [face_normal(nodes[face]) for face in faces]
-        face_areas    = [face_area(nodes[face])   for face in faces]
-        visiblefacets = [VisibleFacet[] for _ in faces]
-
         # Create shape model
-        shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+        shape = ShapeModel(nodes, faces)
         
         # Test ray intersection with the shape
         ray = Ray(@SVector([0.25, 0.25, 1.0]), @SVector([0.0, 0.0, -1.0]))
