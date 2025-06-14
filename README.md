@@ -4,6 +4,7 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://astroshaper.github.io/AsteroidShapeModels.jl/dev/)
 [![Build Status](https://github.com/Astroshaper/AsteroidShapeModels.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Astroshaper/AsteroidShapeModels.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/Astroshaper/AsteroidShapeModels.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Astroshaper/AsteroidShapeModels.jl)
+[![PkgEval](https://JuliaCI.github.io/NanosoldierReports/pkgeval_badges/A/AsteroidShapeModels.svg)](https://JuliaCI.github.io/NanosoldierReports/pkgeval_badges/report.html)
 
 A Julia package for geometric processing of asteroid shape models.
 
@@ -22,9 +23,18 @@ A Julia package for geometric processing of asteroid shape models.
 
 ## Installation
 
+The package is registered in the [General Julia registry](https://github.com/JuliaRegistries/General) and can be installed with:
+
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/Astroshaper/AsteroidShapeModels.jl")
+Pkg.add("AsteroidShapeModels")
+```
+
+Or from the Julia REPL:
+
+```julia
+julia> ]  # Press ] to enter package mode
+pkg> add AsteroidShapeModels
 ```
 
 ## Quick Start
