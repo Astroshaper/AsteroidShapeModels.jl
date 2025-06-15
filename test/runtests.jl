@@ -21,6 +21,7 @@ using BenchmarkTools
     # Visibility and view factor tests
     include("test_find_visiblefacets.jl")
     include("test_visibility_extended.jl")
+    include("test_face_visibility_graph.jl")
     
     # Edge cases and numerical precision tests
     include("test_edge_cases.jl")

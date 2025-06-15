@@ -46,8 +46,16 @@ include("face_properties.jl")
 export face_center, face_normal, face_area
 
 include("types.jl")
-export ShapeModel, VisibleFacet, Ray, BoundingBox
+export VisibleFacet, Ray, BoundingBox
 export RayTriangleIntersectionResult, RayShapeIntersectionResult
+
+include("face_visibility_graph.jl")
+export FaceVisibilityGraph, from_adjacency_list, to_adjacency_list
+export get_visible_faces, get_view_factors, get_distances, get_directions
+export get_visible_facet_data, num_visible_faces, memory_usage
+
+include("shape_model.jl")
+export ShapeModel
 
 include("obj_io.jl")
 export loadobj, isobj
