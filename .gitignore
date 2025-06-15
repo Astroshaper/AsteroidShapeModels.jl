@@ -3,7 +3,7 @@
 /dev/
 /docs/build/
 /docs/site/
-/docs/Manifest.toml
+# /docs/Manifest.toml  # Track for reproducible doc builds
 .ipynb_checkpoints
 
 /test/kernel
