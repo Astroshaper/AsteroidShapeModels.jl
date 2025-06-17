@@ -14,3 +14,6 @@
 !icosahedron.obj
 !ryugu_test.obj
 !single_face.obj
+
+# Benchmark shape models
+benchmark/shape/
