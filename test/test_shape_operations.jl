@@ -218,9 +218,8 @@
             face_centers = [face_center(nodes[face]) for face in faces]
             face_normals = [face_normal(nodes[face]) for face in faces]
             face_areas = [face_area(nodes[face]) for face in faces]
-            visiblefacets = [AsteroidShapeModels.VisibleFacet[] for _ in faces]
             
-            shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+            shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, nothing)
             
             r_min = minimum_radius(shape)
             @test r_min ≈ sqrt(3) atol=1e-10

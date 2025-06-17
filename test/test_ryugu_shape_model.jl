@@ -52,7 +52,7 @@
         
     # 5. Summary statistics
     println("\n=== Summary ===")
-    total_visible_pairs = sum(length(vf) for vf in shape_vis.visiblefacets)
+    total_visible_pairs = shape_vis.visibility_graph.nnz
     println("Total visible facet pairs: $total_visible_pairs")
     avg_visible_per_face = total_visible_pairs / n_faces
     println("Average visible facets per face: $(round(avg_visible_per_face, digits=2))")
