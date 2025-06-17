@@ -79,7 +79,7 @@ b_graph = @benchmark for i in 1:$n_queries
 end samples=100
 
 println("  Legacy implementation : $(round(median(b_legacy.times) / 1000, digits=2)) μs ($n_queries queries)")
-println("  FaceVisibilityGraph   :   $(round(median(b_graph.times) / 1000, digits=2)) μs ($n_queries queries)")
+println("  FaceVisibilityGraph   : $(round(median(b_graph.times) / 1000, digits=2)) μs ($n_queries queries)")
 println("  Speed ratio           : $(round(median(b_legacy.times) / median(b_graph.times), digits=2))x")
 
 # 3. Memory access pattern analysis
@@ -98,7 +98,7 @@ b_rand = @benchmark for i in $rand_indices
 end samples=100
 
 println("  Sequential access       : $(round(median(b_seq.times) / 1000, digits=2)) μs ($(length(seq_indices)) queries)")
-println("  Random access           :     $(round(median(b_rand.times) / 1000, digits=2)) μs ($(length(rand_indices)) queries)")
+println("  Random access           : $(round(median(b_rand.times) / 1000, digits=2)) μs ($(length(rand_indices)) queries)")
 println("  Random/Sequential ratio : $(round(median(b_rand.times) / median(b_seq.times), digits=2))x")
 
 # 4. Detailed visibility statistics
