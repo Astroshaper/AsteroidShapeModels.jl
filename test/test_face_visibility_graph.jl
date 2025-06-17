@@ -16,17 +16,16 @@ using StaticArrays
         @test graph.nnz == 0
     end
     
-    @testset "From/To Adjacency List Conversion" begin
-        # Simple test case
-        visiblefacets = [
-            [VisibleFacet(2, 0.1, 1.0, SA[1.0, 0.0, 0.0]), 
-             VisibleFacet(3, 0.2, 2.0, SA[0.0, 1.0, 0.0])],
-            [VisibleFacet(1, 0.1, 1.0, SA[-1.0, 0.0, 0.0])],
-            [VisibleFacet(1, 0.2, 2.0, SA[0.0, -1.0, 0.0])]
-        ]
+    @testset "Direct CSR Construction" begin
+        # Simple test case: construct graph directly in CSR format
+        row_ptr = [1, 3, 4, 5]
+        col_idx = [2, 3, 1, 1]
+        view_factors = [0.1, 0.2, 0.1, 0.2]
+        distances = [1.0, 2.0, 1.0, 2.0]
+        directions = [SA[1.0, 0.0, 0.0], SA[0.0, 1.0, 0.0], SA[-1.0, 0.0, 0.0], SA[0.0, -1.0, 0.0]]
         
-        # Convert from adjacency list to CSR format
-        graph = from_adjacency_list(visiblefacets)
+        # Construct FaceVisibilityGraph directly
+        graph = FaceVisibilityGraph(row_ptr, col_idx, view_factors, distances, directions)
         
         @test graph.nfaces == 3
         @test graph.nnz == 4
@@ -34,32 +33,17 @@ using StaticArrays
         @test graph.col_idx == [2, 3, 1, 1]
         @test graph.view_factors ≈ [0.1, 0.2, 0.1, 0.2]
         @test graph.distances ≈ [1.0, 2.0, 1.0, 2.0]
-        
-        # Convert from CSR format back to adjacency list
-        converted_back = to_adjacency_list(graph)
-        
-        @test length(converted_back) == length(visiblefacets)
-        for i in eachindex(visiblefacets)
-            @test length(converted_back[i]) == length(visiblefacets[i])
-            for j in eachindex(visiblefacets[i])
-                @test converted_back[i][j].id == visiblefacets[i][j].id
-                @test converted_back[i][j].f ≈ visiblefacets[i][j].f
-                @test converted_back[i][j].d ≈ visiblefacets[i][j].d
-                @test converted_back[i][j].d̂ ≈ visiblefacets[i][j].d̂
-            end
-        end
     end
     
     @testset "Data Access Methods" begin
-        visiblefacets = [
-            [VisibleFacet(2, 0.1, 1.0, SA[1.0, 0.0, 0.0]), 
-             VisibleFacet(3, 0.2, 2.0, SA[0.0, 1.0, 0.0])],
-            [VisibleFacet(1, 0.3, 1.5, SA[-1.0, 0.0, 0.0]),
-             VisibleFacet(3, 0.4, 2.5, SA[0.0, 0.0, 1.0])],
-            VisibleFacet[]
-        ]
+        # Manually construct CSR format data for testing
+        row_ptr = [1, 3, 5, 5]  # Face 1: 2 visible, Face 2: 2 visible, Face 3: 0 visible
+        col_idx = [2, 3, 1, 3]
+        view_factors = [0.1, 0.2, 0.3, 0.4]
+        distances = [1.0, 2.0, 1.5, 2.5]
+        directions = [SA[1.0, 0.0, 0.0], SA[0.0, 1.0, 0.0], SA[-1.0, 0.0, 0.0], SA[0.0, 0.0, 1.0]]
         
-        graph = from_adjacency_list(visiblefacets)
+        graph = FaceVisibilityGraph(row_ptr, col_idx, view_factors, distances, directions)
         
         # get_visible_faces
         @test collect(get_visible_faces(graph, 1)) == [2, 3]
@@ -95,17 +79,27 @@ using StaticArrays
     @testset "Memory Usage" begin
         # Check memory usage with a larger graph
         n = 100
-        visiblefacets = [VisibleFacet[] for _ in 1:n]
+        nnz = n * 10  # Each face has 10 visible faces on average
         
-        # Each face has 10 visible faces on average
+        # Build CSR format data
+        row_ptr = Vector{Int}(undef, n + 1)
+        col_idx = Vector{Int}(undef, nnz)
+        view_factors = fill(0.1, nnz)
+        distances = fill(1.0, nnz)
+        directions = fill(SA[0.0, 0.0, 1.0], nnz)
+        
+        # Build row_ptr and col_idx
+        row_ptr[1] = 1
+        idx = 1
         for i in 1:n
+            row_ptr[i + 1] = row_ptr[i] + 10
             for j in 1:10
-                target = mod1(i + j, n)
-                push!(visiblefacets[i], VisibleFacet(target, 0.1, 1.0, SA[0.0, 0.0, 1.0]))
+                col_idx[idx] = mod1(i + j, n)
+                idx += 1
             end
         end
         
-        graph = from_adjacency_list(visiblefacets)
+        graph = FaceVisibilityGraph(row_ptr, col_idx, view_factors, distances, directions)
         
         @test graph.nfaces == n
         @test graph.nnz == n * 10
@@ -142,45 +136,29 @@ end
         SA[2, 3, 4]
     ]
     
-    @testset "Legacy vs New Implementation" begin
-        # Legacy implementation
-        shape_legacy = ShapeModel(nodes, faces)
-        find_visiblefacets!(shape_legacy, use_visibility_graph=false)
-        
-        # New implementation
-        shape_new = ShapeModel(nodes, faces)
-        find_visiblefacets!(shape_new, use_visibility_graph=true)
+    @testset "FaceVisibilityGraph Implementation" begin
+        # Create shape with visibility computation
+        shape = ShapeModel(nodes, faces)
+        find_visiblefacets!(shape)
         
         # Verify that visibility_graph is created
-        @test !isnothing(shape_new.visibility_graph)
-        @test shape_new.visibility_graph.nfaces == length(faces)
+        @test !isnothing(shape.visibility_graph)
+        @test shape.visibility_graph.nfaces == length(faces)
         
-        # Verify that results match
+        # For a tetrahedron, no face should see any other face (convex shape)
+        @test shape.visibility_graph.nnz == 0
+        
+        # Verify that all faces have no visible faces
         for i in 1:length(faces)
-            legacy_visible = shape_legacy.visiblefacets[i]
-            new_visible = shape_new.visiblefacets[i]
-            
-            @test length(legacy_visible) == length(new_visible)
-            
-            # Check that they have the same visible faces (order may differ)
-            legacy_ids = sort([vf.id for vf in legacy_visible])
-            new_ids = sort([vf.id for vf in new_visible])
-            @test legacy_ids == new_ids
-            
-            # Check that view factors also match
-            for vf_legacy in legacy_visible
-                vf_new = findfirst(vf -> vf.id == vf_legacy.id, new_visible)
-                @test !isnothing(vf_new)
-                @test new_visible[vf_new].f ≈ vf_legacy.f
-                @test new_visible[vf_new].d ≈ vf_legacy.d
-                @test new_visible[vf_new].d̂ ≈ vf_legacy.d̂
-            end
+            visible_faces = get_visible_faces(shape.visibility_graph, i)
+            @test length(visible_faces) == 0
+            @test num_visible_faces(shape.visibility_graph, i) == 0
         end
     end
     
     @testset "isilluminated with FaceVisibilityGraph" begin
         shape = ShapeModel(nodes, faces)
-        find_visiblefacets!(shape, use_visibility_graph=true)
+        find_visiblefacets!(shape)
         
         # Sun position
         r_sun = SA[1.0, 1.0, 1.0]
@@ -190,13 +168,9 @@ end
             # Using visibility_graph
             illuminated_new = isilluminated(shape, r_sun, i)
             
-            # Temporarily set visibility_graph to nothing to test legacy implementation
-            temp_graph = shape.visibility_graph
-            shape.visibility_graph = nothing
-            illuminated_legacy = isilluminated(shape, r_sun, i)
-            shape.visibility_graph = temp_graph
-            
-            @test illuminated_new == illuminated_legacy
+            # Since this is a convex shape (tetrahedron), all faces should be illuminated
+            # from a sun position outside the shape
+            @test illuminated_new == true
         end
     end
 end
@@ -226,28 +200,20 @@ end
     
     nodes, faces = create_cube()
     
-    # Memory usage comparison
-    shape1 = ShapeModel(nodes, faces)
-    find_visiblefacets!(shape1, use_visibility_graph=false)
+    # Create shape with visibility computation
+    shape = ShapeModel(nodes, faces)
+    find_visiblefacets!(shape)
     
-    shape2 = ShapeModel(nodes, faces)
-    find_visiblefacets!(shape2, use_visibility_graph=true)
+    # Verify that FaceVisibilityGraph is created
+    @test !isnothing(shape.visibility_graph)
     
-    # Verify that FaceVisibilityGraph is more memory efficient
-    if !isnothing(shape2.visibility_graph)
-        graph_memory = Base.summarysize(shape2.visibility_graph)
-        
-        # Estimate memory usage of adjacency list
-        adjacency_memory = 0
-        for vf_list in shape1.visiblefacets
-            adjacency_memory += sizeof(vf_list) + length(vf_list) * sizeof(VisibleFacet)
-        end
-        
-        println("Memory usage comparison:")
-        println("  Adjacency list: ~$(adjacency_memory) bytes")
-        println("  FaceVisibilityGraph: $(graph_memory) bytes")
-        
-        # CSR format is generally more efficient, especially for large data
-        # However, this may not always be true for very small graphs
-    end
+    # Display memory usage
+    graph_memory = Base.summarysize(shape.visibility_graph)
+    println("Memory usage for cube:")
+    println("  FaceVisibilityGraph: $(graph_memory) bytes")
+    println("  Number of faces: $(shape.visibility_graph.nfaces)")
+    println("  Number of visible pairs: $(shape.visibility_graph.nnz)")
+    
+    # For a cube, no external face should see any other external face
+    @test shape.visibility_graph.nnz == 0
 end
