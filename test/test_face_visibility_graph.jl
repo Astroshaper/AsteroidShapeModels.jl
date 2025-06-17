@@ -127,13 +127,13 @@ end
         SA[0.0, 0.0, 0.0],
         SA[1.0, 0.0, 0.0],
         SA[0.0, 1.0, 0.0],
-        SA[0.0, 0.0, 1.0]
+        SA[0.0, 0.0, 1.0],
     ]
     faces = [
-        SA[1, 2, 3],
+        SA[1, 3, 2],
         SA[1, 2, 4],
-        SA[1, 3, 4],
-        SA[2, 3, 4]
+        SA[1, 4, 3],
+        SA[2, 3, 4],
     ]
     
     @testset "FaceVisibilityGraph Implementation" begin
@@ -163,14 +163,18 @@ end
         # Sun position
         r_sun = SA[1.0, 1.0, 1.0]
         
-        # Verify both implementations return the same result
+        # Verify illumination for each face
         for i in 1:length(faces)
-            # Using visibility_graph
-            illuminated_new = isilluminated(shape, r_sun, i)
+            illuminated = isilluminated(shape, r_sun, i)
             
-            # Since this is a convex shape (tetrahedron), all faces should be illuminated
-            # from a sun position outside the shape
-            @test illuminated_new == true
+            # Check if face normal points toward the sun
+            face_normal = shape.face_normals[i]
+            r_sun_normalized = normalize(r_sun)
+            cos_angle = dot(face_normal, r_sun_normalized)
+            
+            # Face should be illuminated if it faces the sun
+            expected_illuminated = cos_angle > 0
+            @test illuminated == expected_illuminated
         end
     end
 end
@@ -187,12 +191,12 @@ end
         ]
         
         cube_faces = [
-            SA[1, 2, 3], SA[1, 3, 4],  # bottom
-            SA[5, 7, 6], SA[5, 8, 7],  # top
-            SA[1, 5, 6], SA[1, 6, 2],  # front
-            SA[3, 7, 8], SA[3, 8, 4],  # back
-            SA[1, 4, 8], SA[1, 8, 5],  # left
-            SA[2, 6, 7], SA[2, 7, 3]   # right
+            SA[1, 3, 2], SA[1, 4, 3],  # bottom (-z face, outward normal)
+            SA[5, 6, 7], SA[5, 7, 8],  # top    (+z face, outward normal)
+            SA[1, 2, 6], SA[1, 6, 5],  # front  (-y face, outward normal)
+            SA[3, 4, 8], SA[3, 8, 7],  # back   (+y face, outward normal)
+            SA[1, 5, 8], SA[1, 8, 4],  # left   (-x face, outward normal)
+            SA[2, 3, 7], SA[2, 7, 6],  # right  (+x face, outward normal)
         ]
         
         return cube_nodes, cube_faces
