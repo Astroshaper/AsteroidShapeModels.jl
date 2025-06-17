@@ -55,31 +55,18 @@ function view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)
 end
 
 """
-    find_visiblefacets!(shape::ShapeModel; use_visibility_graph=true, show_progress=true)
+    find_visiblefacets!(shape::ShapeModel)
 
-Find facets that is visible from the facet where the observer is located.
+Find facets that are visible from each facet in the shape model.
 
 # Arguments
 - `shape` : Shape model of an asteroid
 
-# Keyword Arguments
-- `use_visibility_graph::Bool=true`: Use the new FaceVisibilityGraph implementation for better performance
-- `show_progress::Bool=true`: Show progress (currently unused, kept for compatibility)
-
 # Notes
-When `use_visibility_graph=true`, both `visiblefacets` and `visibility_graph` fields are populated
-to maintain backward compatibility. The `visiblefacets` field will be deprecated in v1.0.0.
+This function populates the `visibility_graph` field of the shape model
+with face-to-face visibility information using an efficient CSR-style data structure.
 """
-function find_visiblefacets!(shape::ShapeModel; use_visibility_graph=true, show_progress=true)
-    if use_visibility_graph
-        _find_visiblefacets_graph!(shape)
-    else
-        _find_visiblefacets_legacy!(shape)
-    end
-end
-
-# 新しい実装：FaceVisibilityGraphを使用
-function _find_visiblefacets_graph!(shape::ShapeModel)
+function find_visiblefacets!(shape::ShapeModel)
     nodes = shape.nodes
     faces = shape.faces
     face_centers = shape.face_centers
@@ -139,71 +126,7 @@ function _find_visiblefacets_graph!(shape::ShapeModel)
     end
     
     # FaceVisibilityGraphを構築
-    shape.visibility_graph = from_adjacency_list(temp_visible)
-    
-    # 後方互換性のためvisiblefacetsも更新
-    shape.visiblefacets .= temp_visible
-end
-
-# レガシー実装：従来の方法（deprecation warningを追加）
-function _find_visiblefacets_legacy!(shape::ShapeModel)
-    @warn "Legacy visibility algorithm will be removed in v1.0.0. Set use_visibility_graph=true for better performance." maxlog=1
-    
-    nodes = shape.nodes
-    faces = shape.faces
-    face_centers = shape.face_centers
-    face_normals = shape.face_normals
-    face_areas = shape.face_areas
-    visiblefacets = shape.visiblefacets
-
-    for i in eachindex(faces)
-        cᵢ = face_centers[i]
-        n̂ᵢ = face_normals[i]
-        aᵢ = face_areas[i]
-
-        candidates = Int64[]
-        for j in eachindex(faces)
-            i == j && continue
-            cⱼ = face_centers[j]
-            n̂ⱼ = face_normals[j]
-
-            Rᵢⱼ = cⱼ - cᵢ
-            Rᵢⱼ ⋅ n̂ᵢ > 0 && Rᵢⱼ ⋅ n̂ⱼ < 0 && push!(candidates, j)
-        end
-        
-        for j in candidates
-            j in (visiblefacet.id for visiblefacet in visiblefacets[i]) && continue
-            cⱼ = face_centers[j]
-            n̂ⱼ = face_normals[j]
-            aⱼ = face_areas[j]
-
-            Rᵢⱼ = cⱼ - cᵢ
-            dᵢⱼ = norm(Rᵢⱼ)
-            
-            blocked = false
-            for k in candidates
-                j == k && continue
-                cₖ = face_centers[k]
-
-                Rᵢₖ = cₖ - cᵢ
-                dᵢₖ = norm(Rᵢₖ)
-                
-                dᵢⱼ < dᵢₖ && continue
-                
-                ray = Ray(cᵢ, Rᵢⱼ)
-                A, B, C = nodes[faces[k][1]], nodes[faces[k][2]], nodes[faces[k][3]]
-                intersection = intersect_ray_triangle(ray, A, B, C)
-                if intersection.hit
-                    blocked = true
-                    break
-                end
-            end
-
-            blocked && continue
-            push!(visiblefacets[i], VisibleFacet(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))
-            push!(visiblefacets[j], VisibleFacet(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))
-        end
-    end
+    shape.visibility_graph = FaceVisibilityGraph(temp_visible)
 end
 
 """
@@ -225,27 +148,18 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
 
     ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
 
-    # Use FaceVisibilityGraph if available
-    if !isnothing(shape.visibility_graph)
-        visible_faces = get_visible_faces(shape.visibility_graph, i)
-        for j in visible_faces
-            face = shape.faces[j]
-            A = shape.nodes[face[1]]
-            B = shape.nodes[face[2]]
-            C = shape.nodes[face[3]]
+    # Check if visibility graph exists
+    isnothing(shape.visibility_graph) && error("Visibility graph not computed. Call find_visiblefacets! first.")
+    
+    visible_faces = get_visible_faces(shape.visibility_graph, i)
+    for j in visible_faces
+        face = shape.faces[j]
+        A = shape.nodes[face[1]]
+        B = shape.nodes[face[2]]
+        C = shape.nodes[face[3]]
 
-            intersect_ray_triangle(ray, A, B, C).hit && return false
-        end
-    else
-        # Fallback to legacy implementation
-        for visiblefacet in shape.visiblefacets[i]
-            face = shape.faces[visiblefacet.id]
-            A = shape.nodes[face[1]]
-            B = shape.nodes[face[2]]
-            C = shape.nodes[face[3]]
-
-            intersect_ray_triangle(ray, A, B, C).hit && return false
-        end
+        intersect_ray_triangle(ray, A, B, C).hit && return false
     end
+    
     return true
 end
