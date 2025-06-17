@@ -25,8 +25,8 @@ shape = load_shape_obj("asteroid_km.obj", scale=1000, with_face_visibility=true)
 See also: [`load_shape_grid`](@ref), [`loadobj`](@ref)
 """
 function load_shape_obj(shapepath; scale=1.0, with_face_visibility=false)
-    nodes, faces = loadobj(shapepath; scale=scale, message=false)
-    return ShapeModel(nodes, faces; with_face_visibility=with_face_visibility)
+    nodes, faces = loadobj(shapepath; scale, message=false)
+    return ShapeModel(nodes, faces; with_face_visibility)
 end
 
 ################################################################
@@ -127,7 +127,7 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
     nodes, faces = grid_to_faces(xs, ys, zs)
     nodes .*= scale
     
-    return ShapeModel(nodes, faces; with_face_visibility=with_face_visibility)
+    return ShapeModel(nodes, faces; with_face_visibility)
 end
 
 ################################################################
