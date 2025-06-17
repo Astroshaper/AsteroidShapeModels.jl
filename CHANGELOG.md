@@ -7,15 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-06-17
+
 ### Added
 - `FaceVisibilityGraph`: New CSR-style data structure for face visibility (#12)
   - ~4x faster for small models (< 10k faces) 
   - ~50% memory reduction for all model sizes
   - Better cache locality for sequential access
-  - See [benchmark results](docs/src/benchmarks/v0.2.0_face_visibility_graph.md)
+  - Backward compatible with existing code
 - Benchmark suite for performance comparison
 - High-resolution (49k faces) model benchmark
 - `use_visibility_graph` parameter to `find_visiblefacets!` (default: true)
+- Manifest.toml files for reproducible builds (#11)
 
 ### Deprecated
 - Legacy adjacency list implementation will be removed in v0.3.0
