@@ -137,7 +137,7 @@ SUITE["memory"]["visibility_legacy_size"] = @benchmarkable begin
 end
 
 SUITE["memory"]["visibility_graph_size"] = @benchmarkable begin
-    memory_usage($SHAPE_VIS_GRAPH.visibility_graph)
+    Base.summarysize($SHAPE_VIS_GRAPH.visibility_graph)
 end
 
 # If running standalone (not through PkgBenchmark)

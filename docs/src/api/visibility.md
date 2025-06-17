@@ -23,5 +23,4 @@ get_distances
 get_directions
 get_visible_facet_data
 num_visible_faces
-memory_usage
 ```

@@ -23,7 +23,7 @@ println("\n2. Memory usage:")
 legacy_memory = sum(vf_list -> sizeof(vf_list) + length(vf_list) * sizeof(VisibleFacet), shape1.visiblefacets)
 println("   Legacy (adjacency list): $(legacy_memory) bytes")
 
-graph_memory = memory_usage(shape2.visibility_graph)
+graph_memory = Base.summarysize(shape2.visibility_graph)
 println("   FaceVisibilityGraph:     $(graph_memory) bytes")
 println("   Memory reduction: $(round((1 - graph_memory/legacy_memory)*100, digits=1))%")
 

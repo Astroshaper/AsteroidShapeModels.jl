@@ -111,7 +111,7 @@ using StaticArrays
         @test graph.nnz == n * 10
         
         # Calculate memory usage
-        mem_usage = memory_usage(graph)
+        mem_usage = Base.summarysize(graph)
         expected_min = sizeof(Int) * (n + 1 + n * 10) + sizeof(Float64) * (n * 10 * 2) + sizeof(SVector{3, Float64}) * n * 10
         @test mem_usage >= expected_min
     end
@@ -235,7 +235,7 @@ end
     
     # Verify that FaceVisibilityGraph is more memory efficient
     if !isnothing(shape2.visibility_graph)
-        graph_memory = memory_usage(shape2.visibility_graph)
+        graph_memory = Base.summarysize(shape2.visibility_graph)
         
         # Estimate memory usage of adjacency list
         adjacency_memory = 0

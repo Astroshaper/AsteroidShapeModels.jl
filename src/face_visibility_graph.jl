@@ -221,18 +221,3 @@ function to_adjacency_list(graph::FaceVisibilityGraph)
     
     return visiblefacets
 end
-
-"""
-    memory_usage(graph::FaceVisibilityGraph) -> Int
-
-Estimate memory usage of FaceVisibilityGraph in bytes.
-"""
-function memory_usage(graph::FaceVisibilityGraph)
-    row_ptr_size = sizeof(graph.row_ptr)
-    col_idx_size = sizeof(graph.col_idx)
-    view_factors_size = sizeof(graph.view_factors)
-    distances_size = sizeof(graph.distances)
-    directions_size = sizeof(graph.directions)
-    
-    return row_ptr_size + col_idx_size + view_factors_size + distances_size + directions_size
-end

@@ -49,7 +49,7 @@ println("       Time                : $(round(t_graph, digits=3)) seconds")
 total_visible_graph = shape_graph.visibility_graph.nnz
 println("       Total visible pairs : $total_visible_graph")
 
-graph_memory = memory_usage(shape_graph.visibility_graph)
+graph_memory = Base.summarysize(shape_graph.visibility_graph)
 println("       Memory usage        : $(round(graph_memory / 1024^2, digits=2)) MB")
 
 # Summary
