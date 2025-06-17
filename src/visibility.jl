@@ -55,27 +55,27 @@ function view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)
 end
 
 """
-    find_visiblefacets!(shape::ShapeModel; show_progress=true)
+    build_face_visibility_graph!(shape::ShapeModel)
 
-Find facets that is visible from the facet where the observer is located.
+Build face-to-face visibility graph for the shape model.
+
+This function computes which faces are visible from each face and stores the results
+in a `FaceVisibilityGraph` structure using CSR (Compressed Sparse Row) format.
 
 # Arguments
 - `shape` : Shape model of an asteroid
 
-# Keyword Arguments
-- `show_progress::Bool=true`: Show progress (currently unused, kept for compatibility)
+# Notes
+- The visibility graph is stored in `shape.visibility_graph`
+- This is a computationally intensive operation, especially for large models
+- The resulting graph contains view factors, distances, and direction vectors
 """
-function find_visiblefacets!(shape::ShapeModel; show_progress=true)
-    _find_visiblefacets_graph!(shape)
-end
-
-# New implementation: Using FaceVisibilityGraph
-function _find_visiblefacets_graph!(shape::ShapeModel)
+function build_face_visibility_graph!(shape::ShapeModel)
     nodes = shape.nodes
     faces = shape.faces
     face_centers = shape.face_centers
     face_normals = shape.face_normals
-    face_areas = shape.face_areas
+    face_areas   = shape.face_areas
     
     # Accumulate temporary visible face data
     temp_visible = [Vector{VisibleFacet}() for _ in faces]

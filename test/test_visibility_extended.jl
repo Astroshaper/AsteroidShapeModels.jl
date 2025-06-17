@@ -132,7 +132,7 @@
         shape = ShapeModel(nodes, faces)
         
         # Compute visibility for shadow testing
-        find_visiblefacets!(shape)
+        build_face_visibility_graph!(shape)
         
         @testset "Direct Illumination" begin
             # Sun directly above (positive z direction)
@@ -206,7 +206,7 @@
             
             shape_shadow = ShapeModel(nodes_shadow, faces_shadow)
             
-            find_visiblefacets!(shape_shadow)
+            build_face_visibility_graph!(shape_shadow)
             
             # Sun from low angle that should cast shadow
             sun_low = SA[0.0, -1.0, 0.1]  # Slightly above horizon from -y

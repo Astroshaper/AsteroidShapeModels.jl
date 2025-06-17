@@ -71,7 +71,7 @@ function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVect
     visibility_graph = nothing
     
     shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visibility_graph)
-    find_visible_facets && find_visiblefacets!(shape)
+    find_visible_facets && build_face_visibility_graph!(shape)
     
     return shape
 end

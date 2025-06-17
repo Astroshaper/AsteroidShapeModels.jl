@@ -25,7 +25,7 @@ println("\n1. Visibility computation:")
 
 shape = deepcopy(shape_base)
 GC.gc()
-t_elapsed = @elapsed find_visiblefacets!(shape)
+t_elapsed = @elapsed build_face_visibility_graph!(shape)
 println("   Time                : $(round(t_elapsed, digits=3)) seconds")
 
 # Count visible pairs

@@ -7,7 +7,7 @@ CurrentModule = AsteroidShapeModels
 ## Main Functions
 
 ```@docs
-find_visiblefacets!
+build_face_visibility_graph!
 isilluminated
 view_factor
 ```

@@ -139,7 +139,7 @@ end
     @testset "FaceVisibilityGraph Implementation" begin
         # Create shape with visibility computation
         shape = ShapeModel(nodes, faces)
-        find_visiblefacets!(shape)
+        build_face_visibility_graph!(shape)
         
         # Verify that visibility_graph is created
         @test !isnothing(shape.visibility_graph)
@@ -158,7 +158,7 @@ end
     
     @testset "isilluminated with FaceVisibilityGraph" begin
         shape = ShapeModel(nodes, faces)
-        find_visiblefacets!(shape)
+        build_face_visibility_graph!(shape)
         
         # Sun position
         r_sun = SA[1.0, 1.0, 1.0]
@@ -206,7 +206,7 @@ end
     
     # Create shape with visibility computation
     shape = ShapeModel(nodes, faces)
-    find_visiblefacets!(shape)
+    build_face_visibility_graph!(shape)
     
     # Verify that FaceVisibilityGraph is created
     @test !isnothing(shape.visibility_graph)

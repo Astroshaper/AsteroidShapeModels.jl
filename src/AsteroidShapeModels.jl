@@ -16,7 +16,7 @@ visibility analysis, and surface roughness modeling.
 - Shape I/O: `load_shape_obj`, `loadobj`, `load_shape_grid`
 - Geometric properties: `face_center`, `face_normal`, `face_area`, `polyhedron_volume`
 - Ray intersection: `raycast`, `intersect_ray_shape`
-- Visibility: `find_visiblefacets!`, `isilluminated`, `view_factor`
+- Visibility: `build_face_visibility_graph!`, `isilluminated`, `view_factor`
 - Shape analysis: `equivalent_radius`, `maximum_radius`, `minimum_radius`
 
 # Example
@@ -69,7 +69,7 @@ export load_shape_obj, load_shape_grid, grid_to_faces
 export polyhedron_volume, equivalent_radius, maximum_radius, minimum_radius
 
 include("visibility.jl")
-export view_factor, find_visiblefacets!, isilluminated
+export view_factor, build_face_visibility_graph!, isilluminated
 
 include("geometry_utils.jl")
 export angle_rad, angle_deg, solar_phase_angle, solar_elongation_angle

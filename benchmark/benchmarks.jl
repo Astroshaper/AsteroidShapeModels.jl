@@ -127,7 +127,7 @@ end
 SUITE["find_visible_facets"] = BenchmarkGroup()
 SUITE["find_visible_facets"]["small_shape"] = @benchmarkable begin
     shape = deepcopy($SHAPE)
-    find_visiblefacets!(shape)
+    build_face_visibility_graph!(shape)
 end
 
 # If running standalone (not through PkgBenchmark)
