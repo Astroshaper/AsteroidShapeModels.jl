@@ -37,7 +37,7 @@ struct FaceVisibilityGraph
         nfaces = length(row_ptr) - 1
         nnz = length(col_idx)
         
-        # 妥当性チェック
+        # Validity checks
         @assert row_ptr[1] == 1 "row_ptr must start with 1"
         @assert row_ptr[end] == nnz + 1 "row_ptr[end] must equal nnz + 1"
         @assert length(view_factors) == nnz "view_factors length must equal nnz"
@@ -52,14 +52,14 @@ end
 """
     FaceVisibilityGraph() -> FaceVisibilityGraph
 
-空のFaceVisibilityGraphを作成。
+Create an empty FaceVisibilityGraph.
 """
 FaceVisibilityGraph() = FaceVisibilityGraph(Int[1], Int[], Float64[], Float64[], SVector{3, Float64}[])
 
 """
     FaceVisibilityGraph(nfaces::Int) -> FaceVisibilityGraph
 
-指定された面数で空のFaceVisibilityGraphを作成。
+Create an empty FaceVisibilityGraph with the specified number of faces.
 """
 function FaceVisibilityGraph(nfaces::Int)
     row_ptr = ones(Int, nfaces + 1)
@@ -69,7 +69,7 @@ end
 """
     Base.show(io::IO, graph::FaceVisibilityGraph)
 
-FaceVisibilityGraphの表示。
+Display FaceVisibilityGraph.
 """
 function Base.show(io::IO, graph::FaceVisibilityGraph)
     print(io, "FaceVisibilityGraph:\n")
@@ -84,7 +84,7 @@ end
 """
     get_visible_faces(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
-指定された面の可視面インデックスを取得。
+Get visible face indices for the specified face.
 """
 function get_visible_faces(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
@@ -96,7 +96,7 @@ end
 """
     get_view_factors(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
-指定された面のビューファクターを取得。
+Get view factors for the specified face.
 """
 function get_view_factors(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
@@ -108,7 +108,7 @@ end
 """
     get_distances(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
-指定された面の距離情報を取得。
+Get distance information for the specified face.
 """
 function get_distances(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
@@ -120,7 +120,7 @@ end
 """
     get_directions(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
-指定された面の方向ベクトルを取得。
+Get direction vectors for the specified face.
 """
 function get_directions(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
@@ -132,7 +132,7 @@ end
 """
     get_visible_facet_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
 
-指定された面のidx番目の可視面データを取得。
+Get the idx-th visible face data for the specified face.
 """
 function get_visible_facet_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
     visible_faces = get_visible_faces(graph, face_id)
@@ -150,7 +150,7 @@ end
 """
     num_visible_faces(graph::FaceVisibilityGraph, face_id::Int) -> Int
 
-指定された面の可視面数を取得。
+Get the number of visible faces for the specified face.
 """
 function num_visible_faces(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
@@ -160,26 +160,26 @@ end
 """
     from_adjacency_list(visiblefacets::Vector{Vector{VisibleFacet}}) -> FaceVisibilityGraph
 
-既存の隣接リスト形式からFaceVisibilityGraphを構築。
+Construct FaceVisibilityGraph from existing adjacency list format.
 """
 function from_adjacency_list(visiblefacets::Vector{Vector{VisibleFacet}})
     nfaces = length(visiblefacets)
     nnz = sum(length.(visiblefacets))
     
-    # CSR形式のデータを構築
+    # Build CSR format data
     row_ptr = Vector{Int}(undef, nfaces + 1)
     col_idx = Vector{Int}(undef, nnz)
     view_factors = Vector{Float64}(undef, nnz)
     distances = Vector{Float64}(undef, nnz)
     directions = Vector{SVector{3, Float64}}(undef, nnz)
     
-    # row_ptrを構築
+    # Build row_ptr
     row_ptr[1] = 1
     for i in 1:nfaces
         row_ptr[i + 1] = row_ptr[i] + length(visiblefacets[i])
     end
     
-    # データをコピー
+    # Copy data
     idx = 1
     for i in 1:nfaces
         for vf in visiblefacets[i]
@@ -197,7 +197,7 @@ end
 """
     to_adjacency_list(graph::FaceVisibilityGraph) -> Vector{Vector{VisibleFacet}}
 
-FaceVisibilityGraphを既存の隣接リスト形式に変換（後方互換性のため）。
+Convert FaceVisibilityGraph to existing adjacency list format (for backward compatibility).
 """
 function to_adjacency_list(graph::FaceVisibilityGraph)
     visiblefacets = Vector{Vector{VisibleFacet}}(undef, graph.nfaces)
@@ -225,7 +225,7 @@ end
 """
     memory_usage(graph::FaceVisibilityGraph) -> Int
 
-FaceVisibilityGraphのメモリ使用量をバイト単位で推定。
+Estimate memory usage of FaceVisibilityGraph in bytes.
 """
 function memory_usage(graph::FaceVisibilityGraph)
     row_ptr_size = sizeof(graph.row_ptr)
