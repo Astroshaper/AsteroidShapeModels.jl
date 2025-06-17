@@ -29,11 +29,11 @@ t_elapsed = @elapsed build_face_visibility_graph!(shape)
 println("   Time                : $(round(t_elapsed, digits=3)) seconds")
 
 # Count visible pairs
-total_visible = shape.visibility_graph.nnz
+total_visible = shape.face_visibility_graph.nnz
 println("   Total visible pairs : $total_visible")
 
 # Memory usage
-graph_memory = Base.summarysize(shape.visibility_graph)
+graph_memory = Base.summarysize(shape.face_visibility_graph)
 println("   Memory usage        : $(round(graph_memory / 1024^2, digits=2)) MB")
 
 # 2. Query performance benchmark
@@ -60,13 +60,13 @@ println("\n3. Memory access patterns:")
 # Sequential access
 seq_indices = 1:min(5000, length(shape.faces))
 b_seq = @benchmark for i in $seq_indices
-    num_visible_faces($shape.visibility_graph, i)
+    num_visible_faces($shape.face_visibility_graph, i)
 end samples=100
 
 # Random access
 rand_indices = rand(1:length(shape.faces), length(seq_indices))
 b_rand = @benchmark for i in $rand_indices
-    num_visible_faces($shape.visibility_graph, i)
+    num_visible_faces($shape.face_visibility_graph, i)
 end samples=100
 
 println("   Sequential access       : $(round(median(b_seq.times) / 1000, digits=2)) μs ($(length(seq_indices)) queries)")
@@ -75,8 +75,8 @@ println("   Random/Sequential ratio : $(round(median(b_rand.times) / median(b_se
 
 # 4. Detailed visibility statistics
 println("\n4. Visibility statistics:")
-if !isnothing(shape.visibility_graph)
-    visible_counts = [num_visible_faces(shape.visibility_graph, i) for i in 1:shape.visibility_graph.nfaces]
+if !isnothing(shape.face_visibility_graph)
+    visible_counts = [num_visible_faces(shape.face_visibility_graph, i) for i in 1:shape.face_visibility_graph.nfaces]
     println("   Average visible faces per face : $(round(mean(visible_counts), digits=2))")
     println("   Maximum visible faces          : $(maximum(visible_counts))")
     println("   Minimum visible faces          : $(minimum(visible_counts))")

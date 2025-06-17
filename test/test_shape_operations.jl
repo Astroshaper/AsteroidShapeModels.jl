@@ -218,9 +218,9 @@
             face_centers = [face_center(nodes[face]) for face in faces]
             face_normals = [face_normal(nodes[face]) for face in faces]
             face_areas = [face_area(nodes[face]) for face in faces]
-            visibility_graph = nothing
+            face_visibility_graph = nothing
             
-            shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visibility_graph)
+            shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, face_visibility_graph)
             
             r_min = minimum_radius(shape)
             @test r_min ≈ sqrt(3) atol=1e-10

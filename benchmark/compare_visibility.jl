@@ -15,10 +15,10 @@ println("   Time: $(round(t_elapsed*1000, digits=2)) ms")
 
 # 2. Memory usage
 println("\n2. Memory usage:")
-graph_memory = Base.summarysize(shape.visibility_graph)
+graph_memory = Base.summarysize(shape.face_visibility_graph)
 println("   FaceVisibilityGraph: $(graph_memory) bytes")
 println("   Memory per face: $(round(graph_memory / length(shape.faces), digits=2)) bytes")
-println("   Memory per visible pair: $(round(graph_memory / shape.visibility_graph.nnz, digits=2)) bytes")
+println("   Memory per visible pair: $(round(graph_memory / shape.face_visibility_graph.nnz, digits=2)) bytes")
 
 # 3. Query performance
 println("\n3. Query performance (isilluminated):")
@@ -40,11 +40,11 @@ println("   Time per query: $(round(median(b_query.times)/100, digits=2)) ns")
 # 4. Access pattern analysis
 println("\n4. Visibility statistics:")
 println("   Number of faces: $(length(shape.faces))")
-println("   Total visible pairs: $(shape.visibility_graph.nnz)")
-println("   Average visible faces per face: $(round(shape.visibility_graph.nnz / length(shape.faces), digits=2))")
+println("   Total visible pairs: $(shape.face_visibility_graph.nnz)")
+println("   Average visible faces per face: $(round(shape.face_visibility_graph.nnz / length(shape.faces), digits=2))")
 
 # Distribution of visible faces
-visible_counts = [num_visible_faces(shape.visibility_graph, i) for i in 1:shape.visibility_graph.nfaces]
+visible_counts = [num_visible_faces(shape.face_visibility_graph, i) for i in 1:shape.face_visibility_graph.nfaces]
 println("   Max visible faces for a single face: $(maximum(visible_counts))")
 println("   Min visible faces for a single face: $(minimum(visible_counts))")
 
@@ -54,13 +54,13 @@ println("\n5. Cache efficiency (sequential vs random access):")
 # Sequential access
 indices = 1:1000
 b_seq = @benchmark for i in $indices
-    get_visible_faces($shape.visibility_graph, i)
+    get_visible_faces($shape.face_visibility_graph, i)
 end samples=100
 
 # Random access
 random_indices = rand(1:length(shape.faces), 1000)
 b_rand = @benchmark for i in $random_indices
-    get_visible_faces($shape.visibility_graph, i)
+    get_visible_faces($shape.face_visibility_graph, i)
 end samples=100
 
 println("   Sequential access: $(round(median(b_seq.times)/1000, digits=2)) μs (1000 queries)")

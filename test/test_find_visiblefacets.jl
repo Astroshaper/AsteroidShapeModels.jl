@@ -32,18 +32,18 @@
     @test isa(shape, ShapeModel)
     @test length(shape.nodes) > 0
     @test length(shape.faces) > 0
-    @test !isnothing(shape.visibility_graph)
-    @test shape.visibility_graph.nfaces == length(shape.faces)
+    @test !isnothing(shape.face_visibility_graph)
+    @test shape.face_visibility_graph.nfaces == length(shape.faces)
     
     # Display shape statistics
     println("Number of nodes: ", length(shape.nodes))
     println("Number of faces: ", length(shape.faces))
-    println("Total visible facet pairs: ", shape.visibility_graph.nnz)
+    println("Total visible face pairs: ", shape.face_visibility_graph.nnz)
 
     # Verify expected values for the test model
     @test length(shape.nodes) == 2976  # Expected number of nodes
     @test length(shape.faces) == 5932  # Expected number of faces
-    @test shape.visibility_graph.nnz == 121516  # Expected visible pairs
+    @test shape.face_visibility_graph.nnz == 121516  # Expected visible pairs
 
     println()
 
@@ -59,7 +59,7 @@
     shape = load_shape_obj(filepath; scale=1, find_visible_facets=true)
     
     # Count total visible facets
-    total_visible = shape.visibility_graph.nnz
+    total_visible = shape.face_visibility_graph.nnz
     println("Total visible facet pairs: $total_visible")
     println("(It should be zero for a convex icosahedron.)")
     
@@ -82,8 +82,8 @@
     
     # Check visibility from crater center (face index 992 for this grid)
     # This face is at the bottom of the crater and should see many faces
-    println("Number of faces visible from the crater center: ", num_visible_faces(shape.visibility_graph, 992))
-    @test num_visible_faces(shape.visibility_graph, 992) == 1053  # Expected visibility count
+    println("Number of faces visible from the crater center: ", num_visible_faces(shape.face_visibility_graph, 992))
+    @test num_visible_faces(shape.face_visibility_graph, 992) == 1053  # Expected visibility count
 
     println()
     
@@ -99,11 +99,11 @@
     symmetric = true
     asymmetric_pairs = 0
     
-    for i in 1:shape.visibility_graph.nfaces
-        visible_faces = get_visible_faces(shape.visibility_graph, i)
+    for i in 1:shape.face_visibility_graph.nfaces
+        visible_faces = get_visible_faces(shape.face_visibility_graph, i)
         for j in visible_faces
             # Check if face i is visible from face j
-            visible_from_j = get_visible_faces(shape.visibility_graph, j)
+            visible_from_j = get_visible_faces(shape.face_visibility_graph, j)
             if !(i in visible_from_j)
                 symmetric = false
                 asymmetric_pairs += 1

@@ -142,17 +142,17 @@ end
         build_face_visibility_graph!(shape)
         
         # Verify that visibility_graph is created
-        @test !isnothing(shape.visibility_graph)
-        @test shape.visibility_graph.nfaces == length(faces)
+        @test !isnothing(shape.face_visibility_graph)
+        @test shape.face_visibility_graph.nfaces == length(faces)
         
         # For a tetrahedron, no face should see any other face (convex shape)
-        @test shape.visibility_graph.nnz == 0
+        @test shape.face_visibility_graph.nnz == 0
         
         # Verify that all faces have no visible faces
         for i in 1:length(faces)
-            visible_faces = get_visible_faces(shape.visibility_graph, i)
+            visible_faces = get_visible_faces(shape.face_visibility_graph, i)
             @test length(visible_faces) == 0
-            @test num_visible_faces(shape.visibility_graph, i) == 0
+            @test num_visible_faces(shape.face_visibility_graph, i) == 0
         end
     end
     
@@ -209,15 +209,15 @@ end
     build_face_visibility_graph!(shape)
     
     # Verify that FaceVisibilityGraph is created
-    @test !isnothing(shape.visibility_graph)
+    @test !isnothing(shape.face_visibility_graph)
     
     # Display memory usage
-    graph_memory = Base.summarysize(shape.visibility_graph)
+    graph_memory = Base.summarysize(shape.face_visibility_graph)
     println("Memory usage for cube:")
     println("  FaceVisibilityGraph: $(graph_memory) bytes")
-    println("  Number of faces: $(shape.visibility_graph.nfaces)")
-    println("  Number of visible pairs: $(shape.visibility_graph.nnz)")
+    println("  Number of faces: $(shape.face_visibility_graph.nfaces)")
+    println("  Number of visible pairs: $(shape.face_visibility_graph.nnz)")
     
     # For a cube, no external face should see any other external face
-    @test shape.visibility_graph.nnz == 0
+    @test shape.face_visibility_graph.nnz == 0
 end

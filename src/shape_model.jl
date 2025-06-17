@@ -11,7 +11,7 @@ A polyhedral shape model of an asteroid.
 - `face_centers`  : Center position of each face
 - `face_normals`  : Normal vector of each face
 - `face_areas`    : Area of of each face
-- `visibility_graph` : `FaceVisibilityGraph` for efficient visibility queries
+- `face_visibility_graph` : `FaceVisibilityGraph` for efficient visibility queries
 """
 mutable struct ShapeModel
     nodes        ::Vector{SVector{3, Float64}}
@@ -21,7 +21,7 @@ mutable struct ShapeModel
     face_normals ::Vector{SVector{3, Float64}}
     face_areas   ::Vector{Float64}
 
-    visibility_graph::Union{FaceVisibilityGraph, Nothing}
+    face_visibility_graph::Union{FaceVisibilityGraph, Nothing}
     
     # Constructor with visibility_graph
     function ShapeModel(
@@ -30,9 +30,9 @@ mutable struct ShapeModel
         face_centers::Vector{SVector{3, Float64}},
         face_normals::Vector{SVector{3, Float64}},
         face_areas::Vector{Float64},
-        visibility_graph::Union{FaceVisibilityGraph, Nothing}
+        face_visibility_graph::Union{FaceVisibilityGraph, Nothing}
     )
-        new(nodes, faces, face_centers, face_normals, face_areas, visibility_graph)
+        new(nodes, faces, face_centers, face_normals, face_areas, face_visibility_graph)
     end
 end
 
@@ -68,9 +68,9 @@ function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVect
     face_areas   = [face_area(nodes[face])   for face in faces]
     
     # Initialize with no visibility graph
-    visibility_graph = nothing
+    face_visibility_graph = nothing
     
-    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visibility_graph)
+    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, face_visibility_graph)
     find_visible_facets && build_face_visibility_graph!(shape)
     
     return shape

@@ -52,9 +52,9 @@ let view_dir = SA[1.0, 0.0, 0.0]
     end
     
     # Direct visibility graph access
-    SUITE["visibility"]["num_visible_faces"] = @benchmarkable num_visible_faces($SHAPE_VIS.visibility_graph, 1)
-    SUITE["visibility"]["get_visible_faces"] = @benchmarkable get_visible_faces($SHAPE_VIS.visibility_graph, 1)
-    SUITE["visibility"]["get_view_factors"] = @benchmarkable get_view_factors($SHAPE_VIS.visibility_graph, 1)
+    SUITE["visibility"]["num_visible_faces"] = @benchmarkable num_visible_faces($SHAPE_VIS.face_visibility_graph, 1)
+    SUITE["visibility"]["get_visible_faces"] = @benchmarkable get_visible_faces($SHAPE_VIS.face_visibility_graph, 1)
+    SUITE["visibility"]["get_view_factors"] = @benchmarkable get_view_factors($SHAPE_VIS.face_visibility_graph, 1)
     
     # Sequential vs random access
     seq_indices = 1:100
@@ -62,13 +62,13 @@ let view_dir = SA[1.0, 0.0, 0.0]
     
     SUITE["visibility"]["sequential_access"] = @benchmarkable begin
         for i in $seq_indices
-            num_visible_faces($SHAPE_VIS.visibility_graph, i)
+            num_visible_faces($SHAPE_VIS.face_visibility_graph, i)
         end
     end
     
     SUITE["visibility"]["random_access"] = @benchmarkable begin
         for i in $rand_indices
-            num_visible_faces($SHAPE_VIS.visibility_graph, i)
+            num_visible_faces($SHAPE_VIS.face_visibility_graph, i)
         end
     end
 end
@@ -120,7 +120,7 @@ end
 
 # FaceVisibilityGraph memory usage
 SUITE["memory"]["visibility_graph_size"] = @benchmarkable begin
-    Base.summarysize($SHAPE_VIS.visibility_graph)
+    Base.summarysize($SHAPE_VIS.face_visibility_graph)
 end
 
 # 8. Find visible facets performance

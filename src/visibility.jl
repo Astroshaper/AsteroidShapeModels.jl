@@ -66,7 +66,7 @@ in a `FaceVisibilityGraph` structure using CSR (Compressed Sparse Row) format.
 - `shape` : Shape model of an asteroid
 
 # Notes
-- The visibility graph is stored in `shape.visibility_graph`
+- The visibility graph is stored in `shape.face_visibility_graph`
 - This is a computationally intensive operation, especially for large models
 - The resulting graph contains view factors, distances, and direction vectors
 """
@@ -158,7 +158,7 @@ function build_face_visibility_graph!(shape::ShapeModel)
         end
     end
     
-    shape.visibility_graph = FaceVisibilityGraph(row_ptr, col_idx, view_factors, distances, directions)
+    shape.face_visibility_graph = FaceVisibilityGraph(row_ptr, col_idx, view_factors, distances, directions)
 end
 
 
@@ -182,8 +182,8 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
     ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
 
     # Use FaceVisibilityGraph
-    if !isnothing(shape.visibility_graph)
-        visible_faces = get_visible_faces(shape.visibility_graph, i)
+    if !isnothing(shape.face_visibility_graph)
+        visible_faces = get_visible_faces(shape.face_visibility_graph, i)
         for j in visible_faces
             face = shape.faces[j]
             A = shape.nodes[face[1]]
