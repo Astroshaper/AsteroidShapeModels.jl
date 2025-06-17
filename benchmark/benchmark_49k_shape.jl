@@ -28,34 +28,34 @@ println("\n  a) Legacy implementation (adjacency list):")
 shape_legacy = deepcopy(shape_base)
 GC.gc()
 t_legacy = @elapsed find_visiblefacets!(shape_legacy, use_visibility_graph=false)
-println("     Time: $(round(t_legacy, digits=3)) seconds")
+println("       Time                : $(round(t_legacy, digits=3)) seconds")
 
 # Count visible pairs
 total_visible_legacy = sum(length.(shape_legacy.visiblefacets))
-println("     Total visible pairs: $total_visible_legacy")
+println("       Total visible pairs : $total_visible_legacy")
 
 # Memory usage estimation
 legacy_memory = sum(vf_list -> sizeof(vf_list) + length(vf_list) * sizeof(VisibleFacet), shape_legacy.visiblefacets)
-println("     Estimated memory: $(round(legacy_memory / 1024^2, digits=2)) MB")
+println("       Estimated memory    : $(round(legacy_memory / 1024^2, digits=2)) MB")
 
 # New implementation
 println("\n  b) FaceVisibilityGraph implementation:")
 shape_graph = deepcopy(shape_base)
 GC.gc()
 t_graph = @elapsed find_visiblefacets!(shape_graph, use_visibility_graph=true)
-println("     Time: $(round(t_graph, digits=3)) seconds")
+println("       Time                : $(round(t_graph, digits=3)) seconds")
 
 # Verify results match
 total_visible_graph = shape_graph.visibility_graph.nnz
-println("     Total visible pairs: $total_visible_graph")
+println("       Total visible pairs : $total_visible_graph")
 
 graph_memory = memory_usage(shape_graph.visibility_graph)
-println("     Memory usage: $(round(graph_memory / 1024^2, digits=2)) MB")
+println("       Memory usage        : $(round(graph_memory / 1024^2, digits=2)) MB")
 
 # Summary
 println("\n  c) Performance improvement:")
-println("     Speed up: $(round(t_legacy / t_graph, digits=2))x")
-println("     Memory reduction: $(round((1 - graph_memory / legacy_memory) * 100, digits=1))%")
+println("       Speed up         : $(round(t_legacy / t_graph, digits=2))x")
+println("       Memory reduction : $(round((1 - graph_memory / legacy_memory) * 100, digits=1))%")
 
 # 2. Query performance benchmark
 println("\n2. Query performance (isilluminated):")
@@ -78,9 +78,9 @@ b_graph = @benchmark for i in 1:$n_queries
     isilluminated($shape_graph, $r_sun, mod1(i, length($shape_graph.faces)))
 end samples=100
 
-println("  Legacy implementation: $(round(median(b_legacy.times) / 1000, digits=2)) μs ($n_queries queries)")
-println("  FaceVisibilityGraph:   $(round(median(b_graph.times) / 1000, digits=2)) μs ($n_queries queries)")
-println("  Speed ratio: $(round(median(b_legacy.times) / median(b_graph.times), digits=2))x")
+println("  Legacy implementation : $(round(median(b_legacy.times) / 1000, digits=2)) μs ($n_queries queries)")
+println("  FaceVisibilityGraph   :   $(round(median(b_graph.times) / 1000, digits=2)) μs ($n_queries queries)")
+println("  Speed ratio           : $(round(median(b_legacy.times) / median(b_graph.times), digits=2))x")
 
 # 3. Memory access pattern analysis
 println("\n3. Memory access patterns:")
@@ -97,18 +97,18 @@ b_rand = @benchmark for i in $rand_indices
     num_visible_faces($shape_graph.visibility_graph, i)
 end samples=100
 
-println("  Sequential access: $(round(median(b_seq.times) / 1000, digits=2)) μs ($(length(seq_indices)) queries)")
-println("  Random access:     $(round(median(b_rand.times) / 1000, digits=2)) μs ($(length(rand_indices)) queries)")
-println("  Random/Sequential ratio: $(round(median(b_rand.times) / median(b_seq.times), digits=2))x")
+println("  Sequential access       : $(round(median(b_seq.times) / 1000, digits=2)) μs ($(length(seq_indices)) queries)")
+println("  Random access           :     $(round(median(b_rand.times) / 1000, digits=2)) μs ($(length(rand_indices)) queries)")
+println("  Random/Sequential ratio : $(round(median(b_rand.times) / median(b_seq.times), digits=2))x")
 
 # 4. Detailed visibility statistics
 println("\n4. Visibility statistics:")
 if !isnothing(shape_graph.visibility_graph)
     visible_counts = [num_visible_faces(shape_graph.visibility_graph, i) for i in 1:shape_graph.visibility_graph.nfaces]
-    println("  Average visible faces per face: $(round(mean(visible_counts), digits=2))")
-    println("  Maximum visible faces: $(maximum(visible_counts))")
-    println("  Minimum visible faces: $(minimum(visible_counts))")
-    println("  Faces with no visibility: $(count(==(0), visible_counts))")
+    println("  Average visible faces per face : $(round(mean(visible_counts), digits=2))")
+    println("  Maximum visible faces          : $(maximum(visible_counts))")
+    println("  Minimum visible faces          : $(minimum(visible_counts))")
+    println("  Faces with no visibility       : $(count(==(0), visible_counts))")
 end
 
 println("\n=== Benchmark Complete ===")
