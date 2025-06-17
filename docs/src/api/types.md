@@ -23,4 +23,5 @@ RayShapeIntersectionResult
 
 ```@docs
 VisibleFacet
+FaceVisibilityGraph
 ```

@@ -5,6 +5,22 @@ All notable changes to `AsteroidShapeModels.jl` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `FaceVisibilityGraph`: New CSR-style data structure for face visibility (#12)
+  - ~4x faster for small models (< 10k faces) 
+  - ~50% memory reduction for all model sizes
+  - Better cache locality for sequential access
+  - See [benchmark results](docs/src/benchmarks/v0.2.0_face_visibility_graph.md)
+- Benchmark suite for performance comparison
+- High-resolution (49k faces) model benchmark
+- `use_visibility_graph` parameter to `find_visiblefacets!` (default: true)
+
+### Deprecated
+- Legacy adjacency list implementation will be removed in v0.3.0
+- `shape.visiblefacets` field will be removed in v0.3.0 (use `shape.visibility_graph`)
+
 ## [0.2.0] - 2025-06-14
 
 ### Breaking Changes

@@ -1,54 +1,48 @@
-# Performance Benchmarks for AsteroidShapeModels.jl
+# Benchmarks
 
-This directory contains performance benchmarks for tracking the performance of `AsteroidShapeModels.jl` across different versions.
+This directory contains performance benchmarks for AsteroidShapeModels.jl.
 
 ## Running Benchmarks
 
-### Quick Run
-To run the benchmarks directly:
-```julia
-julia benchmark/benchmarks.jl
+### Quick Benchmarks
+```bash
+# Run basic benchmarks
+julia --project=. benchmark/benchmarks.jl
+
+# Run high-resolution model benchmark (downloads 49k face model)
+julia --project=. benchmark/benchmark_49k_shape.jl
 ```
 
-### Using PkgBenchmark
-For more detailed analysis and comparison between versions:
+**Note**: Always use `--project=.` to ensure you're using the development version of AsteroidShapeModels.jl, not a previously installed version.
 
-```julia
-using PkgBenchmark
-using AsteroidShapeModels
+### Comparing Implementations
+To compare performance before and after changes:
 
-# Run benchmarks for current state
-results = benchmarkpkg(AsteroidShapeModels)
-
-# Compare against a specific version (e.g., v0.2.0)
-judge(AsteroidShapeModels, "v0.2.0")
-
-# Compare against a specific commit
-judge(AsteroidShapeModels, "main")
+```bash
+# Compare visibility implementations (requires v0.2.x with backward compatibility)
+julia --project=. benchmark/compare_visibility.jl
 ```
 
-## Benchmark Categories
+## Benchmark Results
 
-1. **Loading**: Shape model loading with and without visibility calculations
-2. **Face Properties**: Face center, normal, and area calculations
-3. **Visibility**: Illumination checks and face visibility lookups
-4. **Ray Intersection**: Single triangle and full shape intersections
-5. **Bounding Box**: Computing and ray-box intersection
-6. **Shape Characteristics**: Volume, equivalent radius, max/min radius
-7. **Memory**: Memory allocation benchmarks
+Historical benchmark results are documented in:
+- [`docs/src/benchmarks/`](../docs/src/benchmarks/) - Detailed performance comparisons for each version
 
-## Interpreting Results
+## Reproducing Historical Benchmarks
 
-- **Time**: Lower is better (measured in nanoseconds, microseconds, or milliseconds)
-- **Memory**: Lower allocation count and size is better
-- **Regression**: A significant increase in time or memory compared to baseline
+To reproduce benchmarks from specific versions:
 
-## Adding New Benchmarks
-
-To add new benchmarks, edit `benchmarks.jl` and add to the appropriate `SUITE` group:
-
-```julia
-SUITE["category"]["new_benchmark"] = @benchmarkable begin
-    # Your benchmark code here
-end
+```bash
+# Example: Reproduce v0.2.0 FaceVisibilityGraph benchmarks
+git checkout v0.2.0
+julia --project=. benchmark/compare_visibility.jl
 ```
+
+## Shape Models
+
+Large shape models for benchmarks are downloaded on-demand to `benchmark/shape/`. These files are git-ignored to keep the repository size manageable.
+
+### Available Models
+- `SHAPE_SFM_49k_v20180804.obj` - High-resolution Ryugu model (49,152 faces)
+  - Source: JAXA Data Archive
+  - Used for production-scale performance testing
