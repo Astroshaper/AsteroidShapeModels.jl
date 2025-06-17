@@ -1,20 +1,20 @@
 """
     FaceVisibilityGraph
 
-CSR（Compressed Sparse Row）形式を採用した効率的な可視面グラフ構造。
-隣接リスト形式と比較してメモリ効率が良く、キャッシュ局所性も優れている。
+Efficient visible face graph structure using CSR (Compressed Sparse Row) format.
+Provides better memory efficiency and cache locality compared to adjacency list format.
 
 # Fields
-- `row_ptr`: 各面の可視面データの開始インデックス（長さ: nfaces + 1）
-- `col_idx`: 可視面のインデックス（CSR形式の列インデックス）
-- `view_factors`: 各可視面ペアのビューファクター
-- `distances`: 各可視面ペア間の距離
-- `directions`: 各可視面ペア間の単位方向ベクトル
-- `nfaces`: 総面数
-- `nnz`: 非ゼロ要素数（可視面ペアの総数）
+- `row_ptr`: Start index of visible face data for each face (length: nfaces + 1)
+- `col_idx`: Indices of visible faces (column indices in CSR format)
+- `view_factors`: View factors for each visible face pair
+- `distances`: Distances between each visible face pair
+- `directions`: Unit direction vectors between each visible face pair
+- `nfaces`: Total number of faces
+- `nnz`: Number of non-zero elements (total number of visible face pairs)
 
-# 例
-面1が面2,3と、面2が面1,3,4と可視の場合：
+# Example
+If face 1 is visible to faces 2,3 and face 2 is visible to faces 1,3,4:
 - row_ptr = [1, 3, 6, 7]
 - col_idx = [2, 3, 1, 3, 4, ...]
 """

@@ -78,7 +78,7 @@ function find_visiblefacets!(shape::ShapeModel; use_visibility_graph=true, show_
     end
 end
 
-# 新しい実装：FaceVisibilityGraphを使用
+# New implementation: Using FaceVisibilityGraph
 function _find_visiblefacets_graph!(shape::ShapeModel)
     nodes = shape.nodes
     faces = shape.faces
@@ -86,7 +86,7 @@ function _find_visiblefacets_graph!(shape::ShapeModel)
     face_normals = shape.face_normals
     face_areas = shape.face_areas
     
-    # 一時的な可視面データを蓄積
+    # Accumulate temporary visible face data
     temp_visible = [Vector{VisibleFacet}() for _ in faces]
     
     for i in eachindex(faces)
@@ -138,14 +138,14 @@ function _find_visiblefacets_graph!(shape::ShapeModel)
         end
     end
     
-    # FaceVisibilityGraphを構築
+    # Build FaceVisibilityGraph
     shape.visibility_graph = from_adjacency_list(temp_visible)
     
-    # 後方互換性のためvisiblefacetsも更新
+    # Also update visiblefacets for backward compatibility
     shape.visiblefacets .= temp_visible
 end
 
-# レガシー実装：従来の方法（deprecation warningを追加）
+# Legacy implementation: Traditional method (with deprecation warning)
 function _find_visiblefacets_legacy!(shape::ShapeModel)
     @warn "Legacy visibility algorithm will be removed in v1.0.0. Set use_visibility_graph=true for better performance." maxlog=1
     

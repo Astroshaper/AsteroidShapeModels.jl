@@ -5,19 +5,19 @@ using StaticArrays
 @testset "FaceVisibilityGraph" begin
     
     @testset "Basic Construction" begin
-        # 空のグラフ
+        # Empty graph
         graph = FaceVisibilityGraph()
         @test graph.nfaces == 0
         @test graph.nnz == 0
         
-        # 指定サイズの空グラフ
+        # Empty graph with specified size
         graph = FaceVisibilityGraph(5)
         @test graph.nfaces == 5
         @test graph.nnz == 0
     end
     
     @testset "From/To Adjacency List Conversion" begin
-        # 簡単なテストケース
+        # Simple test case
         visiblefacets = [
             [VisibleFacet(2, 0.1, 1.0, SA[1.0, 0.0, 0.0]), 
              VisibleFacet(3, 0.2, 2.0, SA[0.0, 1.0, 0.0])],
@@ -25,7 +25,7 @@ using StaticArrays
             [VisibleFacet(1, 0.2, 2.0, SA[0.0, -1.0, 0.0])]
         ]
         
-        # 隣接リストからCSR形式へ変換
+        # Convert from adjacency list to CSR format
         graph = from_adjacency_list(visiblefacets)
         
         @test graph.nfaces == 3
@@ -35,7 +35,7 @@ using StaticArrays
         @test graph.view_factors ≈ [0.1, 0.2, 0.1, 0.2]
         @test graph.distances ≈ [1.0, 2.0, 1.0, 2.0]
         
-        # CSR形式から隣接リストへ変換
+        # Convert from CSR format back to adjacency list
         converted_back = to_adjacency_list(graph)
         
         @test length(converted_back) == length(visiblefacets)
@@ -93,11 +93,11 @@ using StaticArrays
     end
     
     @testset "Memory Usage" begin
-        # 大きめのグラフでメモリ使用量を確認
+        # Check memory usage with a larger graph
         n = 100
         visiblefacets = [VisibleFacet[] for _ in 1:n]
         
-        # 各面が平均10個の可視面を持つ
+        # Each face has 10 visible faces on average
         for i in 1:n
             for j in 1:10
                 target = mod1(i + j, n)
@@ -110,7 +110,7 @@ using StaticArrays
         @test graph.nfaces == n
         @test graph.nnz == n * 10
         
-        # メモリ使用量の計算
+        # Calculate memory usage
         mem_usage = memory_usage(graph)
         expected_min = sizeof(Int) * (n + 1 + n * 10) + sizeof(Float64) * (n * 10 * 2) + sizeof(SVector{3, Float64}) * n * 10
         @test mem_usage >= expected_min
@@ -119,7 +119,7 @@ using StaticArrays
     @testset "Bounds Checking" begin
         graph = FaceVisibilityGraph(3)
         
-        # 境界外アクセスのテスト
+        # Test out-of-bounds access
         @test_throws BoundsError get_visible_faces(graph, 0)
         @test_throws BoundsError get_visible_faces(graph, 4)
         @test_throws BoundsError get_view_factors(graph, 0)
@@ -128,7 +128,7 @@ using StaticArrays
 end
 
 @testset "ShapeModel with FaceVisibilityGraph" begin
-    # 簡単な四面体のテスト
+    # Simple tetrahedron test
     nodes = [
         SA[0.0, 0.0, 0.0],
         SA[1.0, 0.0, 0.0],
@@ -143,31 +143,31 @@ end
     ]
     
     @testset "Legacy vs New Implementation" begin
-        # レガシー実装
+        # Legacy implementation
         shape_legacy = ShapeModel(nodes, faces)
         find_visiblefacets!(shape_legacy, use_visibility_graph=false)
         
-        # 新実装
+        # New implementation
         shape_new = ShapeModel(nodes, faces)
         find_visiblefacets!(shape_new, use_visibility_graph=true)
         
-        # visibility_graphが作成されていることを確認
+        # Verify that visibility_graph is created
         @test !isnothing(shape_new.visibility_graph)
         @test shape_new.visibility_graph.nfaces == length(faces)
         
-        # 結果が一致することを確認
+        # Verify that results match
         for i in 1:length(faces)
             legacy_visible = shape_legacy.visiblefacets[i]
             new_visible = shape_new.visiblefacets[i]
             
             @test length(legacy_visible) == length(new_visible)
             
-            # 同じ可視面を持つことを確認（順序は異なる可能性がある）
+            # Check that they have the same visible faces (order may differ)
             legacy_ids = sort([vf.id for vf in legacy_visible])
             new_ids = sort([vf.id for vf in new_visible])
             @test legacy_ids == new_ids
             
-            # ビューファクターも一致することを確認
+            # Check that view factors also match
             for vf_legacy in legacy_visible
                 vf_new = findfirst(vf -> vf.id == vf_legacy.id, new_visible)
                 @test !isnothing(vf_new)
@@ -182,15 +182,15 @@ end
         shape = ShapeModel(nodes, faces)
         find_visiblefacets!(shape, use_visibility_graph=true)
         
-        # 太陽の位置
+        # Sun position
         r_sun = SA[1.0, 1.0, 1.0]
         
-        # 両方の実装で同じ結果を返すことを確認
+        # Verify both implementations return the same result
         for i in 1:length(faces)
-            # visibility_graphを使用
+            # Using visibility_graph
             illuminated_new = isilluminated(shape, r_sun, i)
             
-            # 一時的にvisibility_graphをnothingにしてレガシー実装をテスト
+            # Temporarily set visibility_graph to nothing to test legacy implementation
             temp_graph = shape.visibility_graph
             shape.visibility_graph = nothing
             illuminated_legacy = isilluminated(shape, r_sun, i)
@@ -202,9 +202,9 @@ end
 end
 
 @testset "Performance and Memory Comparison" begin
-    # より大きなテストケース（立方体）
+    # Larger test case (cube)
     function create_cube()
-        # 単位立方体を作成
+        # Create unit cube
         cube_nodes = [
             SA[-1.0, -1.0, -1.0], SA[1.0, -1.0, -1.0],
             SA[1.0, 1.0, -1.0], SA[-1.0, 1.0, -1.0],
@@ -226,18 +226,18 @@ end
     
     nodes, faces = create_cube()
     
-    # メモリ使用量の比較
+    # Memory usage comparison
     shape1 = ShapeModel(nodes, faces)
     find_visiblefacets!(shape1, use_visibility_graph=false)
     
     shape2 = ShapeModel(nodes, faces)
     find_visiblefacets!(shape2, use_visibility_graph=true)
     
-    # FaceVisibilityGraphの方がメモリ効率が良いことを確認
+    # Verify that FaceVisibilityGraph is more memory efficient
     if !isnothing(shape2.visibility_graph)
         graph_memory = memory_usage(shape2.visibility_graph)
         
-        # 隣接リストのメモリ使用量を推定
+        # Estimate memory usage of adjacency list
         adjacency_memory = 0
         for vf_list in shape1.visiblefacets
             adjacency_memory += sizeof(vf_list) + length(vf_list) * sizeof(VisibleFacet)
@@ -247,7 +247,7 @@ end
         println("  Adjacency list: ~$(adjacency_memory) bytes")
         println("  FaceVisibilityGraph: $(graph_memory) bytes")
         
-        # CSR形式の方が一般的に効率的であることを確認（特に大規模データで）
-        # ただし、非常に小さなグラフでは必ずしもそうではない
+        # CSR format is generally more efficient, especially for large data
+        # However, this may not always be true for very small graphs
     end
 end

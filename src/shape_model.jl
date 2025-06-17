@@ -29,7 +29,7 @@ mutable struct ShapeModel
     visiblefacets::Vector{Vector{VisibleFacet}}
     visibility_graph::Union{FaceVisibilityGraph, Nothing}
     
-    # 既存のコンストラクタとの互換性を保持
+    # Maintain compatibility with existing constructor
     function ShapeModel(
         nodes::Vector{SVector{3, Float64}},
         faces::Vector{SVector{3, Int}},
@@ -41,7 +41,7 @@ mutable struct ShapeModel
         new(nodes, faces, face_centers, face_normals, face_areas, visiblefacets, nothing)
     end
     
-    # 新しいコンストラクタ
+    # New constructor
     function ShapeModel(
         nodes::Vector{SVector{3, Float64}},
         faces::Vector{SVector{3, Int}},
