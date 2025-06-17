@@ -82,11 +82,11 @@ function Base.show(io::IO, graph::FaceVisibilityGraph)
 end
 
 """
-    get_visible_faces(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
+    get_visible_face_indices(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
-Get visible face indices for the specified face.
+Get indices of faces visible from the specified face.
 """
-function get_visible_faces(graph::FaceVisibilityGraph, face_id::Int)
+function get_visible_face_indices(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
     start_idx = graph.row_ptr[face_id]
     end_idx = graph.row_ptr[face_id + 1] - 1
@@ -106,11 +106,11 @@ function get_view_factors(graph::FaceVisibilityGraph, face_id::Int)
 end
 
 """
-    get_distances(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
+    get_visible_face_distances(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
-Get distance information for the specified face.
+Get distances to visible faces from the specified face.
 """
-function get_distances(graph::FaceVisibilityGraph, face_id::Int)
+function get_visible_face_distances(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
     start_idx = graph.row_ptr[face_id]
     end_idx = graph.row_ptr[face_id + 1] - 1
@@ -118,11 +118,11 @@ function get_distances(graph::FaceVisibilityGraph, face_id::Int)
 end
 
 """
-    get_directions(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
+    get_visible_face_directions(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
-Get direction vectors for the specified face.
+Get direction vectors to visible faces from the specified face.
 """
-function get_directions(graph::FaceVisibilityGraph, face_id::Int)
+function get_visible_face_directions(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
     start_idx = graph.row_ptr[face_id]
     end_idx = graph.row_ptr[face_id + 1] - 1
@@ -130,12 +130,12 @@ function get_directions(graph::FaceVisibilityGraph, face_id::Int)
 end
 
 """
-    get_visible_facet_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
+    get_visible_face_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
 
 Get the idx-th visible face data for the specified face.
 """
-function get_visible_facet_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
-    visible_faces = get_visible_faces(graph, face_id)
+function get_visible_face_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
+    visible_faces = get_visible_face_indices(graph, face_id)
     @boundscheck 1 <= idx <= length(visible_faces) || throw(BoundsError())
     
     base_idx = graph.row_ptr[face_id] + idx - 1

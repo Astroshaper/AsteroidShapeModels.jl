@@ -53,7 +53,7 @@ let view_dir = SA[1.0, 0.0, 0.0]
     
     # Direct visibility graph access
     SUITE["visibility"]["num_visible_faces"] = @benchmarkable num_visible_faces($SHAPE_VIS.face_visibility_graph, 1)
-    SUITE["visibility"]["get_visible_faces"] = @benchmarkable get_visible_faces($SHAPE_VIS.face_visibility_graph, 1)
+    SUITE["visibility"]["get_visible_face_indices"] = @benchmarkable get_visible_face_indices($SHAPE_VIS.face_visibility_graph, 1)
     SUITE["visibility"]["get_view_factors"] = @benchmarkable get_view_factors($SHAPE_VIS.face_visibility_graph, 1)
     
     # Sequential vs random access

@@ -45,31 +45,31 @@ using StaticArrays
         
         graph = FaceVisibilityGraph(row_ptr, col_idx, view_factors, distances, directions)
         
-        # get_visible_faces
-        @test collect(get_visible_faces(graph, 1)) == [2, 3]
-        @test collect(get_visible_faces(graph, 2)) == [1, 3]
-        @test collect(get_visible_faces(graph, 3)) == []
+        # get_visible_face_indices
+        @test collect(get_visible_face_indices(graph, 1)) == [2, 3]
+        @test collect(get_visible_face_indices(graph, 2)) == [1, 3]
+        @test collect(get_visible_face_indices(graph, 3)) == []
         
         # get_view_factors
         @test collect(get_view_factors(graph, 1)) ≈ [0.1, 0.2]
         @test collect(get_view_factors(graph, 2)) ≈ [0.3, 0.4]
         @test collect(get_view_factors(graph, 3)) == []
         
-        # get_distances
-        @test collect(get_distances(graph, 1)) ≈ [1.0, 2.0]
-        @test collect(get_distances(graph, 2)) ≈ [1.5, 2.5]
+        # get_visible_face_distances
+        @test collect(get_visible_face_distances(graph, 1)) ≈ [1.0, 2.0]
+        @test collect(get_visible_face_distances(graph, 2)) ≈ [1.5, 2.5]
         
-        # get_directions
-        @test collect(get_directions(graph, 1))[1] ≈ SA[1.0, 0.0, 0.0]
-        @test collect(get_directions(graph, 1))[2] ≈ SA[0.0, 1.0, 0.0]
+        # get_visible_face_directions
+        @test collect(get_visible_face_directions(graph, 1))[1] ≈ SA[1.0, 0.0, 0.0]
+        @test collect(get_visible_face_directions(graph, 1))[2] ≈ SA[0.0, 1.0, 0.0]
         
         # num_visible_faces
         @test num_visible_faces(graph, 1) == 2
         @test num_visible_faces(graph, 2) == 2
         @test num_visible_faces(graph, 3) == 0
         
-        # get_visible_facet_data
-        data = get_visible_facet_data(graph, 1, 1)
+        # get_visible_face_data
+        data = get_visible_face_data(graph, 1, 1)
         @test data.id == 2
         @test data.f ≈ 0.1
         @test data.d ≈ 1.0
@@ -114,8 +114,8 @@ using StaticArrays
         graph = FaceVisibilityGraph(3)
         
         # Test out-of-bounds access
-        @test_throws BoundsError get_visible_faces(graph, 0)
-        @test_throws BoundsError get_visible_faces(graph, 4)
+        @test_throws BoundsError get_visible_face_indices(graph, 0)
+        @test_throws BoundsError get_visible_face_indices(graph, 4)
         @test_throws BoundsError get_view_factors(graph, 0)
         @test_throws BoundsError num_visible_faces(graph, 4)
     end
@@ -150,7 +150,7 @@ end
         
         # Verify that all faces have no visible faces
         for i in 1:length(faces)
-            visible_faces = get_visible_faces(shape.face_visibility_graph, i)
+            visible_faces = get_visible_face_indices(shape.face_visibility_graph, i)
             @test length(visible_faces) == 0
             @test num_visible_faces(shape.face_visibility_graph, i) == 0
         end

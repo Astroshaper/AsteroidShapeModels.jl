@@ -100,10 +100,10 @@
     asymmetric_pairs = 0
     
     for i in 1:shape.face_visibility_graph.nfaces
-        visible_faces = get_visible_faces(shape.face_visibility_graph, i)
+        visible_faces = get_visible_face_indices(shape.face_visibility_graph, i)
         for j in visible_faces
             # Check if face i is visible from face j
-            visible_from_j = get_visible_faces(shape.face_visibility_graph, j)
+            visible_from_j = get_visible_face_indices(shape.face_visibility_graph, j)
             if !(i in visible_from_j)
                 symmetric = false
                 asymmetric_pairs += 1

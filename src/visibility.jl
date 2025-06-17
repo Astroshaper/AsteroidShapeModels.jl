@@ -183,7 +183,7 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
 
     # Use FaceVisibilityGraph
     if !isnothing(shape.face_visibility_graph)
-        visible_faces = get_visible_faces(shape.face_visibility_graph, i)
+        visible_faces = get_visible_face_indices(shape.face_visibility_graph, i)
         for j in visible_faces
             face = shape.faces[j]
             A = shape.nodes[face[1]]

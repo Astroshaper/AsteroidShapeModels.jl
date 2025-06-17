@@ -51,8 +51,8 @@ export RayTriangleIntersectionResult, RayShapeIntersectionResult
 
 include("face_visibility_graph.jl")
 export FaceVisibilityGraph
-export get_visible_faces, get_view_factors, get_distances, get_directions
-export get_visible_facet_data, num_visible_faces
+export get_visible_face_indices, get_view_factors, get_visible_face_distances, get_visible_face_directions
+export get_visible_face_data, num_visible_faces
 
 include("shape_model.jl")
 export ShapeModel

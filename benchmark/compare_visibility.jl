@@ -54,13 +54,13 @@ println("\n5. Cache efficiency (sequential vs random access):")
 # Sequential access
 indices = 1:1000
 b_seq = @benchmark for i in $indices
-    get_visible_faces($shape.face_visibility_graph, i)
+    get_visible_face_indices($shape.face_visibility_graph, i)
 end samples=100
 
 # Random access
 random_indices = rand(1:length(shape.faces), 1000)
 b_rand = @benchmark for i in $random_indices
-    get_visible_faces($shape.face_visibility_graph, i)
+    get_visible_face_indices($shape.face_visibility_graph, i)
 end samples=100
 
 println("   Sequential access: $(round(median(b_seq.times)/1000, digits=2)) μs (1000 queries)")
