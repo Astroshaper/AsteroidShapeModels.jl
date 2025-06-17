@@ -50,7 +50,7 @@ export VisibleFacet, Ray, BoundingBox
 export RayTriangleIntersectionResult, RayShapeIntersectionResult
 
 include("face_visibility_graph.jl")
-export FaceVisibilityGraph, from_adjacency_list, to_adjacency_list
+export FaceVisibilityGraph
 export get_visible_faces, get_view_factors, get_distances, get_directions
 export get_visible_facet_data, num_visible_faces
 

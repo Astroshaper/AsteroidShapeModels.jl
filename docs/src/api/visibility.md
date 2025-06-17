@@ -15,8 +15,6 @@ view_factor
 ## FaceVisibilityGraph Functions
 
 ```@docs
-from_adjacency_list
-to_adjacency_list
 get_visible_faces
 get_view_factors
 get_distances
