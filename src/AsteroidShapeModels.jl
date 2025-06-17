@@ -10,12 +10,12 @@ visibility analysis, and surface roughness modeling.
 # Main Types
 - `ShapeModel`: Core data structure for polyhedral shapes
 - `Ray`, `BoundingBox`: Ray casting and acceleration structures
-- `VisibleFacet`: Face-to-face visibility relationships
+- `FaceVisibilityGraph`: CSR-style data structure for face-to-face visibility
 
 # Key Functions
 - Shape I/O: `load_shape_obj`, `loadobj`, `load_shape_grid`
 - Geometric properties: `face_center`, `face_normal`, `face_area`, `polyhedron_volume`
-- Ray intersection: `raycast`, `intersect_ray_shape`
+- Ray intersection: `intersect_ray_triangle`, `intersect_ray_shape`
 - Visibility: `build_face_visibility_graph!`, `isilluminated`, `view_factor`
 - Shape analysis: `equivalent_radius`, `maximum_radius`, `minimum_radius`
 
@@ -24,7 +24,7 @@ visibility analysis, and surface roughness modeling.
 using AsteroidShapeModels
 
 # Load an asteroid shape model with face-face visibility
-shape = load_shape_obj("path/to/shape.obj", scale=1000, find_visible_facets=true)  # Convert km to m
+shape = load_shape_obj("path/to/shape.obj", scale=1000, with_face_visibility=true)  # Convert km to m
 
 # Access to face properties
 shape.face_centers  # Center position of each face

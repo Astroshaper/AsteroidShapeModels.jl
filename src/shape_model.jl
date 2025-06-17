@@ -37,7 +37,7 @@ Construct a ShapeModel from nodes and faces, automatically computing face proper
 - `with_face_visibility::Bool=false`: Whether to compute face-to-face visibility
 
 # Returns
-- `ShapeModel`: Shape model with computed face centers, normals, areas, and optionally populated visiblefacets
+- `ShapeModel`: Shape model with computed face centers, normals, areas, and optionally face visibility graph
 
 # Examples
 ```julia
