@@ -13,6 +13,8 @@ julia --project=. benchmark/benchmarks.jl
 julia --project=. benchmark/benchmark_49k_shape.jl
 ```
 
+**Note**: Always use `--project=.` to ensure you're using the development version of AsteroidShapeModels.jl, not a previously installed version.
+
 ### Comparing Implementations
 To compare performance before and after changes:
 
