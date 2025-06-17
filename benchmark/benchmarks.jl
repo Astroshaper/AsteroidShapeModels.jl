@@ -7,11 +7,6 @@ using StaticArrays
 const SHAPE_PATH = joinpath(@__DIR__, "..", "test", "shape", "ryugu_test.obj")
 const SHAPE     = load_shape_obj(SHAPE_PATH; find_visible_facets=false)
 const SHAPE_VIS = load_shape_obj(SHAPE_PATH; find_visible_facets=true)
-const SHAPE_VIS_GRAPH = begin
-    shape = load_shape_obj(SHAPE_PATH; find_visible_facets=false)
-    find_visiblefacets!(shape, use_visibility_graph=true)
-    shape
-end
 const BBOX = compute_bounding_box(SHAPE)
 
 # Benchmark suite
@@ -20,16 +15,7 @@ const SUITE = BenchmarkGroup()
 # 1. Shape loading benchmarks
 SUITE["loading"] = BenchmarkGroup()
 SUITE["loading"]["without_visibility"] = @benchmarkable load_shape_obj($SHAPE_PATH; find_visible_facets=false)
-SUITE["loading"]["with_visibility_legacy"] = @benchmarkable begin
-    shape = load_shape_obj($SHAPE_PATH; find_visible_facets=false)
-    find_visiblefacets!(shape, use_visibility_graph=false)
-    shape
-end
-SUITE["loading"]["with_visibility_graph"] = @benchmarkable begin
-    shape = load_shape_obj($SHAPE_PATH; find_visible_facets=false)
-    find_visiblefacets!(shape, use_visibility_graph=true)
-    shape
-end
+SUITE["loading"]["with_visibility"] = @benchmarkable load_shape_obj($SHAPE_PATH; find_visible_facets=true)
 
 # 2. Face property calculations
 SUITE["face_properties"] = BenchmarkGroup()
@@ -55,30 +41,35 @@ end
 # 3. Visibility calculations
 SUITE["visibility"] = BenchmarkGroup()
 let view_dir = SA[1.0, 0.0, 0.0]
-    # Legacy implementation
-    SUITE["visibility"]["single_face_legacy"] = @benchmarkable isilluminated($SHAPE_VIS, $view_dir, 1)
-    SUITE["visibility"]["batch_100_faces_legacy"] = @benchmarkable begin
+    # Single face query
+    SUITE["visibility"]["single_face"] = @benchmarkable isilluminated($SHAPE_VIS, $view_dir, 1)
+    
+    # Batch queries
+    SUITE["visibility"]["batch_100_faces"] = @benchmarkable begin
         for idx in 1:100
             isilluminated($SHAPE_VIS, $view_dir, idx)
         end
     end
     
-    # FaceVisibilityGraph implementation
-    SUITE["visibility"]["single_face_graph"] = @benchmarkable isilluminated($SHAPE_VIS_GRAPH, $view_dir, 1)
-    SUITE["visibility"]["batch_100_faces_graph"] = @benchmarkable begin
-        for idx in 1:100
-            isilluminated($SHAPE_VIS_GRAPH, $view_dir, idx)
+    # Direct visibility graph access
+    SUITE["visibility"]["num_visible_faces"] = @benchmarkable num_visible_faces($SHAPE_VIS.visibility_graph, 1)
+    SUITE["visibility"]["get_visible_faces"] = @benchmarkable get_visible_faces($SHAPE_VIS.visibility_graph, 1)
+    SUITE["visibility"]["get_view_factors"] = @benchmarkable get_view_factors($SHAPE_VIS.visibility_graph, 1)
+    
+    # Sequential vs random access
+    seq_indices = 1:100
+    rand_indices = rand(1:length(SHAPE_VIS.faces), 100)
+    
+    SUITE["visibility"]["sequential_access"] = @benchmarkable begin
+        for i in $seq_indices
+            num_visible_faces($SHAPE_VIS.visibility_graph, i)
         end
     end
     
-    # Visibility lookup comparison
-    SUITE["visibility"]["visible_facets_lookup_legacy"] = @benchmarkable begin
-        vf = $SHAPE_VIS.visiblefacets[1]
-        length(vf)
-    end
-    
-    SUITE["visibility"]["visible_facets_lookup_graph"] = @benchmarkable begin
-        num_visible_faces($SHAPE_VIS_GRAPH.visibility_graph, 1)
+    SUITE["visibility"]["random_access"] = @benchmarkable begin
+        for i in $rand_indices
+            num_visible_faces($SHAPE_VIS.visibility_graph, i)
+        end
     end
 end
 
@@ -127,17 +118,16 @@ SUITE["memory"]["shape_model_creation"] = @benchmarkable begin
     ShapeModel(nodes, faces; find_visible_facets=false)
 end
 
-# Compare memory usage of visibility data structures
-SUITE["memory"]["visibility_legacy_size"] = @benchmarkable begin
-    total = 0
-    for vf_list in $SHAPE_VIS.visiblefacets
-        total += sizeof(vf_list) + length(vf_list) * sizeof(VisibleFacet)
-    end
-    total
+# FaceVisibilityGraph memory usage
+SUITE["memory"]["visibility_graph_size"] = @benchmarkable begin
+    Base.summarysize($SHAPE_VIS.visibility_graph)
 end
 
-SUITE["memory"]["visibility_graph_size"] = @benchmarkable begin
-    Base.summarysize($SHAPE_VIS_GRAPH.visibility_graph)
+# 8. Find visible facets performance
+SUITE["find_visible_facets"] = BenchmarkGroup()
+SUITE["find_visible_facets"]["small_shape"] = @benchmarkable begin
+    shape = deepcopy($SHAPE)
+    find_visiblefacets!(shape)
 end
 
 # If running standalone (not through PkgBenchmark)
