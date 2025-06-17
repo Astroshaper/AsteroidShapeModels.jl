@@ -22,18 +22,6 @@ mutable struct ShapeModel
     face_areas   ::Vector{Float64}
 
     face_visibility_graph::Union{FaceVisibilityGraph, Nothing}
-    
-    # Constructor with visibility_graph
-    function ShapeModel(
-        nodes::Vector{SVector{3, Float64}},
-        faces::Vector{SVector{3, Int}},
-        face_centers::Vector{SVector{3, Float64}},
-        face_normals::Vector{SVector{3, Float64}},
-        face_areas::Vector{Float64},
-        face_visibility_graph::Union{FaceVisibilityGraph, Nothing}
-    )
-        new(nodes, faces, face_centers, face_normals, face_areas, face_visibility_graph)
-    end
 end
 
 """
