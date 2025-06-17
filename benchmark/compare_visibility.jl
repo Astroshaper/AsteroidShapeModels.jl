@@ -9,7 +9,7 @@ println("=== FaceVisibilityGraph Performance Analysis ===\n")
 
 # 1. Visibility computation performance
 println("1. Visibility computation time:")
-shape = load_shape_obj(shape_path; find_visible_facets=false)
+shape = load_shape_obj(shape_path; with_face_visibility=false)
 t_elapsed = @elapsed build_face_visibility_graph!(shape)
 println("   Time: $(round(t_elapsed*1000, digits=2)) ms")
 

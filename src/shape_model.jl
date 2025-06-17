@@ -34,7 +34,7 @@ Construct a ShapeModel from nodes and faces, automatically computing face proper
 - `faces`: Vector of triangular face definitions (vertex indices)
 
 # Keyword Arguments
-- `find_visible_facets::Bool=false`: Whether to compute face-to-face visibility
+- `with_face_visibility::Bool=false`: Whether to compute face-to-face visibility
 
 # Returns
 - `ShapeModel`: Shape model with computed face centers, normals, areas, and optionally populated visiblefacets
@@ -47,10 +47,10 @@ faces = [SA[1,2,3], SA[1,2,4], SA[1,3,4], SA[2,3,4]]
 shape = ShapeModel(nodes, faces)
 
 # Create with visibility computation
-shape = ShapeModel(nodes, faces, find_visible_facets=true)
+shape = ShapeModel(nodes, faces, with_face_visibility=true)
 ```
 """
-function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}; find_visible_facets=false)
+function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}; with_face_visibility=false)
     face_centers = [face_center(nodes[face]) for face in faces]
     face_normals = [face_normal(nodes[face]) for face in faces]
     face_areas   = [face_area(nodes[face])   for face in faces]
@@ -59,7 +59,7 @@ function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVect
     face_visibility_graph = nothing
     
     shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, face_visibility_graph)
-    find_visible_facets && build_face_visibility_graph!(shape)
+    with_face_visibility && build_face_visibility_graph!(shape)
     
     return shape
 end

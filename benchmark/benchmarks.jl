@@ -5,8 +5,8 @@ using StaticArrays
 
 # Load test shape model once
 const SHAPE_PATH = joinpath(@__DIR__, "..", "test", "shape", "ryugu_test.obj")
-const SHAPE     = load_shape_obj(SHAPE_PATH; find_visible_facets=false)
-const SHAPE_VIS = load_shape_obj(SHAPE_PATH; find_visible_facets=true)
+const SHAPE     = load_shape_obj(SHAPE_PATH; with_face_visibility=false)
+const SHAPE_VIS = load_shape_obj(SHAPE_PATH; with_face_visibility=true)
 const BBOX = compute_bounding_box(SHAPE)
 
 # Benchmark suite
@@ -14,8 +14,8 @@ const SUITE = BenchmarkGroup()
 
 # 1. Shape loading benchmarks
 SUITE["loading"] = BenchmarkGroup()
-SUITE["loading"]["without_visibility"] = @benchmarkable load_shape_obj($SHAPE_PATH; find_visible_facets=false)
-SUITE["loading"]["with_visibility"] = @benchmarkable load_shape_obj($SHAPE_PATH; find_visible_facets=true)
+SUITE["loading"]["without_visibility"] = @benchmarkable load_shape_obj($SHAPE_PATH; with_face_visibility=false)
+SUITE["loading"]["with_visibility"] = @benchmarkable load_shape_obj($SHAPE_PATH; with_face_visibility=true)
 
 # 2. Face property calculations
 SUITE["face_properties"] = BenchmarkGroup()
@@ -115,7 +115,7 @@ SUITE["memory"] = BenchmarkGroup()
 SUITE["memory"]["shape_model_creation"] = @benchmarkable begin
     nodes = [SA[rand(), rand(), rand()] for _ in 1:1000]
     faces = [SA[rand(1:1000), rand(1:1000), rand(1:1000)] for _ in 1:2000]
-    ShapeModel(nodes, faces; find_visible_facets=false)
+    ShapeModel(nodes, faces; with_face_visibility=false)
 end
 
 # FaceVisibilityGraph memory usage

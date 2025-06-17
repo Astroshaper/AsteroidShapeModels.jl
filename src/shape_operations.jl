@@ -1,5 +1,5 @@
 """
-    load_shape_obj(shapepath; scale=1.0, find_visible_facets=false) -> ShapeModel
+    load_shape_obj(shapepath; scale=1.0, with_face_visibility=false) -> ShapeModel
 
 Load a shape model from a Wavefront OBJ file.
 
@@ -8,7 +8,7 @@ Load a shape model from a Wavefront OBJ file.
 
 # Keyword Arguments
 - `scale::Real=1.0`: Scale factor of the shape model
-- `find_visible_facets::Bool=false`: Whether to compute face-to-face visibility
+- `with_face_visibility::Bool=false`: Whether to compute face-to-face visibility
 
 # Returns
 - `ShapeModel`: Loaded shape model with computed geometric properties
@@ -19,14 +19,14 @@ Load a shape model from a Wavefront OBJ file.
 shape = load_shape_obj("asteroid.obj")
 
 # Load with scaling and visibility computation
-shape = load_shape_obj("asteroid_km.obj", scale=1000, find_visible_facets=true)
+shape = load_shape_obj("asteroid_km.obj", scale=1000, with_face_visibility=true)
 ```
 
 See also: [`load_shape_grid`](@ref), [`loadobj`](@ref)
 """
-function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
+function load_shape_obj(shapepath; scale=1.0, with_face_visibility=false)
     nodes, faces = loadobj(shapepath; scale=scale, message=false)
-    return ShapeModel(nodes, faces; find_visible_facets=find_visible_facets)
+    return ShapeModel(nodes, faces; with_face_visibility=with_face_visibility)
 end
 
 ################################################################
@@ -93,7 +93,7 @@ function grid_to_faces(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatri
 end
 
 """
-    load_shape_grid(xs, ys, zs; scale=1.0, find_visible_facets=false) -> ShapeModel
+    load_shape_grid(xs, ys, zs; scale=1.0, with_face_visibility=false) -> ShapeModel
 
 Convert a regular grid (x, y) with z-values to a shape model.
 
@@ -104,7 +104,7 @@ Convert a regular grid (x, y) with z-values to a shape model.
 
 # Keyword Arguments
 - `scale::Real=1.0`: Scale factor to apply to all coordinates
-- `find_visible_facets::Bool=false`: Whether to compute face-to-face visibility
+- `with_face_visibility::Bool=false`: Whether to compute face-to-face visibility
 
 # Returns
 - `ShapeModel`: Shape model with computed geometric properties
@@ -118,16 +118,16 @@ zs = [exp(-(x^2 + y^2)/10) for x in xs, y in ys]  # Gaussian surface
 shape = load_shape_grid(xs, ys, zs)
 
 # With scaling and visibility
-shape = load_shape_grid(xs, ys, zs, scale=1000, find_visible_facets=true)
+shape = load_shape_grid(xs, ys, zs, scale=1000, with_face_visibility=true)
 ```
 
 See also: [`load_shape_obj`](@ref), [`grid_to_faces`](@ref)
 """
-function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix; scale=1.0, find_visible_facets=false)
+function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix; scale=1.0, with_face_visibility=false)
     nodes, faces = grid_to_faces(xs, ys, zs)
     nodes .*= scale
     
-    return ShapeModel(nodes, faces; find_visible_facets=find_visible_facets)
+    return ShapeModel(nodes, faces; with_face_visibility=with_face_visibility)
 end
 
 ################################################################

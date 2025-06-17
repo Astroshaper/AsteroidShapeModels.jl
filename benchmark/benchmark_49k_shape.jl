@@ -14,7 +14,7 @@ mkpath(dirname(shape_filepath))
 isfile(shape_filepath) || Downloads.download(shape_url, shape_filepath)
 
 println("Loading high-resolution shape model...")
-shape_base = @time load_shape_obj(shape_filepath; find_visible_facets=false)
+shape_base = @time load_shape_obj(shape_filepath; with_face_visibility=false)
 
 println("\nShape model statistics:")
 println("  Nodes: $(length(shape_base.nodes))")

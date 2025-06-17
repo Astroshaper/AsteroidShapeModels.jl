@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `ShapeModel` constructor that automatically computes face properties (#2)
   - Reduces code duplication when creating shape models
-  - Optionally computes face-to-face visibility with `find_visible_facets=true`
+  - Optionally computes face-to-face visibility with `with_face_visibility=true`
 
 ### Changed
 - Improved performance and readability across the codebase (#3)

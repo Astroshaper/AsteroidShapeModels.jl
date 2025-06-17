@@ -10,8 +10,8 @@
     path_shape = joinpath("shape", "ryugu_test.obj")
     
     # Load shape models
-    shape     = load_shape_obj(path_shape; find_visible_facets=false)
-    shape_vis = load_shape_obj(path_shape; find_visible_facets=true)
+    shape     = load_shape_obj(path_shape; with_face_visibility=false)
+    shape_vis = load_shape_obj(path_shape; with_face_visibility=true)
     n_nodes = length(shape.nodes)
     n_faces = length(shape.faces)
     
@@ -21,13 +21,13 @@
         
     # 1. Benchmark OBJ file loading (without visibility)
     println("\n1. Benchmarking OBJ file loading (without visibility):")
-    bench_load = @benchmark load_shape_obj($path_shape; find_visible_facets=false)
+    bench_load = @benchmark load_shape_obj($path_shape; with_face_visibility=false)
     display(bench_load)
     println()
         
     # 2. Benchmark loading with visibility calculation
     println("\n2. Benchmarking shape loading with visibility calculation:")
-    bench_load_vis = @benchmark load_shape_obj($path_shape; find_visible_facets=true)
+    bench_load_vis = @benchmark load_shape_obj($path_shape; with_face_visibility=true)
     display(bench_load_vis)
     println()
         

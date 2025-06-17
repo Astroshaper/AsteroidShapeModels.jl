@@ -19,7 +19,7 @@ using BenchmarkTools
     include("test_obj_io.jl")
     
     # Visibility and view factor tests
-    include("test_find_visiblefacets.jl")
+    include("test_with_face_visibility.jl")
     include("test_visibility_extended.jl")
     include("test_face_visibility_graph.jl")
     

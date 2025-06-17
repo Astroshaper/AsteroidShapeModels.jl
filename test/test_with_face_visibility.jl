@@ -10,10 +10,10 @@
 # Ported from AsteroidThermoPhysicalModels.jl
 # Reference: https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu
 
-@testset "find_visiblefacets" begin
+@testset "with_face_visibility" begin
     msg = """\n
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    |                Test: find_visiblefacets                |
+    |                Test: with_face_visibility              |
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
@@ -26,7 +26,7 @@
     
     filepath = joinpath("shape", "ryugu_test.obj")
     println("========  $filepath  ========")
-    shape = load_shape_obj(filepath; scale=1000, find_visible_facets=true)
+    shape = load_shape_obj(filepath; scale=1000, with_face_visibility=true)
     
     # Verify basic shape properties
     @test isa(shape, ShapeModel)
@@ -56,7 +56,7 @@
     
     filepath = joinpath("shape", "icosahedron.obj")
     println("========  $filepath  ========")
-    shape = load_shape_obj(filepath; scale=1, find_visible_facets=true)
+    shape = load_shape_obj(filepath; scale=1, with_face_visibility=true)
     
     # Count total visible facets
     total_visible = shape.face_visibility_graph.nnz
@@ -78,7 +78,7 @@
     
     # Generate crater shape using imported roughness function
     xs, ys, zs = concave_spherical_segment(0.4, 0.2; Nx=2^5, Ny=2^5, xc=0.5, yc=0.5)
-    shape = load_shape_grid(xs, ys, zs; scale=1.0, find_visible_facets=true)
+    shape = load_shape_grid(xs, ys, zs; scale=1.0, with_face_visibility=true)
     
     # Check visibility from crater center (face index 992 for this grid)
     # This face is at the bottom of the crater and should see many faces
