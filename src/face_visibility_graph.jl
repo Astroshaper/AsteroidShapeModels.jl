@@ -158,11 +158,13 @@ function num_visible_faces(graph::FaceVisibilityGraph, face_id::Int)
 end
 
 """
-    from_adjacency_list(visiblefacets::Vector{Vector{VisibleFacet}}) -> FaceVisibilityGraph
+    FaceVisibilityGraph(visiblefacets::Vector{Vector{VisibleFacet}}) -> FaceVisibilityGraph
 
-既存の隣接リスト形式からFaceVisibilityGraphを構築。
+可視面データの隣接リスト形式からFaceVisibilityGraphを構築。
+
+内部使用のみ。`find_visiblefacets!`から呼ばれる。
 """
-function from_adjacency_list(visiblefacets::Vector{Vector{VisibleFacet}})
+function FaceVisibilityGraph(visiblefacets::Vector{Vector{VisibleFacet}})
     nfaces = length(visiblefacets)
     nnz = sum(length.(visiblefacets))
     
@@ -192,34 +194,6 @@ function from_adjacency_list(visiblefacets::Vector{Vector{VisibleFacet}})
     end
     
     return FaceVisibilityGraph(row_ptr, col_idx, view_factors, distances, directions)
-end
-
-"""
-    to_adjacency_list(graph::FaceVisibilityGraph) -> Vector{Vector{VisibleFacet}}
-
-FaceVisibilityGraphを既存の隣接リスト形式に変換（後方互換性のため）。
-"""
-function to_adjacency_list(graph::FaceVisibilityGraph)
-    visiblefacets = Vector{Vector{VisibleFacet}}(undef, graph.nfaces)
-    
-    for i in 1:graph.nfaces
-        start_idx = graph.row_ptr[i]
-        end_idx = graph.row_ptr[i + 1] - 1
-        
-        n_visible = end_idx - start_idx + 1
-        visiblefacets[i] = Vector{VisibleFacet}(undef, n_visible)
-        
-        for (j, idx) in enumerate(start_idx:end_idx)
-            visiblefacets[i][j] = VisibleFacet(
-                graph.col_idx[idx],
-                graph.view_factors[idx],
-                graph.distances[idx],
-                graph.directions[idx]
-            )
-        end
-    end
-    
-    return visiblefacets
 end
 
 """
