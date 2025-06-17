@@ -11,12 +11,7 @@ A polyhedral shape model of an asteroid.
 - `face_centers`  : Center position of each face
 - `face_normals`  : Normal vector of each face
 - `face_areas`    : Area of of each face
-- `visiblefacets` : Vector of vector of `VisibleFacet` (deprecated, use visibility_graph)
 - `visibility_graph` : `FaceVisibilityGraph` for efficient visibility queries
-
-# Note
-The `visiblefacets` field is maintained for backward compatibility but will be removed in v1.0.0.
-New code should use `visibility_graph` for better performance.
 """
 mutable struct ShapeModel
     nodes        ::Vector{SVector{3, Float64}}
@@ -26,32 +21,17 @@ mutable struct ShapeModel
     face_normals ::Vector{SVector{3, Float64}}
     face_areas   ::Vector{Float64}
 
-    visiblefacets::Vector{Vector{VisibleFacet}}
     visibility_graph::Union{FaceVisibilityGraph, Nothing}
     
-    # 既存のコンストラクタとの互換性を保持
     function ShapeModel(
         nodes::Vector{SVector{3, Float64}},
         faces::Vector{SVector{3, Int}},
         face_centers::Vector{SVector{3, Float64}},
         face_normals::Vector{SVector{3, Float64}},
         face_areas::Vector{Float64},
-        visiblefacets::Vector{Vector{VisibleFacet}}
+        visibility_graph::Union{FaceVisibilityGraph, Nothing}=nothing
     )
-        new(nodes, faces, face_centers, face_normals, face_areas, visiblefacets, nothing)
-    end
-    
-    # 新しいコンストラクタ
-    function ShapeModel(
-        nodes::Vector{SVector{3, Float64}},
-        faces::Vector{SVector{3, Int}},
-        face_centers::Vector{SVector{3, Float64}},
-        face_normals::Vector{SVector{3, Float64}},
-        face_areas::Vector{Float64},
-        visiblefacets::Vector{Vector{VisibleFacet}},
-        visibility_graph::Union{FaceVisibilityGraph, Nothing}
-    )
-        new(nodes, faces, face_centers, face_normals, face_areas, visiblefacets, visibility_graph)
+        new(nodes, faces, face_centers, face_normals, face_areas, visibility_graph)
     end
 end
 
@@ -85,9 +65,8 @@ function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVect
     face_centers = [face_center(nodes[face]) for face in faces]
     face_normals = [face_normal(nodes[face]) for face in faces]
     face_areas   = [face_area(nodes[face])   for face in faces]
-    visiblefacets = [VisibleFacet[] for _ in faces]
     
-    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
+    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, nothing)
     find_visible_facets && find_visiblefacets!(shape)
     
     return shape
