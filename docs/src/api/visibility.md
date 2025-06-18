@@ -7,7 +7,7 @@ CurrentModule = AsteroidShapeModels
 ## Main Functions
 
 ```@docs
-find_visiblefacets!
+build_face_visibility_graph!
 isilluminated
 view_factor
 ```
@@ -15,12 +15,10 @@ view_factor
 ## FaceVisibilityGraph Functions
 
 ```@docs
-from_adjacency_list
-to_adjacency_list
-get_visible_faces
+get_visible_face_indices
 get_view_factors
-get_distances
-get_directions
-get_visible_facet_data
+get_visible_face_distances
+get_visible_face_directions
+get_visible_face_data
 num_visible_faces
 ```

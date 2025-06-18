@@ -82,11 +82,11 @@ function Base.show(io::IO, graph::FaceVisibilityGraph)
 end
 
 """
-    get_visible_faces(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
+    get_visible_face_indices(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
-Get visible face indices for the specified face.
+Get indices of faces visible from the specified face.
 """
-function get_visible_faces(graph::FaceVisibilityGraph, face_id::Int)
+function get_visible_face_indices(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
     start_idx = graph.row_ptr[face_id]
     end_idx = graph.row_ptr[face_id + 1] - 1
@@ -106,11 +106,11 @@ function get_view_factors(graph::FaceVisibilityGraph, face_id::Int)
 end
 
 """
-    get_distances(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
+    get_visible_face_distances(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
-Get distance information for the specified face.
+Get distances to visible faces from the specified face.
 """
-function get_distances(graph::FaceVisibilityGraph, face_id::Int)
+function get_visible_face_distances(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
     start_idx = graph.row_ptr[face_id]
     end_idx = graph.row_ptr[face_id + 1] - 1
@@ -118,11 +118,11 @@ function get_distances(graph::FaceVisibilityGraph, face_id::Int)
 end
 
 """
-    get_directions(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
+    get_visible_face_directions(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
-Get direction vectors for the specified face.
+Get direction vectors to visible faces from the specified face.
 """
-function get_directions(graph::FaceVisibilityGraph, face_id::Int)
+function get_visible_face_directions(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
     start_idx = graph.row_ptr[face_id]
     end_idx = graph.row_ptr[face_id + 1] - 1
@@ -130,12 +130,12 @@ function get_directions(graph::FaceVisibilityGraph, face_id::Int)
 end
 
 """
-    get_visible_facet_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
+    get_visible_face_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
 
 Get the idx-th visible face data for the specified face.
 """
-function get_visible_facet_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
-    visible_faces = get_visible_faces(graph, face_id)
+function get_visible_face_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
+    visible_faces = get_visible_face_indices(graph, face_id)
     @boundscheck 1 <= idx <= length(visible_faces) || throw(BoundsError())
     
     base_idx = graph.row_ptr[face_id] + idx - 1
@@ -157,67 +157,3 @@ function num_visible_faces(graph::FaceVisibilityGraph, face_id::Int)
     return graph.row_ptr[face_id + 1] - graph.row_ptr[face_id]
 end
 
-"""
-    from_adjacency_list(visiblefacets::Vector{Vector{VisibleFacet}}) -> FaceVisibilityGraph
-
-Construct FaceVisibilityGraph from existing adjacency list format.
-"""
-function from_adjacency_list(visiblefacets::Vector{Vector{VisibleFacet}})
-    nfaces = length(visiblefacets)
-    nnz = sum(length.(visiblefacets))
-    
-    # Build CSR format data
-    row_ptr = Vector{Int}(undef, nfaces + 1)
-    col_idx = Vector{Int}(undef, nnz)
-    view_factors = Vector{Float64}(undef, nnz)
-    distances = Vector{Float64}(undef, nnz)
-    directions = Vector{SVector{3, Float64}}(undef, nnz)
-    
-    # Build row_ptr
-    row_ptr[1] = 1
-    for i in 1:nfaces
-        row_ptr[i + 1] = row_ptr[i] + length(visiblefacets[i])
-    end
-    
-    # Copy data
-    idx = 1
-    for i in 1:nfaces
-        for vf in visiblefacets[i]
-            col_idx[idx] = vf.id
-            view_factors[idx] = vf.f
-            distances[idx] = vf.d
-            directions[idx] = vf.d̂
-            idx += 1
-        end
-    end
-    
-    return FaceVisibilityGraph(row_ptr, col_idx, view_factors, distances, directions)
-end
-
-"""
-    to_adjacency_list(graph::FaceVisibilityGraph) -> Vector{Vector{VisibleFacet}}
-
-Convert FaceVisibilityGraph to existing adjacency list format (for backward compatibility).
-"""
-function to_adjacency_list(graph::FaceVisibilityGraph)
-    visiblefacets = Vector{Vector{VisibleFacet}}(undef, graph.nfaces)
-    
-    for i in 1:graph.nfaces
-        start_idx = graph.row_ptr[i]
-        end_idx = graph.row_ptr[i + 1] - 1
-        
-        n_visible = end_idx - start_idx + 1
-        visiblefacets[i] = Vector{VisibleFacet}(undef, n_visible)
-        
-        for (j, idx) in enumerate(start_idx:end_idx)
-            visiblefacets[i][j] = VisibleFacet(
-                graph.col_idx[idx],
-                graph.view_factors[idx],
-                graph.distances[idx],
-                graph.directions[idx]
-            )
-        end
-    end
-    
-    return visiblefacets
-end

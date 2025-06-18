@@ -55,36 +55,27 @@ function view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)
 end
 
 """
-    find_visiblefacets!(shape::ShapeModel; use_visibility_graph=true, show_progress=true)
+    build_face_visibility_graph!(shape::ShapeModel)
 
-Find facets that is visible from the facet where the observer is located.
+Build face-to-face visibility graph for the shape model.
+
+This function computes which faces are visible from each face and stores the results
+in a `FaceVisibilityGraph` structure using CSR (Compressed Sparse Row) format.
 
 # Arguments
 - `shape` : Shape model of an asteroid
 
-# Keyword Arguments
-- `use_visibility_graph::Bool=true`: Use the new FaceVisibilityGraph implementation for better performance
-- `show_progress::Bool=true`: Show progress (currently unused, kept for compatibility)
-
 # Notes
-When `use_visibility_graph=true`, both `visiblefacets` and `visibility_graph` fields are populated
-to maintain backward compatibility. The `visiblefacets` field will be deprecated in v1.0.0.
+- The visibility graph is stored in `shape.face_visibility_graph`
+- This is a computationally intensive operation, especially for large models
+- The resulting graph contains view factors, distances, and direction vectors
 """
-function find_visiblefacets!(shape::ShapeModel; use_visibility_graph=true, show_progress=true)
-    if use_visibility_graph
-        _find_visiblefacets_graph!(shape)
-    else
-        _find_visiblefacets_legacy!(shape)
-    end
-end
-
-# New implementation: Using FaceVisibilityGraph
-function _find_visiblefacets_graph!(shape::ShapeModel)
+function build_face_visibility_graph!(shape::ShapeModel)
     nodes = shape.nodes
     faces = shape.faces
     face_centers = shape.face_centers
     face_normals = shape.face_normals
-    face_areas = shape.face_areas
+    face_areas   = shape.face_areas
     
     # Accumulate temporary visible face data
     temp_visible = [Vector{VisibleFacet}() for _ in faces]
@@ -138,73 +129,38 @@ function _find_visiblefacets_graph!(shape::ShapeModel)
         end
     end
     
-    # Build FaceVisibilityGraph
-    shape.visibility_graph = from_adjacency_list(temp_visible)
+    # Build FaceVisibilityGraph directly in CSR format
+    nfaces = length(faces)
+    nnz = sum(length.(temp_visible))
     
-    # Also update visiblefacets for backward compatibility
-    shape.visiblefacets .= temp_visible
-end
-
-# Legacy implementation: Traditional method (with deprecation warning)
-function _find_visiblefacets_legacy!(shape::ShapeModel)
-    @warn "Legacy visibility algorithm will be removed in v1.0.0. Set use_visibility_graph=true for better performance." maxlog=1
+    # Build CSR format data
+    row_ptr = Vector{Int}(undef, nfaces + 1)
+    col_idx = Vector{Int}(undef, nnz)
+    view_factors = Vector{Float64}(undef, nnz)
+    distances = Vector{Float64}(undef, nnz)
+    directions = Vector{SVector{3, Float64}}(undef, nnz)
     
-    nodes = shape.nodes
-    faces = shape.faces
-    face_centers = shape.face_centers
-    face_normals = shape.face_normals
-    face_areas = shape.face_areas
-    visiblefacets = shape.visiblefacets
-
-    for i in eachindex(faces)
-        cᵢ = face_centers[i]
-        n̂ᵢ = face_normals[i]
-        aᵢ = face_areas[i]
-
-        candidates = Int64[]
-        for j in eachindex(faces)
-            i == j && continue
-            cⱼ = face_centers[j]
-            n̂ⱼ = face_normals[j]
-
-            Rᵢⱼ = cⱼ - cᵢ
-            Rᵢⱼ ⋅ n̂ᵢ > 0 && Rᵢⱼ ⋅ n̂ⱼ < 0 && push!(candidates, j)
-        end
-        
-        for j in candidates
-            j in (visiblefacet.id for visiblefacet in visiblefacets[i]) && continue
-            cⱼ = face_centers[j]
-            n̂ⱼ = face_normals[j]
-            aⱼ = face_areas[j]
-
-            Rᵢⱼ = cⱼ - cᵢ
-            dᵢⱼ = norm(Rᵢⱼ)
-            
-            blocked = false
-            for k in candidates
-                j == k && continue
-                cₖ = face_centers[k]
-
-                Rᵢₖ = cₖ - cᵢ
-                dᵢₖ = norm(Rᵢₖ)
-                
-                dᵢⱼ < dᵢₖ && continue
-                
-                ray = Ray(cᵢ, Rᵢⱼ)
-                A, B, C = nodes[faces[k][1]], nodes[faces[k][2]], nodes[faces[k][3]]
-                intersection = intersect_ray_triangle(ray, A, B, C)
-                if intersection.hit
-                    blocked = true
-                    break
-                end
-            end
-
-            blocked && continue
-            push!(visiblefacets[i], VisibleFacet(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))
-            push!(visiblefacets[j], VisibleFacet(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))
+    # Build row_ptr
+    row_ptr[1] = 1
+    for i in 1:nfaces
+        row_ptr[i + 1] = row_ptr[i] + length(temp_visible[i])
+    end
+    
+    # Copy data
+    idx = 1
+    for i in 1:nfaces
+        for vf in temp_visible[i]
+            col_idx[idx] = vf.id
+            view_factors[idx] = vf.f
+            distances[idx] = vf.d
+            directions[idx] = vf.d̂
+            idx += 1
         end
     end
+    
+    shape.face_visibility_graph = FaceVisibilityGraph(row_ptr, col_idx, view_factors, distances, directions)
 end
+
 
 """
     isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool
@@ -225,21 +181,11 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
 
     ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
 
-    # Use FaceVisibilityGraph if available
-    if !isnothing(shape.visibility_graph)
-        visible_faces = get_visible_faces(shape.visibility_graph, i)
+    # Use FaceVisibilityGraph
+    if !isnothing(shape.face_visibility_graph)
+        visible_faces = get_visible_face_indices(shape.face_visibility_graph, i)
         for j in visible_faces
             face = shape.faces[j]
-            A = shape.nodes[face[1]]
-            B = shape.nodes[face[2]]
-            C = shape.nodes[face[3]]
-
-            intersect_ray_triangle(ray, A, B, C).hit && return false
-        end
-    else
-        # Fallback to legacy implementation
-        for visiblefacet in shape.visiblefacets[i]
-            face = shape.faces[visiblefacet.id]
             A = shape.nodes[face[1]]
             B = shape.nodes[face[2]]
             C = shape.nodes[face[3]]

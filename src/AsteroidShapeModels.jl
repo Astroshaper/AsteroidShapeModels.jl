@@ -10,13 +10,13 @@ visibility analysis, and surface roughness modeling.
 # Main Types
 - `ShapeModel`: Core data structure for polyhedral shapes
 - `Ray`, `BoundingBox`: Ray casting and acceleration structures
-- `VisibleFacet`: Face-to-face visibility relationships
+- `FaceVisibilityGraph`: CSR-style data structure for face-to-face visibility
 
 # Key Functions
 - Shape I/O: `load_shape_obj`, `loadobj`, `load_shape_grid`
 - Geometric properties: `face_center`, `face_normal`, `face_area`, `polyhedron_volume`
-- Ray intersection: `raycast`, `intersect_ray_shape`
-- Visibility: `find_visiblefacets!`, `isilluminated`, `view_factor`
+- Ray intersection: `intersect_ray_triangle`, `intersect_ray_shape`
+- Visibility: `build_face_visibility_graph!`, `isilluminated`, `view_factor`
 - Shape analysis: `equivalent_radius`, `maximum_radius`, `minimum_radius`
 
 # Example
@@ -24,7 +24,7 @@ visibility analysis, and surface roughness modeling.
 using AsteroidShapeModels
 
 # Load an asteroid shape model with face-face visibility
-shape = load_shape_obj("path/to/shape.obj", scale=1000, find_visible_facets=true)  # Convert km to m
+shape = load_shape_obj("path/to/shape.obj", scale=1000, with_face_visibility=true)  # Convert km to m
 
 # Access to face properties
 shape.face_centers  # Center position of each face
@@ -50,9 +50,9 @@ export VisibleFacet, Ray, BoundingBox
 export RayTriangleIntersectionResult, RayShapeIntersectionResult
 
 include("face_visibility_graph.jl")
-export FaceVisibilityGraph, from_adjacency_list, to_adjacency_list
-export get_visible_faces, get_view_factors, get_distances, get_directions
-export get_visible_facet_data, num_visible_faces
+export FaceVisibilityGraph
+export get_visible_face_indices, get_view_factors, get_visible_face_distances, get_visible_face_directions
+export get_visible_face_data, num_visible_faces
 
 include("shape_model.jl")
 export ShapeModel
@@ -69,7 +69,7 @@ export load_shape_obj, load_shape_grid, grid_to_faces
 export polyhedron_volume, equivalent_radius, maximum_radius, minimum_radius
 
 include("visibility.jl")
-export view_factor, find_visiblefacets!, isilluminated
+export view_factor, build_face_visibility_graph!, isilluminated
 
 include("geometry_utils.jl")
 export angle_rad, angle_deg, solar_phase_angle, solar_elongation_angle
