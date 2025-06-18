@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-06-18
+
+### Breaking Changes
+- **Removed legacy visibility API** (#15)
+  - Removed `visiblefacets` field from `ShapeModel`
+  - Removed `use_visibility_graph` parameter (CSR format is now the only implementation)
+  - Removed `from_adjacency_list` and `to_adjacency_list` conversion functions
+  
+- **API renaming for clarity and consistency** (#15)
+  - `find_visiblefacets!` → `build_face_visibility_graph!`
+  - `ShapeModel.visibility_graph` → `ShapeModel.face_visibility_graph`
+  - `find_visible_facets` parameter → `with_face_visibility`
+  - Visibility graph accessor functions:
+    - `get_visible_faces` → `get_visible_face_indices`
+    - `get_distances` → `get_visible_face_distances`
+    - `get_directions` → `get_visible_face_directions`
+    - `get_visible_facet_data` → `get_visible_face_data`
+
+### Changed
+- Removed redundant inner constructor from `ShapeModel`
+- Fixed face orientations in test shapes for correct visibility calculations
+- Used keyword argument shorthand syntax where applicable
+
+### Migration Guide
+```julia
+# Before (v0.2.x)
+shape = load_shape_obj("asteroid.obj", find_visible_facets=true)
+find_visiblefacets!(shape, use_visibility_graph=true)
+visible_faces = get_visible_faces(shape.visibility_graph, i)
+
+# After (v0.3.0)
+shape = load_shape_obj("asteroid.obj", with_face_visibility=true)
+build_face_visibility_graph!(shape)
+visible_indices = get_visible_face_indices(shape.face_visibility_graph, i)
+```
+
 ## [0.2.1] - 2025-06-17
 
 ### Added

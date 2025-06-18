@@ -43,7 +43,7 @@ pkg> add AsteroidShapeModels
 using AsteroidShapeModels
 
 # Load an asteroid shape model with face-face visibility
-shape = load_shape_obj("path/to/shape.obj", scale=1000, find_visible_facets=true)  # Convert km to m
+shape = load_shape_obj("path/to/shape.obj", scale=1000, with_face_visibility=true)  # Convert km to m
 
 # Access to face properties
 shape.face_centers  # Center position of each face
