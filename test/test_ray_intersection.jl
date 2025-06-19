@@ -1,8 +1,14 @@
-# ====================================================================
-#                    Ray Intersection Tests
-# ====================================================================
-# This file tests the ray-triangle and ray-shape intersection algorithms
-# used for visibility calculations and surface analysis.
+#=
+    test_ray_intersection.jl
+
+Tests for ray-shape intersection algorithms.
+This file verifies:
+- Ray-triangle intersection using Möller-Trumbore algorithm
+- Ray-bounding box intersection for acceleration
+- Ray-shape model intersection finding closest hit
+- Edge cases and numerical precision
+- Performance characteristics
+=#
 
 @testset "Ray intersection tests" begin
     

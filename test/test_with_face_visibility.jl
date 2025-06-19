@@ -1,13 +1,16 @@
-# ====================================================================
-#                    Visibility and View Factor Tests
-# ====================================================================
-# This file tests the visibility calculation between facets:
-# - Finding mutually visible facets in shape models
-# - Testing with convex shapes (no self-visibility)
-# - Testing with concave shapes (self-visibility expected)
-# - Verifying symmetry of visibility relationships
-#
-# Ported from AsteroidThermoPhysicalModels.jl
+#=
+    test_with_face_visibility.jl
+
+Tests for face visibility and view factor calculations.
+This file tests the visibility calculation between facets:
+- Finding mutually visible facets in shape models
+- Testing with convex shapes (no self-visibility)
+- Testing with concave shapes (self-visibility expected)
+- Verifying symmetry of visibility relationships
+- Memory usage and performance characteristics
+
+Ported from AsteroidThermoPhysicalModels.jl
+=#
 # Reference: https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu
 
 @testset "with_face_visibility" begin

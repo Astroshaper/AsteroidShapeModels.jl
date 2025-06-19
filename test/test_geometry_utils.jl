@@ -1,9 +1,12 @@
-# ====================================================================
-#                   Geometry Utility Function Tests
-# ====================================================================
-# This file tests utility functions for geometric calculations:
-# - Angle calculations between vectors (in radians and degrees)
-# - Solar geometry calculations (phase angle, elongation angle)
+#=
+    test_geometry_utils.jl
+
+Tests for geometry utility functions.
+This file tests utility functions for geometric calculations:
+- Angle calculations between vectors (in radians and degrees)
+- Solar geometry calculations (phase angle, elongation angle)
+- Vector algebra utilities
+=#
 
 @testset "Geometry Utility Functions (FOVSimulator ported tests)" begin
     

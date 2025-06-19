@@ -1,3 +1,14 @@
+#= ====================================================================
+                    Face Visibility Graph Tests
+====================================================================
+This file tests the FaceVisibilityGraph data structure and functionality:
+- CSR (Compressed Sparse Row) format construction and data access
+- Visibility graph building for shape models
+- Memory efficiency and performance characteristics
+- Integration with ShapeModel illumination calculations
+- Bounds checking and edge cases
+=# 
+
 using Test
 using AsteroidShapeModels
 using StaticArrays

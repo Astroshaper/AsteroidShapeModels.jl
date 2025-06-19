@@ -1,3 +1,14 @@
+#= ====================================================================
+                Edge Cases and Numerical Precision Tests
+====================================================================
+This file tests edge cases and numerical stability:
+- Degenerate triangles (collinear vertices, zero area)
+- Extreme scale differences (very large/small coordinates)
+- Ray intersection edge cases (parallel rays, vertex/edge hits)
+- Volume calculation for non-closed and inverted shapes
+- Numerical stability for cross products and normalizations
+=# 
+
 @testset "Edge Cases and Numerical Precision Tests" begin
     
     @testset "Degenerate Triangles" begin

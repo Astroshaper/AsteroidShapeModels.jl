@@ -1,10 +1,14 @@
-# ====================================================================
-#                    Face Properties Tests
-# ====================================================================
-# This file tests the basic geometric properties of triangular faces:
-# - Face center calculation
-# - Face normal vector computation
-# - Face area calculation
+#=
+    test_face_properties.jl
+
+Tests for basic geometric properties of triangular faces.
+This file verifies the correctness of fundamental calculations including:
+- Face center calculation using vertex averaging
+- Face normal vector computation using cross product
+- Face area calculation using cross product magnitude
+
+These properties are essential for all higher-level computations in the package.
+=#
 
 @testset "Face properties" begin
 

@@ -1,6 +1,12 @@
-"""
+#=
+    geometry_utils.jl
+
 Geometric utility functions for asteroid shape analysis.
-"""
+This file provides functions for:
+- Angle calculations between vectors
+- Solar geometry calculations for asteroid observations
+- Common geometric operations used in asteroid science
+=#
 
 """
     angle_rad(v1, v2) -> Float64

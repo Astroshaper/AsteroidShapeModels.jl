@@ -1,3 +1,14 @@
+#= ====================================================================
+                 Ryugu Shape Model Performance Test
+====================================================================
+This file benchmarks performance with a realistic asteroid shape model:
+- OBJ file loading with and without visibility calculation
+- Illumination checks for multiple faces
+- Ray-shape intersection performance
+- Memory usage and visibility graph statistics
+- Uses the Ryugu test model (2976 nodes, 5932 faces)
+=# 
+
 @testset "Ryugu Shape Model Performance Test" begin
     msg = """\n
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓

@@ -1,3 +1,14 @@
+#=
+    test_shape_operations.jl
+
+This file tests fundamental shape operations and calculations:
+- Polyhedron volume computation using divergence theorem
+- Equivalent radius calculations from volume
+- Maximum and minimum radius determination
+- Grid-to-faces conversion for terrain modeling
+- Various edge cases with different polyhedron configurations
+=# 
+
 @testset "Shape Operations Tests" begin
     
     @testset "Polyhedron Volume" begin

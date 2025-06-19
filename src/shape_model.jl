@@ -1,4 +1,13 @@
-# ShapeModel type definition - depends on FaceVisibilityGraph
+#=
+    shape_model.jl
+
+Defines the core `ShapeModel` type for representing polyhedral asteroid shapes.
+This type encapsulates:
+- Vertex positions (nodes)
+- Face connectivity (triangular faces)
+- Precomputed geometric properties (centers, normals, areas)
+- Optional face-to-face visibility graph for thermal and radiative calculations
+=#
 
 """
     ShapeModel
