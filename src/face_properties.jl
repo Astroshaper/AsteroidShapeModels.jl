@@ -1,6 +1,16 @@
-################################################################
-#                      Face properties
-################################################################
+#=
+    face_properties.jl
+
+This file provides functions to calculate geometric properties of triangular faces,
+including face centers, normal vectors, and areas. These properties are fundamental
+for various computations in asteroid shape modeling, such as visibility analysis,
+radiative heat transfer calculations, and illumination modeling.
+
+Exported Functions:
+- `face_center`: Calculate the center of a triangular face
+- `face_normal`: Calculate the unit normal vector of a triangular face
+- `face_area`: Calculate the area of a triangular face
+=#
 
 """
     face_center(vs::StaticVector{3, <:StaticVector{3}}) -> StaticVector{3}

@@ -1,3 +1,16 @@
+#=
+    obj_io.jl
+
+This file provides functions for loading 3D shape models from Wavefront OBJ files.
+OBJ is a widely used file format for 3D geometry that stores vertex positions and
+face connectivity information. This module handles the parsing and conversion of
+OBJ data into the internal representation used by AsteroidShapeModels.jl.
+
+Exported Functions:
+- `loadobj`: Load vertices and faces from an OBJ file
+- `isobj`: Check if a file has the OBJ file extension
+=#
+
 """
     isobj(filepath::String) -> Bool
 

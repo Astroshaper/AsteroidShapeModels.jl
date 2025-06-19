@@ -1,3 +1,16 @@
+#=
+    roughness.jl
+
+This file provides functions for modeling surface roughness features on asteroids,
+particularly focusing on crater geometries. Surface roughness significantly affects
+thermal properties, light scattering, and radar reflection characteristics of
+asteroid surfaces.
+
+Exported Functions:
+- `crater_curvature_radius`: Calculate the curvature radius of a concave spherical segment
+- `concave_spherical_segment`: Generate crater geometry as a concave spherical segment
+=#
+
 ################################################################
 #                  Concave spherical segment
 ################################################################

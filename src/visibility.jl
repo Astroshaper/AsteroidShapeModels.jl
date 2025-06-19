@@ -1,6 +1,17 @@
-################################################################
-#                 Face-to-face interactions
-################################################################
+#=
+    visibility.jl
+
+This file implements face-to-face visibility calculations for asteroid shape models.
+It includes functions for computing view factors between faces, building visibility
+graphs, and determining illumination conditions. These calculations are essential
+for thermal modeling, radiative heat transfer analysis, and understanding the
+surface energy balance of asteroids.
+
+Exported Functions:
+- `view_factor`: Calculate the view factor between two triangular faces
+- `build_face_visibility_graph!`: Build the face-to-face visibility graph
+- `isilluminated`: Check if a face is illuminated by direct sunlight
+=#
 
 """
     view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
