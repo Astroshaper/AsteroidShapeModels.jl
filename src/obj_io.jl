@@ -35,7 +35,7 @@ function isobj(filepath)
 end
 
 """
-    load_obj(shapepath::String; scale=1, message=true) -> nodes, faces
+    load_obj(shapepath::String; scale=1) -> nodes, faces
 
 Load a 3D shape model from an OBJ file.
 
@@ -44,7 +44,6 @@ Load a 3D shape model from an OBJ file.
 
 # Keyword Arguments
 - `scale::Real=1`: Scale factor to apply to all vertex coordinates. For example, use `scale=1000` to convert from kilometers to meters
-- `message::Bool=true`: Whether to print loading information
 
 # Returns
 - `nodes::Vector{SVector{3,Float64}}`: Array of vertex positions
@@ -58,28 +57,26 @@ nodes, faces = load_obj("asteroid.obj")
 # Load shape model and convert from km to m
 nodes, faces = load_obj("asteroid_km.obj", scale=1000)
 
-# Load without printing messages
-nodes, faces = load_obj("asteroid.obj", message=false)
+# Get the number of nodes and faces
+num_nodes = length(nodes)
+num_faces = length(faces)
+println("Loaded model with $num_nodes vertices and $num_faces faces.")
+
+# Access individual nodes and faces
+first_node = nodes[1]  # SVector{3, Float64}
+first_face = faces[1]  # SVector{3, Int} with node indices
 ```
 
 # Notes
 This function uses the FileIO/MeshIO packages to load OBJ files.
 Only triangular faces are supported.
 """
-function load_obj(shapepath::String; scale=1, message=true)
+function load_obj(shapepath::String; scale=1)
     mesh = load(shapepath)
     nodes = Vector{SVector{3, Float64}}(GeometryBasics.coordinates(mesh))
     faces = [SVector{3,Int}(convert.(Int, face)) for face in GeometryBasics.faces(mesh)]
 
     nodes *= scale  # if scale is 1000, converted [km] to [m]
-
-    if message == true
-        println("+-----------------------------+")
-        println("|        Load OBJ file        |")
-        println("+-----------------------------+")
-        println(" Nodes: ", length(nodes))
-        println(" Faces: ", length(faces))
-    end
 
     return nodes, faces
 end

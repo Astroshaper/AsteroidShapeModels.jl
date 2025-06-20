@@ -62,20 +62,20 @@ This file verifies:
             
             try
                 # Load with default scale
-                nodes1, faces1 = load_obj(temp_file, message=false)
+                nodes1, faces1 = load_obj(temp_file)
                 @test length(nodes1) == 3
                 @test length(faces1) == 1
                 @test nodes1[1] ≈ SA[1.0, 0.0, 0.0]
                 
                 # Load with scale = 2
-                nodes2, faces2 = load_obj(temp_file, scale=2.0, message=false)
+                nodes2, faces2 = load_obj(temp_file, scale=2.0)
                 @test length(nodes2) == 3
                 @test nodes2[1] ≈ SA[2.0, 0.0, 0.0]
                 @test nodes2[2] ≈ SA[0.0, 2.0, 0.0]
                 @test nodes2[3] ≈ SA[0.0, 0.0, 2.0]
                 
                 # Load with scale = 0.5
-                nodes3, faces3 = load_obj(temp_file, scale=0.5, message=false)
+                nodes3, faces3 = load_obj(temp_file, scale=0.5)
                 @test nodes3[1] ≈ SA[0.5, 0.0, 0.0]
                 
                 # Face indices should not change with scale
@@ -86,7 +86,7 @@ This file verifies:
             end
         end
         
-        @testset "Message suppression" begin
+        @testset "Basic loading" begin
             # Create a temporary test file
             test_obj_content = """
             v 1.0 0.0 0.0
@@ -101,14 +101,8 @@ This file verifies:
             end
             
             try
-                # Test that message=false doesn't print
-                # (Can't easily test stdout, but at least check it runs)
-                nodes, faces = load_obj(temp_file, message=false)
-                @test length(nodes) == 3
-                @test length(faces) == 1
-                
-                # Test that message=true works (default)
-                nodes, faces = load_obj(temp_file, message=true)
+                # Test basic loading
+                nodes, faces = load_obj(temp_file)
                 @test length(nodes) == 3
                 @test length(faces) == 1
             finally
@@ -134,7 +128,7 @@ This file verifies:
             end
             
             try
-                nodes, faces = load_obj(temp_file, message=false)
+                nodes, faces = load_obj(temp_file)
                 @test length(nodes) == 3
                 @test length(faces) == 1
             finally
@@ -158,7 +152,7 @@ This file verifies:
             end
             
             try
-                nodes, faces = load_obj(temp_file, message=false)
+                nodes, faces = load_obj(temp_file)
                 @test length(nodes) == 4
                 @test length(faces) == 2
                 @test faces[1] == SA[1, 2, 3]
@@ -188,7 +182,7 @@ This file verifies:
                 # Should throw an error or handle gracefully
                 # Redirect stderr to suppress FileIO error messages
                 redirect_stderr(devnull) do
-                    @test_throws Exception load_obj(temp_file, message=false)
+                    @test_throws Exception load_obj(temp_file)
                 end
             finally
                 rm(temp_file, force=true)
@@ -213,7 +207,7 @@ This file verifies:
                 # This should throw an error because vertex 4 doesn't exist
                 # Redirect stderr to suppress FileIO error messages
                 redirect_stderr(devnull) do
-                    @test_throws Exception load_obj(temp_file, message=false)
+                    @test_throws Exception load_obj(temp_file)
                 end
             finally
                 rm(temp_file, force=true)
@@ -227,7 +221,7 @@ This file verifies:
             end
             
             try
-                nodes, faces = load_obj(temp_file, message=false)
+                nodes, faces = load_obj(temp_file)
                 @test length(nodes) == 0
                 @test length(faces) == 0
             finally
@@ -247,7 +241,7 @@ This file verifies:
             if isfile(filepath)
                 @testset "Loading $obj_file" begin
                     # Test that file can be loaded
-                    nodes, faces = load_obj(filepath, message=false)
+                    nodes, faces = load_obj(filepath)
                     
                     # Basic sanity checks
                     @test length(nodes) > 0
