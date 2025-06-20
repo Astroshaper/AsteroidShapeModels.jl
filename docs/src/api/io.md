@@ -8,7 +8,7 @@ CurrentModule = AsteroidShapeModels
 
 ```@docs
 load_shape_obj
-loadobj
+load_obj
 isobj
 ```
 

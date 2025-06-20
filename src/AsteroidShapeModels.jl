@@ -13,7 +13,7 @@ visibility analysis, and surface roughness modeling.
 - `FaceVisibilityGraph`: CSR-style data structure for face-to-face visibility
 
 # Key Functions
-- Shape I/O: `load_shape_obj`, `loadobj`, `load_shape_grid`
+- Shape I/O: `load_shape_obj`, `load_obj`, `load_shape_grid`
 - Geometric properties: `face_center`, `face_normal`, `face_area`, `polyhedron_volume`
 - Ray intersection: `intersect_ray_triangle`, `intersect_ray_shape`
 - Visibility: `build_face_visibility_graph!`, `isilluminated`, `view_factor`
@@ -58,7 +58,7 @@ include("shape_model.jl")
 export ShapeModel
 
 include("obj_io.jl")
-export loadobj, isobj
+export load_obj, isobj
 
 include("ray_intersection.jl")
 export intersect_ray_triangle, intersect_ray_shape

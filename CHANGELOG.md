@@ -26,10 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `get_visible_facet_data` → `get_visible_face_data`
   - `VisibleFacet` → `VisibleFace` (internal type, removed from exports)
 
+- **Function naming convention updates** (#18)
+  - `loadobj` → `load_obj` (follows Julia snake_case convention)
+  - Removed `message` parameter from `load_obj` function
+
 ### Changed
 - Removed redundant inner constructor from `ShapeModel`
 - Fixed face orientations in test shapes for correct visibility calculations
 - Used keyword argument shorthand syntax where applicable
+- Made `VisibleFacet` an internal type and renamed to `VisibleFace` (#17)
 
 ### Migration Guide
 
@@ -41,6 +46,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Code Migration Examples
 
 ```julia
+# Loading OBJ files
+# Before (v0.2.x)
+nodes, faces = loadobj("path/to/shape.obj", message=false)
+# After (v0.3.0)
+nodes, faces = load_obj("path/to/shape.obj")
+# To get node/face counts:
+println("Number of nodes: ", length(nodes))
+println("Number of faces: ", length(faces))
+
 # Loading shapes with visibility
 # Before (v0.2.x)
 shape = load_shape_obj("path/to/shape.obj"; find_visible_facets=true)
