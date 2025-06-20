@@ -38,7 +38,7 @@ mutable struct ShapeModel
 end
 
 """
-    ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}; find_visible_facets=false) -> ShapeModel
+    ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}; with_face_visibility=false) -> ShapeModel
 
 Construct a ShapeModel from nodes and faces, automatically computing face properties.
 
@@ -47,7 +47,7 @@ Construct a ShapeModel from nodes and faces, automatically computing face proper
 - `faces`: Vector of triangular face definitions (vertex indices)
 
 # Keyword Arguments
-- `with_face_visibility::Bool=false`: Whether to compute face-to-face visibility
+- `with_face_visibility::Bool=false`: Whether to compute face-to-face visibility graph
 
 # Returns
 - `ShapeModel`: Shape model with computed face centers, normals, areas, and optionally face visibility graph
