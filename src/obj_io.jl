@@ -7,7 +7,7 @@ face connectivity information. This module handles the parsing and conversion of
 OBJ data into the internal representation used by AsteroidShapeModels.jl.
 
 Exported Functions:
-- `loadobj`: Load vertices and faces from an OBJ file
+- `load_obj`: Load vertices and faces from an OBJ file
 - `isobj`: Check if a file has the OBJ file extension
 =#
 
@@ -35,7 +35,7 @@ function isobj(filepath)
 end
 
 """
-    loadobj(shapepath::String; scale=1, message=true) -> nodes, faces
+    load_obj(shapepath::String; scale=1, message=true) -> nodes, faces
 
 Load a 3D shape model from an OBJ file.
 
@@ -53,20 +53,20 @@ Load a 3D shape model from an OBJ file.
 # Examples
 ```julia
 # Load shape model in meters
-nodes, faces = loadobj("asteroid.obj")
+nodes, faces = load_obj("asteroid.obj")
 
 # Load shape model and convert from km to m
-nodes, faces = loadobj("asteroid_km.obj", scale=1000)
+nodes, faces = load_obj("asteroid_km.obj", scale=1000)
 
 # Load without printing messages
-nodes, faces = loadobj("asteroid.obj", message=false)
+nodes, faces = load_obj("asteroid.obj", message=false)
 ```
 
 # Notes
 This function uses the FileIO/MeshIO packages to load OBJ files.
 Only triangular faces are supported.
 """
-function loadobj(shapepath::String; scale=1, message=true)
+function load_obj(shapepath::String; scale=1, message=true)
     mesh = load(shapepath)
     nodes = Vector{SVector{3, Float64}}(GeometryBasics.coordinates(mesh))
     faces = [SVector{3,Int}(convert.(Int, face)) for face in GeometryBasics.faces(mesh)]
