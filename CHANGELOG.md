@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed `use_visibility_graph` parameter (CSR format is now the only implementation)
   - Removed `from_adjacency_list` and `to_adjacency_list` conversion functions
   
-- **API renaming for clarity and consistency** (#15)
+- **API renaming for clarity and consistency** (#15, #17)
   - `find_visiblefacets!` → `build_face_visibility_graph!`
   - `ShapeModel.visibility_graph` → `ShapeModel.face_visibility_graph`
   - `find_visible_facets` parameter → `with_face_visibility`
@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `get_distances` → `get_visible_face_distances`
     - `get_directions` → `get_visible_face_directions`
     - `get_visible_facet_data` → `get_visible_face_data`
+  - `VisibleFacet` → `VisibleFace` (internal type, removed from exports)
 
 ### Changed
 - Removed redundant inner constructor from `ShapeModel`
