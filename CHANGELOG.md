@@ -52,7 +52,8 @@ nodes, faces = loadobj("path/to/shape.obj", message=false)
 # After (v0.3.0)
 nodes, faces = load_obj("path/to/shape.obj")
 # To get node/face counts:
-println("Loaded model with $(length(nodes)) nodes and $(length(faces)) faces.")
+println("Number of nodes: ", length(nodes))
+println("Number of faces: ", length(faces))
 
 # Loading shapes with visibility
 # Before (v0.2.x)

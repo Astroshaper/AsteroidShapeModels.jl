@@ -58,9 +58,8 @@ nodes, faces = load_obj("asteroid.obj")
 nodes, faces = load_obj("asteroid_km.obj", scale=1000)
 
 # Get the number of nodes and faces
-num_nodes = length(nodes)
-num_faces = length(faces)
-println("Loaded model with $num_nodes vertices and $num_faces faces.")
+println("Number of nodes: ", length(nodes))
+println("Number of faces: ", length(faces))
 
 # Access individual nodes and faces
 first_node = nodes[1]  # SVector{3, Float64}
