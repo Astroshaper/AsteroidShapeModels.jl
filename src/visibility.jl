@@ -97,7 +97,7 @@ function build_face_visibility_graph!(shape::ShapeModel)
     face_areas   = shape.face_areas
     
     # Accumulate temporary visible face data
-    temp_visible = [Vector{VisibleFacet}() for _ in faces]
+    temp_visible = [Vector{VisibleFace}() for _ in faces]
     
     for i in eachindex(faces)
         cᵢ = face_centers[i]
@@ -143,8 +143,8 @@ function build_face_visibility_graph!(shape::ShapeModel)
             end
 
             blocked && continue
-            push!(temp_visible[i], VisibleFacet(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))
-            push!(temp_visible[j], VisibleFacet(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))
+            push!(temp_visible[i], VisibleFace(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))
+            push!(temp_visible[j], VisibleFace(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))
         end
     end
     
