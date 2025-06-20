@@ -9,6 +9,10 @@ This type encapsulates:
 - Optional face-to-face visibility graph for thermal and radiative calculations
 =#
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                        Type Definition                            ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     ShapeModel
 

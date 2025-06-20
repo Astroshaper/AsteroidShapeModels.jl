@@ -12,9 +12,9 @@ This file verifies:
 
 @testset "Ray intersection tests" begin
     
-    # ----------------------------------------------------------------
-    #                   Basic Ray Intersection
-    # ----------------------------------------------------------------
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                      Basic Ray Intersection                       ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
 
     @testset "Basic ray intersection" begin
         # Test a simple downward ray hitting a triangle on the XY plane
@@ -37,9 +37,9 @@ This file verifies:
         @test result.point ≈ @SVector [0.0, 0.0, 0.0]
     end
     
-    # ----------------------------------------------------------------
-    #                      Simple Raycast
-    # ----------------------------------------------------------------
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                         Simple Raycast                            ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
 
     @testset "Simple raycast" begin
         # Test the simplified raycast function
@@ -56,9 +56,9 @@ This file verifies:
         @test intersect_ray_triangle(ray, A, B, C).hit == true
     end
 
-    # ----------------------------------------------------------------
-    #        Comprehensive Ray-Triangle Tests (FOVSimulator)
-    # ----------------------------------------------------------------
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║           Comprehensive Ray-Triangle Tests (FOVSimulator)         ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
 
     @testset "Ray-Triangle Intersection (FOVSimulator ported tests)" begin
         # Define a standard test triangle on the XY plane
@@ -76,7 +76,7 @@ This file verifies:
         v2 = @SVector [1.0, 0.0, 0.0]  # Point on x-axis
         v3 = @SVector [0.0, 1.0, 0.0]  # Point on y-axis
         
-        # ====== Test Case 1: Direct Hit ======
+        # Test Case 1: Direct Hit
         # Ray from (0.25, 0.25, 1) pointing down should hit the triangle
         ray1 = Ray(@SVector([0.25, 0.25, 1.0]), @SVector([0.0, 0.0, -1.0]))
         result1 = intersect_ray_triangle(ray1, v1, v2, v3)
@@ -85,21 +85,21 @@ This file verifies:
         @test result1.distance ≈ 1.0
         @test result1.point ≈ @SVector([0.25, 0.25, 0.0])
         
-        # ====== Test Case 2: Complete Miss ======
+        # Test Case 2: Complete Miss
         # Ray from (2, 2, 1) is outside the triangle bounds
         ray2 = Ray(@SVector([2.0, 2.0, 1.0]), @SVector([0.0, 0.0, -1.0]))
         result2 = intersect_ray_triangle(ray2, v1, v2, v3)
         
         @test result2.hit == false
         
-        # ====== Test Case 3: Parallel Ray ======
+        # Test Case 3: Parallel Ray
         # Ray parallel to the triangle plane should not intersect
         ray3 = Ray(@SVector([0.5, 0.5, 1.0]), @SVector([1.0, 0.0, 0.0]))
         result3 = intersect_ray_triangle(ray3, v1, v2, v3)
         
         @test result3.hit == false
         
-        # ====== Test Case 4: Vertex Hit ======
+        # Test Case 4: Vertex Hit
         # Ray passing exactly through vertex v1 at origin
         ray4 = Ray(@SVector([0.0, 0.0, 1.0]), @SVector([0.0, 0.0, -1.0]))
         result4 = intersect_ray_triangle(ray4, v1, v2, v3)
@@ -108,7 +108,7 @@ This file verifies:
         @test result4.distance ≈ 1.0
         @test result4.point ≈ @SVector([0.0, 0.0, 0.0])
         
-        # ====== Test Case 5: Edge Hit ======
+        # Test Case 5: Edge Hit
         # Ray passing through the edge between v1 and v2
         ray5 = Ray(@SVector([0.5, 0.0, 1.0]), @SVector([0.0, 0.0, -1.0]))
         result5 = intersect_ray_triangle(ray5, v1, v2, v3)
@@ -117,7 +117,7 @@ This file verifies:
         @test result5.distance ≈ 1.0
         @test result5.point ≈ @SVector([0.5, 0.0, 0.0])
         
-        # ====== Test Case 6: Backside Hit ======
+        # Test Case 6: Backside Hit
         # Ray from below the triangle pointing upward
         ray6 = Ray(@SVector([0.25, 0.25, -1.0]), @SVector([0.0, 0.0, 1.0]))
         result6 = intersect_ray_triangle(ray6, v1, v2, v3)
@@ -126,14 +126,14 @@ This file verifies:
         @test result6.distance ≈ 1.0
         @test result6.point ≈ @SVector([0.25, 0.25, 0.0])
         
-        # ====== Test Case 7: Ray Origin on Triangle ======
+        # Test Case 7: Ray Origin on Triangle
         # Ray starting exactly on the triangle surface
         ray7 = Ray(@SVector([0.25, 0.25, 0.0]), @SVector([0.0, 0.0, -1.0]))
         result7 = intersect_ray_triangle(ray7, v1, v2, v3)
         
         @test result7.hit == false  # Numerical precision prevents self-intersection
         
-        # ====== Test Case 8: Ray Pointing Away ======
+        # Test Case 8: Ray Pointing Away
         # Ray behind triangle pointing away from it
         ray8 = Ray(@SVector([0.25, 0.25, -1.0]), @SVector([0.0, 0.0, -1.0]))
         result8 = intersect_ray_triangle(ray8, v1, v2, v3)
@@ -141,9 +141,9 @@ This file verifies:
         @test result8.hit == false  # Ray moves away from triangle
     end
 
-    # ----------------------------------------------------------------
-    #              Ray-Shape Intersection Tests
-    # ----------------------------------------------------------------
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                   Ray-Shape Intersection Tests                    ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Ray-Shape Intersection (FOVSimulator ported tests)" begin
         # Create a minimal shape model with a single triangle

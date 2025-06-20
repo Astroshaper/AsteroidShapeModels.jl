@@ -10,9 +10,9 @@ This file tests utility functions for geometric calculations:
 
 @testset "Geometry Utility Functions (FOVSimulator ported tests)" begin
     
-    # ----------------------------------------------------------------
-    #                    Basic Angle Functions
-    # ----------------------------------------------------------------
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                     Basic Angle Functions                         ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
 
     @testset "Angle calculations in degrees" begin
         # Test perpendicular vectors (90°)
@@ -41,9 +41,9 @@ This file tests utility functions for geometric calculations:
         @test angle_rad([1, 0, 0], [-1, 0, 0]) ≈ π
     end
 
-    # ----------------------------------------------------------------
-    #                   Solar Geometry Functions
-    # ----------------------------------------------------------------
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                   Solar Geometry Functions                        ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
 
     @testset "Solar geometry calculations" begin
         # Define a simple configuration:
@@ -72,9 +72,9 @@ This file tests utility functions for geometric calculations:
         @test solar_elongation_angle(sun, obs, tgt) ≈ deg2rad(45)
     end
 
-    # ----------------------------------------------------------------
-    #                      Edge Cases
-    # ----------------------------------------------------------------
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                Edge Cases and Vector Independence                 ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
 
     @testset "Edge cases and vector magnitude independence" begin
         # Same vector should give 0° angle

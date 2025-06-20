@@ -10,6 +10,10 @@ This file contains fundamental data structures used throughout the package:
 - `RayShapeIntersectionResult`: Result of ray-shape intersection test
 =#
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                          Core Types                               ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     struct VisibleFacet
 
@@ -86,6 +90,10 @@ function Base.show(io::IO, bbox::BoundingBox)
     print(io, "    ∘ min_point = $(bbox.min_point)\n")
     print(io, "    ∘ max_point = $(bbox.max_point)\n")
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                   Intersection Result Types                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     RayTriangleIntersectionResult

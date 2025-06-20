@@ -1,19 +1,23 @@
-#= ====================================================================
-                    Face Visibility Graph Tests
-====================================================================
-This file tests the FaceVisibilityGraph data structure and functionality:
-- CSR (Compressed Sparse Row) format construction and data access
-- Visibility graph building for shape models
-- Memory efficiency and performance characteristics
-- Integration with ShapeModel illumination calculations
-- Bounds checking and edge cases
-=# 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                   Face Visibility Graph Tests                     ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+#
+# This file tests the FaceVisibilityGraph data structure and functionality:
+# - CSR (Compressed Sparse Row) format construction and data access
+# - Visibility graph building for shape models
+# - Memory efficiency and performance characteristics
+# - Integration with ShapeModel illumination calculations
+# - Bounds checking and edge cases 
 
 using Test
 using AsteroidShapeModels
 using StaticArrays
 
 @testset "FaceVisibilityGraph" begin
+    
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                      Basic Construction                           ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Basic Construction" begin
         # Empty graph
@@ -26,6 +30,10 @@ using StaticArrays
         @test graph.nfaces == 5
         @test graph.nnz == 0
     end
+    
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                    Direct CSR Construction                        ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Direct CSR Construction" begin
         # Simple test case: construct graph directly in CSR format
@@ -45,6 +53,10 @@ using StaticArrays
         @test graph.view_factors ≈ [0.1, 0.2, 0.1, 0.2]
         @test graph.distances ≈ [1.0, 2.0, 1.0, 2.0]
     end
+    
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                     Data Access Methods                           ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Data Access Methods" begin
         # Manually construct CSR format data for testing
@@ -87,6 +99,10 @@ using StaticArrays
         @test data.d̂ ≈ SA[1.0, 0.0, 0.0]
     end
     
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                         Memory Usage                              ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
+    
     @testset "Memory Usage" begin
         # Check memory usage with a larger graph
         n = 100
@@ -121,6 +137,10 @@ using StaticArrays
         @test mem_usage >= expected_min
     end
     
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                        Bounds Checking                            ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
+    
     @testset "Bounds Checking" begin
         graph = FaceVisibilityGraph(3)
         
@@ -131,6 +151,10 @@ using StaticArrays
         @test_throws BoundsError num_visible_faces(graph, 4)
     end
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║              ShapeModel with FaceVisibilityGraph                  ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 @testset "ShapeModel with FaceVisibilityGraph" begin
     # Simple tetrahedron test
@@ -189,6 +213,10 @@ end
         end
     end
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║              Performance and Memory Comparison                    ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 @testset "Performance and Memory Comparison" begin
     # Larger test case (cube)

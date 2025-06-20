@@ -21,9 +21,9 @@ Ported from AsteroidThermoPhysicalModels.jl
     """
     println(msg)
 
-    # ================================================================
-    #                    Ryugu Test Model
-    # ================================================================
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                        Ryugu Test Model                           ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     # Test with a small version of the Ryugu asteroid shape model
     # This is a complex, irregular shape with many self-visible facets
     
@@ -50,9 +50,9 @@ Ported from AsteroidThermoPhysicalModels.jl
 
     println()
 
-    # ================================================================
-    #                      Icosahedron Test
-    # ================================================================
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                       Icosahedron Test                            ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     # Test with a convex icosahedron
     # For a perfect convex shape, no face should see any other face
     # (all faces point outward)
@@ -71,9 +71,9 @@ Ported from AsteroidThermoPhysicalModels.jl
 
     println()
     
-    # ================================================================
-    #            Concave Spherical Segment (Crater)
-    # ================================================================
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║               Concave Spherical Segment (Crater)                  ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     # Test with a crater-like shape generated using roughness functions
     # Faces at the bottom of the crater should see many other faces
     
@@ -90,9 +90,9 @@ Ported from AsteroidThermoPhysicalModels.jl
 
     println()
     
-    # ================================================================
-    #                 Visibility Symmetry Test
-    # ================================================================
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                    Visibility Symmetry Test                       ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     # Verify that visibility is symmetric:
     # If face i sees face j, then face j must also see face i
     

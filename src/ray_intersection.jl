@@ -13,6 +13,10 @@ Exported Functions:
 - `intersect_ray_shape`: Find the closest intersection between a ray and a shape model
 =#
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                      Bounding Box Operations                      ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     compute_bounding_box(shape::ShapeModel) -> BoundingBox
 
@@ -113,6 +117,10 @@ function intersect_ray_bounding_box(ray::Ray, bbox::BoundingBox)
     return t_max >= 0.0
 end
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║               Ray-Triangle Intersection (Möller-Trumbore)         ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     intersect_ray_triangle(ray::Ray, v1::AbstractVector{<:Real}, v2::AbstractVector{<:Real}, v3::AbstractVector{<:Real}) -> RayTriangleIntersectionResult
 
@@ -166,6 +174,10 @@ function intersect_ray_triangle(ray::Ray, v1::AbstractVector{<:Real}, v2::Abstra
     
     return NO_INTERSECTION_RAY_TRIANGLE
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                    Ray-Shape Model Intersection                   ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox) -> RayShapeIntersectionResult

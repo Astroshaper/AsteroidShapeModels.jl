@@ -18,6 +18,10 @@ Exported Functions:
 - `num_visible_faces`: Get number of faces visible from a given face
 =#
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                        Type Definition                            ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     FaceVisibilityGraph
 
@@ -100,6 +104,10 @@ function Base.show(io::IO, graph::FaceVisibilityGraph)
         print(io, "  Average visible faces per face: $(round(avg_visible, digits=2))\n")
     end
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                      Data Access Methods                          ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     get_visible_face_indices(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
