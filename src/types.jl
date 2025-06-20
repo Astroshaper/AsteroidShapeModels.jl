@@ -3,7 +3,7 @@
 
 Core type definitions for `AsteroidShapeModels.jl`.
 This file contains fundamental data structures used throughout the package:
-- `VisibleFacet`: Stores face-to-face visibility relationship data
+- `VisibleFacet`: Internal type for temporary visibility data storage
 - `Ray`: Represents a ray in 3D space for intersection tests
 - `BoundingBox`: Axis-aligned bounding box for acceleration structures
 - `RayTriangleIntersectionResult`: Result of ray-triangle intersection test
@@ -17,13 +17,17 @@ This file contains fundamental data structures used throughout the package:
 """
     struct VisibleFacet
 
-Index of an interfacing facet and its view factor
+Internal type for storing face-to-face visibility data during graph construction.
+This type is used temporarily in `build_face_visibility_graph!` before converting
+to the CSR format `FaceVisibilityGraph`.
 
 # Fields
 - `id` : Index of the interfacing facet
 - `f`  : View factor from facet i to j
 - `d`  : Distance from facet i to j
 - `d̂`  : Normal vector from facet i to j
+
+Note: This is an internal type and not exported.
 """
 struct VisibleFacet
     id::Int64

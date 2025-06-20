@@ -46,7 +46,7 @@ include("face_properties.jl")
 export face_center, face_normal, face_area
 
 include("types.jl")
-export VisibleFacet, Ray, BoundingBox
+export Ray, BoundingBox
 export RayTriangleIntersectionResult, RayShapeIntersectionResult
 
 include("face_visibility_graph.jl")
