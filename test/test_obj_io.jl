@@ -1,6 +1,14 @@
-using Test
-using AsteroidShapeModels
-using StaticArrays
+#=
+    test_obj_io.jl
+
+Tests for Wavefront OBJ file I/O operations.
+This file verifies:
+- Loading vertices and faces from OBJ files
+- Handling of different OBJ file formats
+- Scaling transformations during loading
+- File path validation
+- Integration with shape model construction
+=#
 
 @testset "OBJ I/O Tests" begin
     

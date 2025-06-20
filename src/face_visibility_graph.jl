@@ -1,3 +1,27 @@
+#=
+    face_visibility_graph.jl
+
+This file implements the `FaceVisibilityGraph` data structure, which stores face-to-face
+visibility relationships in a Compressed Sparse Row (CSR) format. This efficient
+representation is used for computing view factors, illumination conditions, and
+radiative heat transfer between faces of an asteroid shape model.
+
+Exported Types:
+- `FaceVisibilityGraph`: CSR-style data structure for face visibility
+
+Exported Functions:
+- `get_visible_face_indices`: Get indices of faces visible from a given face
+- `get_view_factors`: Get view factors from a face to its visible faces
+- `get_visible_face_distances`: Get distances to visible faces
+- `get_visible_face_directions`: Get unit direction vectors to visible faces
+- `get_visible_face_data`: Get all visibility data for a specific visible face
+- `num_visible_faces`: Get number of faces visible from a given face
+=#
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                        Type Definition                            ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     FaceVisibilityGraph
 
@@ -81,6 +105,10 @@ function Base.show(io::IO, graph::FaceVisibilityGraph)
     end
 end
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                      Data Access Methods                          ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     get_visible_face_indices(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
@@ -156,4 +184,3 @@ function num_visible_faces(graph::FaceVisibilityGraph, face_id::Int)
     @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
     return graph.row_ptr[face_id + 1] - graph.row_ptr[face_id]
 end
-

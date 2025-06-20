@@ -1,16 +1,18 @@
-# ====================================================================
-#            Ray-Shape Intersection Validation vs SPICE/DSK
-# ====================================================================
-# This file validates our ray-shape intersection algorithm against
-# NASA's SPICE toolkit using the Digital Shape Kernel (DSK) format.
-#
-# The test downloads actual mission data from ESA's Hera mission
-# and compares intersection results between:
-# - AsteroidShapeModels.jl's implementation
-# - SPICE's `sincpt` function with DSK shape models
-#
-# This ensures our implementation produces accurate results when
-# compared to the industry-standard SPICE toolkit.
+#=
+    test_ray_intersection_vs_spice.jl
+
+Validation tests comparing ray-shape intersection against SPICE/DSK.
+This file validates our ray-shape intersection algorithm against
+NASA's SPICE toolkit using the Digital Shape Kernel (DSK) format.
+
+The test downloads actual mission data from ESA's Hera mission
+and compares intersection results between:
+- AsteroidShapeModels.jl's implementation
+- SPICE's `sincpt` function with DSK shape models
+
+This ensures our implementation produces accurate results when
+compared to the industry-standard SPICE toolkit.
+=#
 
 @testset "Ray-Shape Intersection vs. SPICE/DSK" begin
     msg = """\n

@@ -1,4 +1,19 @@
+#=
+    test_edge_cases.jl
+
+This file tests edge cases and numerical stability:
+- Degenerate triangles (collinear vertices, zero area)
+- Extreme scale differences (very large/small coordinates)
+- Ray intersection edge cases (parallel rays, vertex/edge hits)
+- Volume calculation for non-closed and inverted shapes
+- Numerical stability for cross products and normalizations
+=# 
+
 @testset "Edge Cases and Numerical Precision Tests" begin
+    
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                      Degenerate Triangles                         ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Degenerate Triangles" begin
         @testset "Zero-area triangle (collinear vertices)" begin
@@ -49,6 +64,10 @@
         end
     end
     
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                   Extreme Scale Differences                       ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
+    
     @testset "Extreme Scale Differences" begin
         @testset "Very large coordinates" begin
             scale = 1e10
@@ -88,6 +107,10 @@
             @test norm(normal) ≈ 1.0 rtol=1e-10
         end
     end
+    
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                  Ray Intersection Edge Cases                      ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Ray Intersection Edge Cases" begin
         @testset "Ray parallel to triangle" begin
@@ -146,6 +169,10 @@
         end
     end
     
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                Volume Calculation Edge Cases                      ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
+    
     @testset "Volume Calculation Edge Cases" begin
         @testset "Non-closed shape" begin
             # Single triangle (not closed)
@@ -183,6 +210,10 @@
         end
     end
     
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                     Visibility Edge Cases                         ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
+    
     @testset "Visibility Edge Cases" begin
         @testset "Self-viewing face" begin
             # A face should not view itself
@@ -209,6 +240,10 @@
             @test d_hat ≈ SA[0.0, 0.0, 1.0]
         end
     end
+    
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                       Grid Edge Cases                             ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Grid Edge Cases" begin
         @testset "1x1 grid (single cell)" begin
@@ -241,6 +276,10 @@
             end
         end
     end
+    
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                     Numerical Stability                           ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Numerical Stability" begin
         @testset "Cross product numerical stability" begin

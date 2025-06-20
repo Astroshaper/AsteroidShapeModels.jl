@@ -1,3 +1,22 @@
+#=
+    runtests.jl
+
+Main test runner for AsteroidShapeModels.jl package.
+This file orchestrates all test suites to ensure the package functionality
+is working correctly across different components.
+
+Test Categories:
+- Face properties calculations
+- OBJ file I/O operations
+- Ray-shape intersection algorithms
+- Face visibility graph
+- Shape operations and metrics
+- Visibility analysis
+- Edge cases and error handling
+- Integration tests with SPICE
+- Performance benchmarks
+=#
+
 using Test
 using AsteroidShapeModels
 using StaticArrays

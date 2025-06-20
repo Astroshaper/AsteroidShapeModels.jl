@@ -31,17 +31,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Used keyword argument shorthand syntax where applicable
 
 ### Migration Guide
+
+#### Key Changes
+1. The `visiblefacets` field has been removed from `ShapeModel`
+2. CSR-based `FaceVisibilityGraph` is now the only implementation
+3. Several functions and parameters have been renamed for clarity
+
+#### Code Migration Examples
+
 ```julia
+# Loading shapes with visibility
 # Before (v0.2.x)
-shape = load_shape_obj("asteroid.obj", find_visible_facets=true)
+shape = load_shape_obj("path/to/shape.obj"; find_visible_facets=true)
+# After (v0.3.0)
+shape = load_shape_obj("path/to/shape.obj"; with_face_visibility=true)
+
+# Building visibility graph
+# Before (v0.2.x)
 find_visiblefacets!(shape, use_visibility_graph=true)
+# After (v0.3.0)
+build_face_visibility_graph!(shape)
+
+# Accessing visibility data
+# Before (v0.2.x)
 visible_faces = get_visible_faces(shape.visibility_graph, i)
+distances = get_distances(shape.visibility_graph, i)
+directions = get_directions(shape.visibility_graph, i)
+data = get_visible_facet_data(shape.visibility_graph, i, j)
 
 # After (v0.3.0)
-shape = load_shape_obj("asteroid.obj", with_face_visibility=true)
-build_face_visibility_graph!(shape)
 visible_indices = get_visible_face_indices(shape.face_visibility_graph, i)
+distances = get_visible_face_distances(shape.face_visibility_graph, i)
+directions = get_visible_face_directions(shape.face_visibility_graph, i)
+data = get_visible_face_data(shape.face_visibility_graph, i, j)
 ```
+
+#### Performance Benefits
+The new CSR-based implementation provides:
+- ~4x faster computation for small models (< 10k faces)
+- ~50% memory reduction across all model sizes
+- Better cache locality for sequential access patterns
 
 ## [0.2.1] - 2025-06-17
 

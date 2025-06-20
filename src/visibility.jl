@@ -1,6 +1,21 @@
-################################################################
-#                 Face-to-face interactions
-################################################################
+#=
+    visibility.jl
+
+This file implements face-to-face visibility calculations for asteroid shape models.
+It includes functions for computing view factors between faces, building visibility
+graphs, and determining illumination conditions. These calculations are essential
+for thermal modeling, radiative heat transfer analysis, and understanding the
+surface energy balance of asteroids.
+
+Exported Functions:
+- `view_factor`: Calculate the view factor between two triangular faces
+- `build_face_visibility_graph!`: Build the face-to-face visibility graph
+- `isilluminated`: Check if a face is illuminated by direct sunlight
+=#
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                    View Factor Calculations                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
@@ -53,6 +68,10 @@ function view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)
     fᵢⱼ = cosθᵢ * cosθⱼ * aⱼ / (π * dᵢⱼ^2)
     return fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                 Face Visibility Graph Construction                ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     build_face_visibility_graph!(shape::ShapeModel)
@@ -161,6 +180,9 @@ function build_face_visibility_graph!(shape::ShapeModel)
     shape.face_visibility_graph = FaceVisibilityGraph(row_ptr, col_idx, view_factors, distances, directions)
 end
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                       Illumination Analysis                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool

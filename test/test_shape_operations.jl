@@ -1,4 +1,19 @@
+#=
+    test_shape_operations.jl
+
+This file tests fundamental shape operations and calculations:
+- Polyhedron volume computation using divergence theorem
+- Equivalent radius calculations from volume
+- Maximum and minimum radius determination
+- Grid-to-faces conversion for terrain modeling
+- Various edge cases with different polyhedron configurations
+=# 
+
 @testset "Shape Operations Tests" begin
+    
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                      Polyhedron Volume Tests                      ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Polyhedron Volume" begin
         @testset "Unit Cube" begin
@@ -104,6 +119,10 @@
         end
     end
     
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                    Equivalent Radius Tests                        ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
+    
     @testset "Equivalent Radius" begin
         @testset "From Volume" begin
             # Sphere with radius 2
@@ -143,6 +162,10 @@
         end
     end
     
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                      Maximum Radius Tests                         ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
+    
     @testset "Maximum Radius" begin
         @testset "Simple Shapes" begin
             # Points on axes
@@ -179,6 +202,10 @@
             @test r_max ≈ 4.0 atol=1e-10
         end
     end
+    
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                      Minimum Radius Tests                         ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Minimum Radius" begin
         @testset "Simple Shapes" begin
@@ -226,6 +253,10 @@
             @test r_min ≈ sqrt(3) atol=1e-10
         end
     end
+    
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                     Grid to Faces Tests                           ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
     
     @testset "Grid to Faces" begin
         @testset "Simple 2x2 Grid" begin

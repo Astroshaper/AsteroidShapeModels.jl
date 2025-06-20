@@ -1,6 +1,19 @@
-################################################################
-#                  Concave spherical segment
-################################################################
+#=
+    roughness.jl
+
+This file provides functions for modeling surface roughness features on asteroids,
+particularly focusing on crater geometries. Surface roughness significantly affects
+thermal properties, light scattering, and radar reflection characteristics of
+asteroid surfaces.
+
+Exported Functions:
+- `crater_curvature_radius`: Calculate the curvature radius of a concave spherical segment
+- `concave_spherical_segment`: Generate crater geometry as a concave spherical segment
+=#
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                  Concave spherical segment                        ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     crater_curvature_radius(r, h) -> R
@@ -61,9 +74,9 @@ function concave_spherical_segment(r::Real, h::Real; Nx::Integer=2^5, Ny::Intege
 end
 
 
-################################################################
-#                 Parallel sinusoidal trenches
-################################################################
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                 Parallel sinusoidal trenches                      ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 # function parallel_sinusoidal_trenches(Ct, N_trench, x)
 #     z = Ct + Ct * sin(2π * (N_trench + 0.5) * x)
@@ -78,15 +91,15 @@ end
 # end
 
 
-################################################################
-#                   Random Gaussian surface
-################################################################
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                   Random Gaussian surface                         ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 # TODO: Functions to generate random Gaussian surface will be implmented.
 
 
-################################################################
-#                       Fractal surface
-################################################################
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                       Fractal surface                             ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 # TODO: Functions to generate fractal surface will be implmented.

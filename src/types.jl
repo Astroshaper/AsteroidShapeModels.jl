@@ -1,4 +1,18 @@
-# Core type definitions for AsteroidShapeModels.jl
+#=
+    types.jl
+
+Core type definitions for `AsteroidShapeModels.jl`.
+This file contains fundamental data structures used throughout the package:
+- `VisibleFacet`: Stores face-to-face visibility relationship data
+- `Ray`: Represents a ray in 3D space for intersection tests
+- `BoundingBox`: Axis-aligned bounding box for acceleration structures
+- `RayTriangleIntersectionResult`: Result of ray-triangle intersection test
+- `RayShapeIntersectionResult`: Result of ray-shape intersection test
+=#
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                          Core Types                               ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     struct VisibleFacet
@@ -76,6 +90,10 @@ function Base.show(io::IO, bbox::BoundingBox)
     print(io, "    ∘ min_point = $(bbox.min_point)\n")
     print(io, "    ∘ max_point = $(bbox.max_point)\n")
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                   Intersection Result Types                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     RayTriangleIntersectionResult

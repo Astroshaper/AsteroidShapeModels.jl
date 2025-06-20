@@ -1,3 +1,24 @@
+#=
+    shape_operations.jl
+
+This file provides high-level functions for shape model operations including
+loading shape models from various sources, computing geometric properties
+such as volume and radii, and converting between different representations.
+
+Exported Functions:
+- `load_shape_obj`: Load a shape model from an OBJ file
+- `load_shape_grid`: Convert a regular grid to a shape model
+- `grid_to_faces`: Convert grid data to triangular faces
+- `polyhedron_volume`: Calculate the volume of a polyhedron
+- `equivalent_radius`: Calculate the radius of an equivalent sphere
+- `maximum_radius`: Find the maximum distance from origin
+- `minimum_radius`: Find the minimum distance from origin
+=#
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                         Shape Loading                             ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     load_shape_obj(shapepath; scale=1.0, with_face_visibility=false) -> ShapeModel
 
@@ -29,9 +50,9 @@ function load_shape_obj(shapepath; scale=1.0, with_face_visibility=false)
     return ShapeModel(nodes, faces; with_face_visibility)
 end
 
-################################################################
-#               Create a shape model from grid
-################################################################
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                        Grid Operations                            ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     grid_to_faces(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces
@@ -130,9 +151,9 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
     return ShapeModel(nodes, faces; with_face_visibility)
 end
 
-################################################################
-#                      Shape properites
-################################################################
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                      Geometric Properties                         ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     polyhedron_volume(nodes, faces) -> Float64

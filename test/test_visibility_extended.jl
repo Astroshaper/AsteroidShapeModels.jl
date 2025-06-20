@@ -1,3 +1,14 @@
+#=
+    test_visibility_extended.jl
+
+This file tests advanced visibility and illumination calculations:
+- View factor calculations between face pairs
+- Distance and area dependencies of view factors
+- Direct and indirect illumination scenarios
+- Shadow casting and self-shadowing
+- Edge cases including coincident faces and extreme distances
+=#
+
 @testset "Visibility Extended Tests" begin
     
     @testset "View Factor Calculation" begin

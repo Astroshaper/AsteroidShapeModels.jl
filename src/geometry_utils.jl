@@ -1,6 +1,16 @@
-"""
+#=
+    geometry_utils.jl
+
 Geometric utility functions for asteroid shape analysis.
-"""
+This file provides functions for:
+- Angle calculations between vectors
+- Solar geometry calculations for asteroid observations
+- Common geometric operations used in asteroid science
+=#
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                      Angle Calculations                           ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     angle_rad(v1, v2) -> Float64
@@ -71,6 +81,10 @@ angles = angle_deg(v1s, v2s)  # Returns [90.0, 90.0]
 ```
 """
 angle_deg(v1::AbstractVector{<:AbstractVector{<:Real}}, v2::AbstractVector{<:AbstractVector{<:Real}}) = angle_deg.(v1, v2)
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                       Solar Geometry                              ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     solar_phase_angle(sun, target, observer) -> Float64

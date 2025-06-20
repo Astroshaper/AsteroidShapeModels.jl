@@ -1,6 +1,20 @@
-################################################################
-#                      Face properties
-################################################################
+#=
+    face_properties.jl
+
+This file provides functions to calculate geometric properties of triangular faces,
+including face centers, normal vectors, and areas. These properties are fundamental
+for various computations in asteroid shape modeling, such as visibility analysis,
+radiative heat transfer calculations, and illumination modeling.
+
+Exported Functions:
+- `face_center`: Calculate the center of a triangular face
+- `face_normal`: Calculate the unit normal vector of a triangular face
+- `face_area`: Calculate the area of a triangular face
+=#
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                         Face Center                               ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     face_center(vs::StaticVector{3, <:StaticVector{3}}) -> StaticVector{3}
@@ -25,6 +39,10 @@ center = face_center(v1, v2, v3)  # Returns SA[1/3, 1/3, 1/3]
 """
 face_center(vs::StaticVector{3, <:StaticVector{3}}) = face_center(vs...)
 face_center(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) = (v1 + v2 + v3) / 3
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                         Face Normal                               ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     face_normal(vs::StaticVector{3, <:StaticVector{3}}) -> StaticVector{3}
@@ -53,6 +71,10 @@ normal = face_normal(v1, v2, v3)  # Returns SA[0.0, 0.0, 1.0]
 """
 face_normal(vs::StaticVector{3, <:StaticVector{3}}) = face_normal(vs...)
 face_normal(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) = normalize((v2 - v1) × (v3 - v2))
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                          Face Area                                ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     face_area(vs::StaticVector{3, <:StaticVector{3}}) -> Real
