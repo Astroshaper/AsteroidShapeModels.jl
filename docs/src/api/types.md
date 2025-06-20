@@ -22,6 +22,5 @@ RayShapeIntersectionResult
 ## Visibility Types
 
 ```@docs
-VisibleFacet
 FaceVisibilityGraph
 ```
