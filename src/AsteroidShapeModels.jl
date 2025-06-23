@@ -36,11 +36,13 @@ See the documentation for detailed usage examples and API reference.
 """
 module AsteroidShapeModels
 
+using FileIO
 using LinearAlgebra
 using StaticArrays
-using FileIO
-import MeshIO
+
 import GeometryBasics
+import ImplicitBVH
+import MeshIO
 
 include("face_properties.jl")
 export face_center, face_normal, face_area, get_face_vertices
