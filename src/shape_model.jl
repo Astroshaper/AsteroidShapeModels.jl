@@ -40,7 +40,7 @@ mutable struct ShapeModel
 end
 
 """
-    ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}; with_face_visibility=false) -> ShapeModel
+    ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}; with_face_visibility=false, with_bvh=false) -> ShapeModel
 
 Construct a ShapeModel from nodes and faces, automatically computing face properties.
 
@@ -50,6 +50,7 @@ Construct a ShapeModel from nodes and faces, automatically computing face proper
 
 # Keyword Arguments
 - `with_face_visibility::Bool=false`: Whether to compute face-to-face visibility graph
+- `with_bvh::Bool=false`: Whether to build BVH for accelerated ray tracing (experimental)
 
 # Returns
 - `ShapeModel`: Shape model with computed face centers, normals, areas, and optionally face visibility graph
@@ -63,9 +64,12 @@ shape = ShapeModel(nodes, faces)
 
 # Create with visibility computation
 shape = ShapeModel(nodes, faces, with_face_visibility=true)
+
+# Create with BVH acceleration (experimental)
+shape = ShapeModel(nodes, faces, with_bvh=true)
 ```
 """
-function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}; with_face_visibility=false)
+function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}}; with_face_visibility=false, with_bvh=false)
     face_centers = [face_center(nodes[face]) for face in faces]
     face_normals = [face_normal(nodes[face]) for face in faces]
     face_areas   = [face_area(nodes[face])   for face in faces]
@@ -78,8 +82,8 @@ function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVect
     
     shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, face_visibility_graph, bvh)
     
-    # Build BVH for ray tracing acceleration
-    build_bvh!(shape)
+    # Build BVH for ray tracing acceleration if requested
+    with_bvh && build_bvh!(shape)
     
     with_face_visibility && build_face_visibility_graph!(shape)
     
