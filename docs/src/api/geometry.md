@@ -10,6 +10,7 @@ CurrentModule = AsteroidShapeModels
 face_center
 face_normal
 face_area
+get_face_vertices
 ```
 
 ## Shape Properties
