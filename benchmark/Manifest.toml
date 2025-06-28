@@ -2,7 +2,7 @@
 
 julia_version = "1.11.5"
 manifest_format = "2.0"
-project_hash = "7f17253d7f03be4c6218a8046852c23a69cc6013"
+project_hash = "1de786a96a4d402408d6d0259c5a421f1ab46a62"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "2d9c9a55f9c93e8887ad391fbae72f8ef55e1177"
@@ -19,9 +19,9 @@ version = "1.11.0"
 
 [[deps.AsteroidShapeModels]]
 deps = ["BenchmarkTools", "FileIO", "GeometryBasics", "LinearAlgebra", "MeshIO", "StaticArrays"]
-git-tree-sha1 = "587ee5c167a37eb292f01739f155cb0b9dbfdac3"
+path = ".."
 uuid = "a7943d8e-5d65-4248-ae23-0082f5115a05"
-version = "0.2.0"
+version = "0.3.0"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"

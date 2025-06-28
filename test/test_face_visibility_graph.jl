@@ -7,11 +7,7 @@
 # - Visibility graph building for shape models
 # - Memory efficiency and performance characteristics
 # - Integration with ShapeModel illumination calculations
-# - Bounds checking and edge cases 
-
-using Test
-using AsteroidShapeModels
-using StaticArrays
+# - Bounds checking and edge cases
 
 @testset "FaceVisibilityGraph" begin
     
@@ -158,18 +154,7 @@ end
 
 @testset "ShapeModel with FaceVisibilityGraph" begin
     # Simple tetrahedron test
-    nodes = [
-        SA[0.0, 0.0, 0.0],
-        SA[1.0, 0.0, 0.0],
-        SA[0.0, 1.0, 0.0],
-        SA[0.0, 0.0, 1.0],
-    ]
-    faces = [
-        SA[1, 3, 2],
-        SA[1, 2, 4],
-        SA[1, 4, 3],
-        SA[2, 3, 4],
-    ]
+    nodes, faces = create_regular_tetrahedron()
     
     @testset "FaceVisibilityGraph Implementation" begin
         # Create shape with visibility computation

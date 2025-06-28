@@ -17,13 +17,16 @@ Test Categories:
 - Performance benchmarks
 =#
 
-using Test
 using AsteroidShapeModels
-using StaticArrays
+using BenchmarkTools
+using Downloads
 using LinearAlgebra
 using SPICE
-using Downloads
-using BenchmarkTools
+using StaticArrays
+using Test
+
+# Include test helper functions
+include("test_helpers.jl")
 
 @testset "AsteroidShapeModels.jl" begin
     # Core functionality tests

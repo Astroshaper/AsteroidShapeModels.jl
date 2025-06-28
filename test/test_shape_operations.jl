@@ -17,23 +17,8 @@ This file tests fundamental shape operations and calculations:
     
     @testset "Polyhedron Volume" begin
         @testset "Unit Cube" begin
-            # Define unit cube vertices
-            nodes = [
-                SA[0.0, 0.0, 0.0], SA[1.0, 0.0, 0.0],
-                SA[1.0, 1.0, 0.0], SA[0.0, 1.0, 0.0],
-                SA[0.0, 0.0, 1.0], SA[1.0, 0.0, 1.0],
-                SA[1.0, 1.0, 1.0], SA[0.0, 1.0, 1.0],
-            ]
-            
-            # Define faces (triangulated cube) - corrected orientation
-            faces = [
-                SA[1, 3, 2], SA[1, 4, 3],  # Bottom face (z=0)
-                SA[5, 6, 7], SA[5, 7, 8],  # Top face (z=1)
-                SA[1, 2, 6], SA[1, 6, 5],  # Front face (y=0)
-                SA[4, 8, 7], SA[4, 7, 3],  # Back face (y=1)
-                SA[1, 5, 8], SA[1, 8, 4],  # Left face (x=0)
-                SA[2, 3, 7], SA[2, 7, 6],  # Right face (x=1)
-            ]
+            # Define unit cube vertices and faces
+            nodes, faces = create_unit_cube()
             
             volume = polyhedron_volume(nodes, faces)
             @test volume ≈ 1.0 atol=1e-10
@@ -41,19 +26,7 @@ This file tests fundamental shape operations and calculations:
         
         @testset "Unit Tetrahedron" begin
             # Regular tetrahedron with unit edges
-            nodes = [
-                SA[0.0, 0.0, 0.0],
-                SA[1.0, 0.0, 0.0],
-                SA[0.5, sqrt(3)/2, 0.0],
-                SA[0.5, sqrt(3)/6, sqrt(6)/3]
-            ]
-            
-            faces = [
-                SA[1, 2, 3],  # Base
-                SA[1, 2, 4],  # Side 1
-                SA[2, 3, 4],  # Side 2
-                SA[3, 1, 4]   # Side 3
-            ]
+            nodes, faces = create_regular_tetrahedron()
             
             volume = polyhedron_volume(nodes, faces)
             expected_volume = 1 / (6 * sqrt(2))  # Analytical formula
@@ -63,21 +36,8 @@ This file tests fundamental shape operations and calculations:
         @testset "Translated Shape" begin
             # Unit cube translated by [10, 10, 10]
             offset = SA[10.0, 10.0, 10.0]
-            nodes = [
-                offset + SA[0.0, 0.0, 0.0], offset + SA[1.0, 0.0, 0.0],
-                offset + SA[1.0, 1.0, 0.0], offset + SA[0.0, 1.0, 0.0],
-                offset + SA[0.0, 0.0, 1.0], offset + SA[1.0, 0.0, 1.0],
-                offset + SA[1.0, 1.0, 1.0], offset + SA[0.0, 1.0, 1.0],
-            ]
-            
-            faces = [
-                SA[1, 3, 2], SA[1, 4, 3],  # Bottom face (z=0)
-                SA[5, 6, 7], SA[5, 7, 8],  # Top face (z=1)
-                SA[1, 2, 6], SA[1, 6, 5],  # Front face (y=0)
-                SA[4, 8, 7], SA[4, 7, 3],  # Back face (y=1)
-                SA[1, 5, 8], SA[1, 8, 4],  # Left face (x=0)
-                SA[2, 3, 7], SA[2, 7, 6],  # Right face (x=1)
-            ]
+            base_nodes, faces = create_unit_cube()
+            nodes = [node + offset for node in base_nodes]
             
             volume = polyhedron_volume(nodes, faces)
             @test volume ≈ 1.0 atol=1e-10
@@ -86,33 +46,15 @@ This file tests fundamental shape operations and calculations:
         @testset "Scaled Shape" begin
             # Unit cube scaled by factor 2
             scale = 2.0
-            nodes = [
-                SA[0.0, 0.0, 0.0] * scale, SA[1.0, 0.0, 0.0] * scale,
-                SA[1.0, 1.0, 0.0] * scale, SA[0.0, 1.0, 0.0] * scale,
-                SA[0.0, 0.0, 1.0] * scale, SA[1.0, 0.0, 1.0] * scale,
-                SA[1.0, 1.0, 1.0] * scale, SA[0.0, 1.0, 1.0] * scale,
-            ]
-            
-            faces = [
-                SA[1, 3, 2], SA[1, 4, 3],  # Bottom face (z=0)
-                SA[5, 6, 7], SA[5, 7, 8],  # Top face (z=1)
-                SA[1, 2, 6], SA[1, 6, 5],  # Front face (y=0)
-                SA[4, 8, 7], SA[4, 7, 3],  # Back face (y=1)
-                SA[1, 5, 8], SA[1, 8, 4],  # Left face (x=0)
-                SA[2, 3, 7], SA[2, 7, 6],  # Right face (x=1)
-            ]
+            base_nodes, faces = create_unit_cube()
+            nodes = [node * scale for node in base_nodes]
             
             volume = polyhedron_volume(nodes, faces)
             @test volume ≈ scale^3 atol=1e-10
         end
         
         @testset "Single Triangle (Zero Volume)" begin
-            nodes = [
-                SA[0.0, 0.0, 0.0],
-                SA[1.0, 0.0, 0.0],
-                SA[0.0, 1.0, 0.0]
-            ]
-            faces = [SA[1, 2, 3]]
+            nodes, faces = create_xy_triangle()
             
             volume = polyhedron_volume(nodes, faces)
             @test volume ≈ 0.0 atol=1e-10
@@ -139,18 +81,7 @@ This file tests fundamental shape operations and calculations:
         
         @testset "From ShapeModel" begin
             # Create a simple tetrahedron shape
-            nodes = [
-                SA[0.0, 0.0, 0.0],
-                SA[1.0, 0.0, 0.0],
-                SA[0.5, sqrt(3)/2, 0.0],
-                SA[0.5, sqrt(3)/6, sqrt(6)/3],
-            ]
-            faces = [
-                SA[1, 2, 3],
-                SA[1, 2, 4],
-                SA[2, 3, 4],
-                SA[3, 1, 4],
-            ]
+            nodes, faces = create_regular_tetrahedron()
             
             # Create shape model
             shape = ShapeModel(nodes, faces)

@@ -22,7 +22,8 @@ SUITE["face_properties"] = BenchmarkGroup()
 let nodes = SHAPE.nodes, faces = SHAPE.faces
     # Single face calculations
     face = faces[1]
-    face_nodes = SA[nodes[face[1]], nodes[face[2]], nodes[face[3]]]
+    v1, v2, v3 = get_face_vertices(nodes, face)
+    face_nodes = SA[v1, v2, v3]
     
     SUITE["face_properties"]["face_center"] = @benchmarkable face_center($face_nodes)
     SUITE["face_properties"]["face_normal"] = @benchmarkable face_normal($face_nodes)
@@ -32,7 +33,8 @@ let nodes = SHAPE.nodes, faces = SHAPE.faces
     SUITE["face_properties"]["batch_centers"] = @benchmarkable begin
         for i in 1:100
             face = $faces[i]
-            fn = SA[$nodes[face[1]], $nodes[face[2]], $nodes[face[3]]]
+            v1, v2, v3 = get_face_vertices($nodes, face)
+            fn = SA[v1, v2, v3]
             face_center(fn)
         end
     end
@@ -77,10 +79,7 @@ end
 SUITE["ray_intersection"] = BenchmarkGroup()
 let ray = Ray([0.0, 0.0, 1000.0], [0.0, 0.0, -1.0])
     # Single triangle intersection
-    face = SHAPE.faces[1]
-    A = SHAPE.nodes[face[1]]
-    B = SHAPE.nodes[face[2]]
-    C = SHAPE.nodes[face[3]]
+    A, B, C = get_face_vertices(SHAPE, 1)
     
     SUITE["ray_intersection"]["single_triangle"] = @benchmarkable intersect_ray_triangle($ray, $A, $B, $C)
     

@@ -53,64 +53,26 @@ function intersect_ray_bounding_box(ray::Ray, bbox::BoundingBox)
     t_min = -Inf
     t_max = Inf
     
-    # Intersection test in x-direction
-    if abs(ray.direction[1]) < 1e-8
-        if ray.origin[1] < bbox.min_point[1] || ray.origin[1] > bbox.max_point[1]
-            return false
-        end
-    else
-        t1 = (bbox.min_point[1] - ray.origin[1]) / ray.direction[1]
-        t2 = (bbox.max_point[1] - ray.origin[1]) / ray.direction[1]
-        
-        t1, t2 = minmax(t1, t2)
-        
-        t_min = max(t_min, t1)
-        t_max = min(t_max, t2)
-        
-        if t_min > t_max
-            return false
-        end
-    end
-    
-    # Intersection test in y-direction
-    if abs(ray.direction[2]) < 1e-8
-        if ray.origin[2] < bbox.min_point[2] || ray.origin[2] > bbox.max_point[2]
-            return false
-        end
-    else
-        t1 = (bbox.min_point[2] - ray.origin[2]) / ray.direction[2]
-        t2 = (bbox.max_point[2] - ray.origin[2]) / ray.direction[2]
-        
-        if t1 > t2
-            t1, t2 = t2, t1
-        end
-        
-        t_min = max(t_min, t1)
-        t_max = min(t_max, t2)
-        
-        if t_min > t_max
-            return false
-        end
-    end
-    
-    # Intersection test in z-direction
-    if abs(ray.direction[3]) < 1e-8
-        if ray.origin[3] < bbox.min_point[3] || ray.origin[3] > bbox.max_point[3]
-            return false
-        end
-    else
-        t1 = (bbox.min_point[3] - ray.origin[3]) / ray.direction[3]
-        t2 = (bbox.max_point[3] - ray.origin[3]) / ray.direction[3]
-        
-        if t1 > t2
-            t1, t2 = t2, t1
-        end
-        
-        t_min = max(t_min, t1)
-        t_max = min(t_max, t2)
-        
-        if t_min > t_max
-            return false
+    # Intersection test for each dimension (x, y, z)
+    for dim in 1:3
+        if abs(ray.direction[dim]) < 1e-8
+            # Ray is parallel to this axis
+            if ray.origin[dim] < bbox.min_point[dim] || ray.origin[dim] > bbox.max_point[dim]
+                return false
+            end
+        else
+            # Ray intersects this axis
+            t1 = (bbox.min_point[dim] - ray.origin[dim]) / ray.direction[dim]
+            t2 = (bbox.max_point[dim] - ray.origin[dim]) / ray.direction[dim]
+            
+            t1, t2 = minmax(t1, t2)
+            
+            t_min = max(t_min, t1)
+            t_max = min(t_max, t2)
+            
+            if t_min > t_max
+                return false
+            end
         end
     end
     
@@ -175,6 +137,46 @@ function intersect_ray_triangle(ray::Ray, v1::AbstractVector{<:Real}, v2::Abstra
     return NO_INTERSECTION_RAY_TRIANGLE
 end
 
+"""
+    intersect_ray_triangle(ray::Ray, shape::ShapeModel, face_id::Integer) -> RayTriangleIntersectionResult
+
+Perform ray-triangle intersection test for a specific face in a shape model.
+
+# Arguments
+- `ray`: Ray
+- `shape`: Shape model containing the triangle
+- `face_id`: Index of the face to test
+
+# Returns
+- `RayTriangleIntersectionResult` object containing the intersection test result
+
+# Notes
+This is a convenience function that delegates to the more general `intersect_ray_triangle` with nodes and faces.
+"""
+@inline function intersect_ray_triangle(ray::Ray, shape::ShapeModel, face_id::Integer)
+    return intersect_ray_triangle(ray, shape.nodes, shape.faces, face_id)
+end
+
+"""
+    intersect_ray_triangle(ray::Ray, nodes::AbstractVector, faces::AbstractVector, face_id::Integer) -> RayTriangleIntersectionResult
+
+Perform ray-triangle intersection test for a specific face given nodes and faces arrays.
+
+# Arguments
+- `ray`: Ray
+- `nodes`: Array of node positions
+- `faces`: Array of face definitions (each face is an array of node indices)
+- `face_id`: Index of the face to test
+
+# Returns
+- `RayTriangleIntersectionResult` object containing the intersection test result
+"""
+@inline function intersect_ray_triangle(ray::Ray, nodes::AbstractVector, faces::AbstractVector, face_id::Integer)
+    face = faces[face_id]
+    v1, v2, v3 = get_face_vertices(nodes, face)
+    return intersect_ray_triangle(ray, v1, v2, v3)
+end
+
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                    Ray-Shape Model Intersection                   ║
 # ╚═══════════════════════════════════════════════════════════════════╝
@@ -203,7 +205,7 @@ function intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox)
     hit_face_index = 0
     hit_any        = false
     
-    for (i, face) in enumerate(shape.faces)
+    for i in eachindex(shape.faces)
         # Backface culling
         n̂ = shape.face_normals[i]
         dot(ray.direction, n̂) ≥ 0 && continue
@@ -212,11 +214,7 @@ function intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox)
         c = shape.face_centers[i]
         dot(c - ray.origin, n̂) ≥ 0 && continue
         
-        v1 = shape.nodes[face[1]]
-        v2 = shape.nodes[face[2]]
-        v3 = shape.nodes[face[3]]
-        
-        result = intersect_ray_triangle(ray, v1, v2, v3)
+        result = intersect_ray_triangle(ray, shape, i)
         
         if result.hit && result.distance < min_distance
             min_distance   = result.distance

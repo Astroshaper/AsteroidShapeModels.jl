@@ -134,8 +134,7 @@ function build_face_visibility_graph!(shape::ShapeModel)
                 dᵢⱼ < dᵢₖ && continue
                 
                 ray = Ray(cᵢ, Rᵢⱼ)
-                A, B, C = nodes[faces[k][1]], nodes[faces[k][2]], nodes[faces[k][3]]
-                intersection = intersect_ray_triangle(ray, A, B, C)
+                intersection = intersect_ray_triangle(ray, nodes, faces, k)
                 if intersection.hit
                     blocked = true
                     break
@@ -207,12 +206,7 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
     if !isnothing(shape.face_visibility_graph)
         visible_faces = get_visible_face_indices(shape.face_visibility_graph, i)
         for j in visible_faces
-            face = shape.faces[j]
-            A = shape.nodes[face[1]]
-            B = shape.nodes[face[2]]
-            C = shape.nodes[face[3]]
-
-            intersect_ray_triangle(ray, A, B, C).hit && return false
+            intersect_ray_triangle(ray, shape, j).hit && return false
         end
     end
     return true
