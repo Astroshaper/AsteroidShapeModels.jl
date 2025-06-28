@@ -25,8 +25,9 @@ julia = "1.6"
 [extras]
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SPICE = "5bab7191-041a-5c2e-a744-024b9c3a5062"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "SPICE", "Downloads"]
+test = ["Test", "SPICE", "Downloads", "Random"]

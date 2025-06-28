@@ -57,7 +57,7 @@ export get_visible_face_indices, get_view_factors, get_visible_face_distances, g
 export get_visible_face_data, num_visible_faces
 
 include("shape_model.jl")
-export ShapeModel
+export ShapeModel, build_bvh!
 
 include("obj_io.jl")
 export load_obj, isobj

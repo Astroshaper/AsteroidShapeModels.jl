@@ -122,22 +122,50 @@ function build_face_visibility_graph!(shape::ShapeModel)
 
             Rᵢⱼ = cⱼ - cᵢ
             dᵢⱼ = norm(Rᵢⱼ)
+            d̂ᵢⱼ = Rᵢⱼ / dᵢⱼ  # Normalized direction
             
+            # Use BVH to check for obstructions
             blocked = false
-            for k in candidates
-                j == k && continue
-                cₖ = face_centers[k]
+            
+            if !isnothing(shape.bvh)
+                # Create ray from face i to face j
+                origins    = reshape([cᵢ[1], cᵢ[2], cᵢ[3]], 3, 1)
+                directions = reshape([d̂ᵢⱼ[1], d̂ᵢⱼ[2], d̂ᵢⱼ[3]], 3, 1)
+                
+                # Traverse BVH to find all potential intersections
+                traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
+                
+                # Check if any face blocks the path
+                for contact in traversal.contacts
+                    k = Int(contact[1])  # Face index
+                    k == i && continue   # Skip source face
+                    k == j && continue   # Skip target face
+                    
+                    # Perform actual intersection test
+                    ray = Ray(cᵢ, d̂ᵢⱼ)
+                    result = intersect_ray_triangle(ray, shape, k)
+                    if result.hit && result.distance < dᵢⱼ
+                        blocked = true
+                        break
+                    end
+                end
+            else
+                # Fallback to linear search if BVH not available
+                for k in candidates
+                    j == k && continue
+                    cₖ = face_centers[k]
 
-                Rᵢₖ = cₖ - cᵢ
-                dᵢₖ = norm(Rᵢₖ)
-                
-                dᵢⱼ < dᵢₖ && continue
-                
-                ray = Ray(cᵢ, Rᵢⱼ)
-                intersection = intersect_ray_triangle(ray, nodes, faces, k)
-                if intersection.hit
-                    blocked = true
-                    break
+                    Rᵢₖ = cₖ - cᵢ
+                    dᵢₖ = norm(Rᵢₖ)
+                    
+                    dᵢⱼ < dᵢₖ && continue
+                    
+                    ray = Ray(cᵢ, Rᵢⱼ)
+                    intersection = intersect_ray_triangle(ray, nodes, faces, k)
+                    if intersection.hit
+                        blocked = true
+                        break
+                    end
                 end
             end
 
@@ -202,12 +230,36 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
 
     ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
 
-    # Use FaceVisibilityGraph
+    # Use BVH if available for faster ray intersection
+    if !isnothing(shape.bvh)
+        # Use ImplicitBVH to check for any obstruction
+        origins    = reshape([cᵢ[1], cᵢ[2], cᵢ[3]], 3, 1)
+        directions = reshape([r̂☉[1], r̂☉[2], r̂☉[3]], 3, 1)
+        
+        # Traverse BVH to find all potential intersections
+        traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
+        
+        # Check for any valid intersection (excluding self-intersection)
+        for contact in traversal.contacts
+            j = Int(contact[1])  # Face index
+            j == i && continue   # Skip self-intersection
+            
+            # Perform actual intersection test
+            if intersect_ray_triangle(ray, shape, j).hit
+                return false  # Face is in shadow
+            end
+        end
+        return true  # No obstruction found
+    end
+    
+    # Fallback to FaceVisibilityGraph
     if !isnothing(shape.face_visibility_graph)
         visible_faces = get_visible_face_indices(shape.face_visibility_graph, i)
         for j in visible_faces
             intersect_ray_triangle(ray, shape, j).hit && return false
         end
+        return true  # No obstruction found
     end
-    return true
+
+    return true  # No obstruction found
 end
