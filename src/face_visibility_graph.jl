@@ -109,16 +109,22 @@ end
 # ║                      Data Access Methods                          ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
+# Internal helper function to get the range of indices for a face
+function _get_visible_face_range(graph::FaceVisibilityGraph, face_id::Int)
+    @boundscheck 1 ≤ face_id ≤ graph.nfaces || throw(BoundsError(graph, face_id))
+    start_idx = graph.row_ptr[face_id]
+    end_idx   = graph.row_ptr[face_id + 1] - 1
+    return start_idx:end_idx
+end
+
 """
     get_visible_face_indices(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
 
 Get indices of faces visible from the specified face.
 """
 function get_visible_face_indices(graph::FaceVisibilityGraph, face_id::Int)
-    @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
-    start_idx = graph.row_ptr[face_id]
-    end_idx = graph.row_ptr[face_id + 1] - 1
-    return @view graph.col_idx[start_idx:end_idx]
+    range = _get_visible_face_range(graph, face_id)
+    return @view graph.col_idx[range]
 end
 
 """
@@ -127,10 +133,8 @@ end
 Get view factors for the specified face.
 """
 function get_view_factors(graph::FaceVisibilityGraph, face_id::Int)
-    @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
-    start_idx = graph.row_ptr[face_id]
-    end_idx = graph.row_ptr[face_id + 1] - 1
-    return @view graph.view_factors[start_idx:end_idx]
+    range = _get_visible_face_range(graph, face_id)
+    return @view graph.view_factors[range]
 end
 
 """
@@ -139,10 +143,8 @@ end
 Get distances to visible faces from the specified face.
 """
 function get_visible_face_distances(graph::FaceVisibilityGraph, face_id::Int)
-    @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
-    start_idx = graph.row_ptr[face_id]
-    end_idx = graph.row_ptr[face_id + 1] - 1
-    return @view graph.distances[start_idx:end_idx]
+    range = _get_visible_face_range(graph, face_id)
+    return @view graph.distances[range]
 end
 
 """
@@ -151,10 +153,8 @@ end
 Get direction vectors to visible faces from the specified face.
 """
 function get_visible_face_directions(graph::FaceVisibilityGraph, face_id::Int)
-    @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
-    start_idx = graph.row_ptr[face_id]
-    end_idx = graph.row_ptr[face_id + 1] - 1
-    return @view graph.directions[start_idx:end_idx]
+    range = _get_visible_face_range(graph, face_id)
+    return @view graph.directions[range]
 end
 
 """
@@ -164,7 +164,7 @@ Get the idx-th visible face data for the specified face.
 """
 function get_visible_face_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
     visible_faces = get_visible_face_indices(graph, face_id)
-    @boundscheck 1 <= idx <= length(visible_faces) || throw(BoundsError())
+    @boundscheck 1 ≤ idx ≤ length(visible_faces) || throw(BoundsError())
     
     base_idx = graph.row_ptr[face_id] + idx - 1
     return (
@@ -181,6 +181,6 @@ end
 Get the number of visible faces for the specified face.
 """
 function num_visible_faces(graph::FaceVisibilityGraph, face_id::Int)
-    @boundscheck 1 <= face_id <= graph.nfaces || throw(BoundsError(graph, face_id))
+    @boundscheck 1 ≤ face_id ≤ graph.nfaces || throw(BoundsError(graph, face_id))
     return graph.row_ptr[face_id + 1] - graph.row_ptr[face_id]
 end
