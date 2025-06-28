@@ -24,9 +24,8 @@ These properties are essential for all higher-level computations in the package.
     #      v1      v2
     #   (0,0,0)  (1,0,0)
     
-    v1 = @SVector [0.0, 0.0, 0.0]  # Origin
-    v2 = @SVector [1.0, 0.0, 0.0]  # Unit distance along X
-    v3 = @SVector [0.0, 1.0, 0.0]  # Unit distance along Y
+    nodes, faces = create_xy_triangle()
+    v1, v2, v3 = nodes[1], nodes[2], nodes[3]
     
     # ╔═══════════════════════════════════════════════════════════════════╗
     # ║                         Face Center Test                          ║

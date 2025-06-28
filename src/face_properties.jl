@@ -133,4 +133,3 @@ end
 
 # Forward declaration for ShapeModel version - implementation in shape_operations.jl
 function get_face_vertices end
-

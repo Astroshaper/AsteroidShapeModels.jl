@@ -247,22 +247,11 @@ This file verifies:
                     @test length(nodes) > 0
                     @test length(faces) > 0
                     
-                    # Check validity of all faces at once
-                    invalid_indices = Int[]
-                    for (i, face) in enumerate(faces)
-                        if !all(1 ≤ idx ≤ length(nodes) for idx in face)
-                            push!(invalid_indices, i)
-                        end
-                    end
-                    @test isempty(invalid_indices)
-                    
-                    # Check that all nodes are 3D vectors
-                    nodes_with_wrong_dim = findall(node -> length(node) != 3, nodes)
-                    @test isempty(nodes_with_wrong_dim)
-                    
-                    # Check that all faces are triangles
-                    non_triangular_faces = findall(face -> length(face) != 3, faces)
-                    @test isempty(non_triangular_faces)
+                    # Check validity using helper function
+                    validation = validate_shape_model(nodes, faces)
+                    @test validation.valid_indices
+                    @test validation.valid_dimensions
+                    @test validation.all_triangular
                     
                     # Summary information (not a test, just informative)
                     println("  ✓ Loaded $obj_file: $(length(nodes)) vertices, $(length(faces)) faces")

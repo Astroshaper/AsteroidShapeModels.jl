@@ -27,14 +27,11 @@ This file verifies:
         ray = Ray([0.0, 0.0, 1.0], [0.0, 0.0, -1.0])
         
         # Triangle vertices on XY plane
-        v1 = @SVector [0.0, 0.0, 0.0]
-        v2 = @SVector [1.0, 0.0, 0.0]
-        v3 = @SVector [0.0, 1.0, 0.0]
+        nodes, _ = create_xy_triangle()
+        v1, v2, v3 = nodes[1], nodes[2], nodes[3]
         
         result = intersect_ray_triangle(ray, v1, v2, v3)
-        @test result.hit == true
-        @test result.distance ≈ 1.0
-        @test result.point ≈ @SVector [0.0, 0.0, 0.0]
+        test_ray_intersection(result, true, 1.0, @SVector [0.0, 0.0, 0.0])
     end
     
     # ╔═══════════════════════════════════════════════════════════════════╗
@@ -72,18 +69,15 @@ This file verifies:
         #      v1     v2
         #   (0,0,0)  (1,0,0)
         
-        v1 = @SVector [0.0, 0.0, 0.0]  # Origin
-        v2 = @SVector [1.0, 0.0, 0.0]  # Point on x-axis
-        v3 = @SVector [0.0, 1.0, 0.0]  # Point on y-axis
+        nodes, _ = create_xy_triangle()  # Standard triangle on XY plane
+        v1, v2, v3 = nodes[1], nodes[2], nodes[3]
         
         # Test Case 1: Direct Hit
         # Ray from (0.25, 0.25, 1) pointing down should hit the triangle
         ray1 = Ray(@SVector([0.25, 0.25, 1.0]), @SVector([0.0, 0.0, -1.0]))
         result1 = intersect_ray_triangle(ray1, v1, v2, v3)
         
-        @test result1.hit == true
-        @test result1.distance ≈ 1.0
-        @test result1.point ≈ @SVector([0.25, 0.25, 0.0])
+        test_ray_intersection(result1, true, 1.0, @SVector([0.25, 0.25, 0.0]))
         
         # Test Case 2: Complete Miss
         # Ray from (2, 2, 1) is outside the triangle bounds
@@ -104,27 +98,21 @@ This file verifies:
         ray4 = Ray(@SVector([0.0, 0.0, 1.0]), @SVector([0.0, 0.0, -1.0]))
         result4 = intersect_ray_triangle(ray4, v1, v2, v3)
         
-        @test result4.hit == true
-        @test result4.distance ≈ 1.0
-        @test result4.point ≈ @SVector([0.0, 0.0, 0.0])
+        test_ray_intersection(result4, true, 1.0, @SVector([0.0, 0.0, 0.0]))
         
         # Test Case 5: Edge Hit
         # Ray passing through the edge between v1 and v2
         ray5 = Ray(@SVector([0.5, 0.0, 1.0]), @SVector([0.0, 0.0, -1.0]))
         result5 = intersect_ray_triangle(ray5, v1, v2, v3)
         
-        @test result5.hit == true
-        @test result5.distance ≈ 1.0
-        @test result5.point ≈ @SVector([0.5, 0.0, 0.0])
+        test_ray_intersection(result5, true, 1.0, @SVector([0.5, 0.0, 0.0]))
         
         # Test Case 6: Backside Hit
         # Ray from below the triangle pointing upward
         ray6 = Ray(@SVector([0.25, 0.25, -1.0]), @SVector([0.0, 0.0, 1.0]))
         result6 = intersect_ray_triangle(ray6, v1, v2, v3)
         
-        @test result6.hit == true  # No backface culling
-        @test result6.distance ≈ 1.0
-        @test result6.point ≈ @SVector([0.25, 0.25, 0.0])
+        test_ray_intersection(result6, true, 1.0, @SVector([0.25, 0.25, 0.0]))  # No backface culling
         
         # Test Case 7: Ray Origin on Triangle
         # Ray starting exactly on the triangle surface
@@ -149,13 +137,8 @@ This file verifies:
         # Create a minimal shape model with a single triangle
         
         # Triangle vertices
-        v1 = @SVector [0.0, 0.0, 0.0]  # Origin
-        v2 = @SVector [1.0, 0.0, 0.0]  # Point on x-axis
-        v3 = @SVector [0.0, 1.0, 0.0]  # Point on y-axis
-
-        # Build shape model
-        nodes = [v1, v2, v3]
-        faces = [@SVector([1, 2, 3])]  # Single face with vertex indices
+        nodes, faces = create_xy_triangle()  # Standard triangle on XY plane
+        v1, v2, v3 = nodes[1], nodes[2], nodes[3]
         
         # Create shape model
         shape = ShapeModel(nodes, faces)
@@ -170,9 +153,7 @@ This file verifies:
         result = intersect_ray_shape(ray, shape, bbox)
         
         # Verify results
-        @test result.hit == true
-        @test result.distance ≈ 1.0
-        @test result.point ≈ @SVector([0.25, 0.25, 0.0])
+        test_ray_intersection(result, true, 1.0, @SVector([0.25, 0.25, 0.0]))
         @test result.face_index == 1  # Hit the first (and only) face
     end
 end

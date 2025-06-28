@@ -71,9 +71,10 @@ This file tests edge cases and numerical stability:
     @testset "Extreme Scale Differences" begin
         @testset "Very large coordinates" begin
             scale = 1e10
-            v1 = SA[0.0, 0.0, 0.0] * scale
-            v2 = SA[1.0, 0.0, 0.0] * scale
-            v3 = SA[0.0, 1.0, 0.0] * scale
+            nodes, _ = create_xy_triangle()
+            v1 = nodes[1] * scale
+            v2 = nodes[2] * scale
+            v3 = nodes[3] * scale
             
             area = face_area(v1, v2, v3)
             @test area ≈ 0.5 * scale^2 rtol=1e-10
@@ -84,9 +85,10 @@ This file tests edge cases and numerical stability:
         
         @testset "Very small coordinates" begin
             scale = 1e-10
-            v1 = SA[0.0, 0.0, 0.0] * scale
-            v2 = SA[1.0, 0.0, 0.0] * scale
-            v3 = SA[0.0, 1.0, 0.0] * scale
+            nodes, _ = create_xy_triangle()
+            v1 = nodes[1] * scale
+            v2 = nodes[2] * scale
+            v3 = nodes[3] * scale
             
             area = face_area(v1, v2, v3)
             @test area ≈ 0.5 * scale^2 rtol=1e-10
@@ -115,9 +117,8 @@ This file tests edge cases and numerical stability:
     @testset "Ray Intersection Edge Cases" begin
         @testset "Ray parallel to triangle" begin
             # Triangle in xy-plane
-            v1 = SA[0.0, 0.0, 0.0]
-            v2 = SA[1.0, 0.0, 0.0]
-            v3 = SA[0.0, 1.0, 0.0]
+            nodes, _ = create_xy_triangle()
+            v1, v2, v3 = nodes[1], nodes[2], nodes[3]
             
             # Ray parallel to triangle (in xy-plane)
             ray_dir = SA[1.0, 0.0, 0.0]
@@ -129,9 +130,8 @@ This file tests edge cases and numerical stability:
         end
         
         @testset "Ray through triangle edge" begin
-            v1 = SA[0.0, 0.0, 0.0]
-            v2 = SA[1.0, 0.0, 0.0]
-            v3 = SA[0.0, 1.0, 0.0]
+            nodes, _ = create_xy_triangle()
+            v1, v2, v3 = nodes[1], nodes[2], nodes[3]
             
             # Ray through midpoint of edge v1-v2 (0.5, 0.0, 0.0)
             # The ray origin is at (0, 0, -0.5)
@@ -143,9 +143,8 @@ This file tests edge cases and numerical stability:
         end
         
         @testset "Ray through triangle vertex" begin
-            v1 = SA[0.0, 0.0, 0.0]
-            v2 = SA[1.0, 0.0, 0.0]
-            v3 = SA[0.0, 1.0, 0.0]
+            nodes, _ = create_xy_triangle()
+            v1, v2, v3 = nodes[1], nodes[2], nodes[3]
             
             # Ray through vertex v1 from below
             ray_dir = SA[0.0, 0.0, 1.0]
@@ -156,9 +155,8 @@ This file tests edge cases and numerical stability:
         end
         
         @testset "Nearly parallel ray" begin
-            v1 = SA[0.0, 0.0, 0.0]
-            v2 = SA[1.0, 0.0, 0.0]
-            v3 = SA[0.0, 1.0, 0.0]
+            nodes, _ = create_xy_triangle()
+            v1, v2, v3 = nodes[1], nodes[2], nodes[3]
             
             # Ray almost parallel to triangle
             ray_dir = SA[1.0, 0.0, 1e-10]  # Tiny z component
@@ -176,11 +174,7 @@ This file tests edge cases and numerical stability:
     @testset "Volume Calculation Edge Cases" begin
         @testset "Non-closed shape" begin
             # Single triangle (not closed)
-            nodes = [
-                SA[0.0, 0.0, 0.0],
-                SA[1.0, 0.0, 0.0],
-                SA[0.0, 1.0, 0.0]
-            ]
+            nodes, faces = create_xy_triangle()
             faces = [SA[1, 2, 3]]
             
             volume = polyhedron_volume(nodes, faces)
@@ -189,20 +183,10 @@ This file tests edge cases and numerical stability:
         
         @testset "Inside-out shape" begin
             # Tetrahedron with inverted normals
-            nodes = [
-                SA[0.0, 0.0, 0.0],
-                SA[1.0, 0.0, 0.0],
-                SA[0.5, sqrt(3)/2, 0.0],
-                SA[0.5, sqrt(3)/6, sqrt(6)/3]
-            ]
+            nodes, faces = create_regular_tetrahedron()
             
-            # Faces with reversed orientation
-            faces = [
-                SA[1, 3, 2],  # Reversed
-                SA[1, 4, 2],  # Reversed
-                SA[2, 4, 3],  # Reversed
-                SA[3, 4, 1]   # Reversed
-            ]
+            # Reverse the orientation of all faces
+            faces = [SA[f[1], f[3], f[2]] for f in faces]
             
             volume = polyhedron_volume(nodes, faces)
             # Volume should be negative for inside-out shape
