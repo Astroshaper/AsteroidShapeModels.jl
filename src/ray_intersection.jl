@@ -137,6 +137,47 @@ function intersect_ray_triangle(ray::Ray, v1::AbstractVector{<:Real}, v2::Abstra
     return NO_INTERSECTION_RAY_TRIANGLE
 end
 
+"""
+    intersect_ray_triangle(ray::Ray, shape::ShapeModel, face_id::Integer) -> RayTriangleIntersectionResult
+
+Perform ray-triangle intersection test for a specific face in a shape model.
+
+# Arguments
+- `ray`: Ray
+- `shape`: Shape model containing the triangle
+- `face_id`: Index of the face to test
+
+# Returns
+- `RayTriangleIntersectionResult` object containing the intersection test result
+
+# Notes
+This is a convenience function that extracts the vertices and calls the base `intersect_ray_triangle`.
+"""
+@inline function intersect_ray_triangle(ray::Ray, shape::ShapeModel, face_id::Integer)
+    v1, v2, v3 = get_face_vertices(shape, face_id)
+    return intersect_ray_triangle(ray, v1, v2, v3)
+end
+
+"""
+    intersect_ray_triangle(ray::Ray, nodes::AbstractVector, faces::AbstractVector, face_id::Integer) -> RayTriangleIntersectionResult
+
+Perform ray-triangle intersection test for a specific face given nodes and faces arrays.
+
+# Arguments
+- `ray`: Ray
+- `nodes`: Array of node positions
+- `faces`: Array of face definitions (each face is an array of node indices)
+- `face_id`: Index of the face to test
+
+# Returns
+- `RayTriangleIntersectionResult` object containing the intersection test result
+"""
+@inline function intersect_ray_triangle(ray::Ray, nodes::AbstractVector, faces::AbstractVector, face_id::Integer)
+    face = faces[face_id]
+    v1, v2, v3 = get_face_vertices(nodes, face)
+    return intersect_ray_triangle(ray, v1, v2, v3)
+end
+
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                    Ray-Shape Model Intersection                   ║
 # ╚═══════════════════════════════════════════════════════════════════╝
@@ -174,8 +215,7 @@ function intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox)
         c = shape.face_centers[i]
         dot(c - ray.origin, n̂) ≥ 0 && continue
         
-        v1, v2, v3 = get_face_vertices(shape, i)
-        result = intersect_ray_triangle(ray, v1, v2, v3)
+        result = intersect_ray_triangle(ray, shape, i)
         
         if result.hit && result.distance < min_distance
             min_distance   = result.distance
