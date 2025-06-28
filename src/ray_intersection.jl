@@ -53,64 +53,26 @@ function intersect_ray_bounding_box(ray::Ray, bbox::BoundingBox)
     t_min = -Inf
     t_max = Inf
     
-    # Intersection test in x-direction
-    if abs(ray.direction[1]) < 1e-8
-        if ray.origin[1] < bbox.min_point[1] || ray.origin[1] > bbox.max_point[1]
-            return false
-        end
-    else
-        t1 = (bbox.min_point[1] - ray.origin[1]) / ray.direction[1]
-        t2 = (bbox.max_point[1] - ray.origin[1]) / ray.direction[1]
-        
-        t1, t2 = minmax(t1, t2)
-        
-        t_min = max(t_min, t1)
-        t_max = min(t_max, t2)
-        
-        if t_min > t_max
-            return false
-        end
-    end
-    
-    # Intersection test in y-direction
-    if abs(ray.direction[2]) < 1e-8
-        if ray.origin[2] < bbox.min_point[2] || ray.origin[2] > bbox.max_point[2]
-            return false
-        end
-    else
-        t1 = (bbox.min_point[2] - ray.origin[2]) / ray.direction[2]
-        t2 = (bbox.max_point[2] - ray.origin[2]) / ray.direction[2]
-        
-        if t1 > t2
-            t1, t2 = t2, t1
-        end
-        
-        t_min = max(t_min, t1)
-        t_max = min(t_max, t2)
-        
-        if t_min > t_max
-            return false
-        end
-    end
-    
-    # Intersection test in z-direction
-    if abs(ray.direction[3]) < 1e-8
-        if ray.origin[3] < bbox.min_point[3] || ray.origin[3] > bbox.max_point[3]
-            return false
-        end
-    else
-        t1 = (bbox.min_point[3] - ray.origin[3]) / ray.direction[3]
-        t2 = (bbox.max_point[3] - ray.origin[3]) / ray.direction[3]
-        
-        if t1 > t2
-            t1, t2 = t2, t1
-        end
-        
-        t_min = max(t_min, t1)
-        t_max = min(t_max, t2)
-        
-        if t_min > t_max
-            return false
+    # Intersection test for each dimension (x, y, z)
+    for dim in 1:3
+        if abs(ray.direction[dim]) < 1e-8
+            # Ray is parallel to this axis
+            if ray.origin[dim] < bbox.min_point[dim] || ray.origin[dim] > bbox.max_point[dim]
+                return false
+            end
+        else
+            # Ray intersects this axis
+            t1 = (bbox.min_point[dim] - ray.origin[dim]) / ray.direction[dim]
+            t2 = (bbox.max_point[dim] - ray.origin[dim]) / ray.direction[dim]
+            
+            t1, t2 = minmax(t1, t2)
+            
+            t_min = max(t_min, t1)
+            t_max = min(t_max, t2)
+            
+            if t_min > t_max
+                return false
+            end
         end
     end
     
