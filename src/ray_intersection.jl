@@ -151,11 +151,10 @@ Perform ray-triangle intersection test for a specific face in a shape model.
 - `RayTriangleIntersectionResult` object containing the intersection test result
 
 # Notes
-This is a convenience function that extracts the vertices and calls the base `intersect_ray_triangle`.
+This is a convenience function that delegates to the more general `intersect_ray_triangle` with nodes and faces.
 """
 @inline function intersect_ray_triangle(ray::Ray, shape::ShapeModel, face_id::Integer)
-    v1, v2, v3 = get_face_vertices(shape, face_id)
-    return intersect_ray_triangle(ray, v1, v2, v3)
+    return intersect_ray_triangle(ray, shape.nodes, shape.faces, face_id)
 end
 
 """
