@@ -161,7 +161,7 @@ function build_face_visibility_graph!(shape::ShapeModel)
                     dᵢⱼ < dᵢₖ && continue
                     
                     ray = Ray(cᵢ, Rᵢⱼ)
-                    intersection = intersect_ray_triangle(ray, nodes, faces, k)
+                    intersection = intersect_ray_triangle(ray, shape, k)
                     if intersection.hit
                         blocked = true
                         break

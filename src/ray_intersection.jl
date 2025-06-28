@@ -251,7 +251,7 @@ function _intersect_ray_shape_bvh(ray::Ray, shape::ShapeModel)
     
     # Use ImplicitBVH to traverse and find candidate triangles
     # Note: traverse_rays expects arrays, so we create single-element arrays
-    origins = reshape([ray.origin[1], ray.origin[2], ray.origin[3]], 3, 1)
+    origins    = reshape([ray.origin[1], ray.origin[2], ray.origin[3]], 3, 1)
     directions = reshape([ray.direction[1], ray.direction[2], ray.direction[3]], 3, 1)
     
     traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
@@ -269,11 +269,7 @@ function _intersect_ray_shape_bvh(ray::Ray, shape::ShapeModel)
         c = shape.face_centers[i]
         dot(c - ray.origin, n̂) ≥ 0 && continue
         
-        v1 = shape.nodes[face[1]]
-        v2 = shape.nodes[face[2]]
-        v3 = shape.nodes[face[3]]
-        
-        result = intersect_ray_triangle(ray, v1, v2, v3)
+        result = intersect_ray_triangle(ray, shape, i)
         
         if result.hit && result.distance < min_distance
             min_distance   = result.distance

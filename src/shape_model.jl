@@ -133,9 +133,7 @@ function build_bvh!(shape::ShapeModel)
     bboxes = ImplicitBVH.BBox{Float64}[]
     
     for face in shape.faces
-        v1 = shape.nodes[face[1]]
-        v2 = shape.nodes[face[2]]
-        v3 = shape.nodes[face[3]]
+        v1, v2, v3 = get_face_vertices(shape.nodes, face)
         
         # Find min and max coordinates for the triangle
         min_point = SVector{3}(
