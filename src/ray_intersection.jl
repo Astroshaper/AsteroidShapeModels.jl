@@ -174,9 +174,7 @@ function intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox)
         c = shape.face_centers[i]
         dot(c - ray.origin, n̂) ≥ 0 && continue
         
-        v1 = shape.nodes[face[1]]
-        v2 = shape.nodes[face[2]]
-        v3 = shape.nodes[face[3]]
+        v1, v2, v3 = get_face_vertices(shape.nodes, face)
         
         result = intersect_ray_triangle(ray, v1, v2, v3)
         

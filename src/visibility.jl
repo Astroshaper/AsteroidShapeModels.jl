@@ -207,11 +207,7 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
     if !isnothing(shape.face_visibility_graph)
         visible_faces = get_visible_face_indices(shape.face_visibility_graph, i)
         for j in visible_faces
-            face = shape.faces[j]
-            A = shape.nodes[face[1]]
-            B = shape.nodes[face[2]]
-            C = shape.nodes[face[3]]
-
+            A, B, C = get_face_vertices(shape, j)
             intersect_ray_triangle(ray, A, B, C).hit && return false
         end
     end

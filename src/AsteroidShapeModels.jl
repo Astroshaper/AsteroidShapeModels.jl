@@ -43,7 +43,7 @@ import MeshIO
 import GeometryBasics
 
 include("face_properties.jl")
-export face_center, face_normal, face_area
+export face_center, face_normal, face_area, get_face_vertices
 
 include("types.jl")
 export Ray, BoundingBox
