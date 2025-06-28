@@ -165,7 +165,7 @@ function intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox)
     hit_face_index = 0
     hit_any        = false
     
-    for (i, face) in enumerate(shape.faces)
+    for i in eachindex(shape.faces)
         # Backface culling
         n̂ = shape.face_normals[i]
         dot(ray.direction, n̂) ≥ 0 && continue
@@ -174,8 +174,7 @@ function intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox)
         c = shape.face_centers[i]
         dot(c - ray.origin, n̂) ≥ 0 && continue
         
-        v1, v2, v3 = get_face_vertices(shape.nodes, face)
-        
+        v1, v2, v3 = get_face_vertices(shape, i)
         result = intersect_ray_triangle(ray, v1, v2, v3)
         
         if result.hit && result.distance < min_distance
