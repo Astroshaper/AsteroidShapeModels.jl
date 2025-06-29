@@ -7,6 +7,7 @@ version = "0.3.0"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
+ImplicitBVH = "932a18dc-bb55-4cd5-bdd6-1368ec9cea29"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MeshIO = "7269a6da-0436-5bbc-96c2-40638cbb6118"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
@@ -15,6 +16,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 BenchmarkTools = "1.6.0"
 FileIO = "1"
 GeometryBasics = "0.5"
+ImplicitBVH = "0.6.0"
 LinearAlgebra = "1"
 MeshIO = "0.5"
 StaticArrays = "1"
@@ -23,8 +25,9 @@ julia = "1.10"
 [extras]
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SPICE = "5bab7191-041a-5c2e-a744-024b9c3a5062"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "SPICE", "Downloads"]
+test = ["Test", "SPICE", "Downloads", "Random"]

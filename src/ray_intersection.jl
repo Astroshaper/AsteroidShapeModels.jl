@@ -196,10 +196,21 @@ Uses the Möller–Trumbore algorithm for ray-triangle mesh intersection.
 - `RayShapeIntersectionResult` object containing the intersection test result
 """
 function intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox)
-    if !intersect_ray_bounding_box(ray, bbox)
-        return NO_INTERSECTION_RAY_SHAPE
+    # Use BVH if available, otherwise fall back to bounding box check
+    if isnothing(shape.bvh)
+        if !intersect_ray_bounding_box(ray, bbox)
+            return NO_INTERSECTION_RAY_SHAPE
+        end
+        # Linear search through all faces
+        return _intersect_ray_shape_linear(ray, shape)
+    else
+        # BVH-accelerated intersection
+        return _intersect_ray_shape_bvh(ray, shape)
     end
-    
+end
+
+# Linear search implementation (original algorithm)
+function _intersect_ray_shape_linear(ray::Ray, shape::ShapeModel)
     min_distance   = Inf
     closest_point  = SVector{3, Float64}(0.0, 0.0, 0.0)
     hit_face_index = 0
@@ -213,6 +224,41 @@ function intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox)
         # Visibility check from observer
         c = shape.face_centers[i]
         dot(c - ray.origin, n̂) ≥ 0 && continue
+        
+        result = intersect_ray_triangle(ray, shape, i)
+        
+        if result.hit && result.distance < min_distance
+            min_distance   = result.distance
+            closest_point  = result.point
+            hit_face_index = i
+            hit_any        = true
+        end
+    end
+    
+    if hit_any
+        return RayShapeIntersectionResult(true, min_distance, closest_point, hit_face_index)
+    else
+        return NO_INTERSECTION_RAY_SHAPE
+    end
+end
+
+# BVH-accelerated implementation
+function _intersect_ray_shape_bvh(ray::Ray, shape::ShapeModel)
+    min_distance   = Inf
+    closest_point  = SVector{3, Float64}(0.0, 0.0, 0.0)
+    hit_face_index = 0
+    hit_any        = false
+    
+    # Use ImplicitBVH to traverse and find candidate triangles
+    # Note: traverse_rays expects arrays, so we create single-element arrays
+    origins    = reshape([ray.origin[1], ray.origin[2], ray.origin[3]], 3, 1)
+    directions = reshape([ray.direction[1], ray.direction[2], ray.direction[3]], 3, 1)
+    
+    traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
+    
+    # Extract contacts from traversal
+    for contact in traversal.contacts
+        i = Int(contact[1])  # The first element is the leaf/face index
         
         result = intersect_ray_triangle(ray, shape, i)
         

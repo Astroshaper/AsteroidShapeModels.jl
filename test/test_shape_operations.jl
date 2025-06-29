@@ -173,12 +173,7 @@ This file tests fundamental shape operations and calculations:
                 SA[3, 1, 4]
             ]
             
-            face_centers = [face_center(nodes[face]) for face in faces]
-            face_normals = [face_normal(nodes[face]) for face in faces]
-            face_areas = [face_area(nodes[face]) for face in faces]
-            face_visibility_graph = nothing
-            
-            shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, face_visibility_graph)
+            shape = ShapeModel(nodes, faces)
             
             r_min = minimum_radius(shape)
             @test r_min ≈ sqrt(3) atol=1e-10
