@@ -25,6 +25,10 @@ For detailed documentation, please visit:
 - **Visibility Analysis**: Calculate visibility and view factors between faces
 - **Shape Characteristics**: Calculate volume, equivalent radius, maximum and minimum radii
 
+## Requirements
+
+- Julia 1.10 or later
+
 ## Installation
 
 The package is registered in the [General Julia registry](https://github.com/JuliaRegistries/General) and can be installed with:
