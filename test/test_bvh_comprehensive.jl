@@ -97,11 +97,11 @@ All tests include correctness verification and performance benchmarks.
         test_ray = rays[1]
         
         time_no_bvh = @belapsed intersect_ray_shape($test_ray, $shape_no_bvh, $bbox)
-        println("  Single ray - Without BVH: $(round(time_no_bvh * 1e6, digits=2)) μs")
+        println("  Single ray - Without BVH : $(round(time_no_bvh * 1e6, digits=2)) μs")
         
         time_with_bvh = @belapsed intersect_ray_shape($test_ray, $shape_with_bvh, $bbox)
-        println("  Single ray - With BVH: $(round(time_with_bvh * 1e6, digits=2)) μs")
-        println("  Single ray - Speedup: $(round(time_no_bvh / time_with_bvh, digits=2))x")
+        println("  Single ray - With BVH    : $(round(time_with_bvh * 1e6, digits=2)) μs")
+        println("  Single ray - Speedup     : $(round(time_no_bvh / time_with_bvh, digits=2))x")
         
         # Batch rays
         time_batch_no_bvh = @belapsed for ray in $rays
@@ -122,8 +122,8 @@ All tests include correctness verification and performance benchmarks.
         hits_with_bvh = sum(ray -> intersect_ray_shape(ray, shape_with_bvh, bbox).hit, rays)
         
         println("\n  Hit rate:")
-        println("    Without BVH: $hits_no_bvh / $n_test_rays")
-        println("    With BVH: $hits_with_bvh / $n_test_rays")
+        println("    Without BVH : $hits_no_bvh / $n_test_rays")
+        println("    With BVH    : $hits_with_bvh / $n_test_rays")
         
         @test hits_no_bvh == hits_with_bvh
     end
@@ -140,20 +140,21 @@ All tests include correctness verification and performance benchmarks.
         # Define sun position
         r☉ = SA[1000.0, 500.0, 300.0]
         
-        # Create shape without any acceleration structure for baseline
-        shape_no_accel = ShapeModel(shape_no_bvh.nodes, shape_no_bvh.faces)
+        # Create shape with face visibility graph for baseline
+        shape_with_vis = ShapeModel(shape_no_bvh.nodes, shape_no_bvh.faces)
+        build_face_visibility_graph!(shape_with_vis)
         
         # 2.1 Test all faces
         println("\n2.1 Testing ALL $n_faces faces:")
         
-        results_no_accel = Bool[]
+        results_with_vis = Bool[]
         results_with_bvh = Bool[]
         
-        print("  Computing baseline (no acceleration)...")
-        time_no_accel = @elapsed for i in 1:n_faces
-            push!(results_no_accel, isilluminated(shape_no_accel, r☉, i))
+        print("  Computing baseline (with visibility graph)...")
+        time_with_vis = @elapsed for i in 1:n_faces
+            push!(results_with_vis, isilluminated(shape_with_vis, r☉, i))
         end
-        println(" done ($(round(time_no_accel, digits=3))s)")
+        println(" done ($(round(time_with_vis, digits=3))s)")
         
         print("  Computing with BVH...")
         time_bvh = @elapsed for i in 1:n_faces
@@ -161,13 +162,13 @@ All tests include correctness verification and performance benchmarks.
         end
         println(" done ($(round(time_bvh, digits=3))s)")
         
-        count_no_accel = sum(results_no_accel)
+        count_with_vis = sum(results_with_vis)
         count_bvh = sum(results_with_bvh)
         
         println("\n  Results:")
-        println("    No acceleration: $count_no_accel / $n_faces illuminated")
-        println("    With BVH: $count_bvh / $n_faces illuminated")
-        println("    Difference: $(abs(count_no_accel - count_bvh)) faces")
+        println("    With visibility graph : $count_with_vis / $n_faces illuminated")
+        println("    With BVH              : $count_bvh / $n_faces illuminated")
+        println("    Difference            : $(abs(count_with_vis - count_bvh)) faces")
         
         # 2.2 Performance comparison
         println("\n2.2 Performance comparison:")
@@ -176,11 +177,11 @@ All tests include correctness verification and performance benchmarks.
         sample_faces = collect(1:min(100, n_faces))
         
         # Use setup parameter to avoid scope issues with @belapsed
-        time_per_face_no_accel = @belapsed begin
+        time_per_face_with_vis = @belapsed begin
             for i in sample_faces
-                isilluminated(shape_no_accel, r☉, i)
+                isilluminated(shape_with_vis, r☉, i)
             end
-        end setup=(sample_faces=$sample_faces; shape_no_accel=$shape_no_accel; r☉=$r☉) / length(sample_faces)
+        end setup=(sample_faces=$sample_faces; shape_with_vis=$shape_with_vis; r☉=$r☉) / length(sample_faces)
         
         time_per_face_bvh = @belapsed begin
             for i in sample_faces
@@ -189,8 +190,8 @@ All tests include correctness verification and performance benchmarks.
         end setup=(sample_faces=$sample_faces; shape_with_bvh=$shape_with_bvh; r☉=$r☉) / length(sample_faces)
         
         println("  Average time per face:")
-        println("    No acceleration: $(round(time_per_face_no_accel * 1e6, digits=2)) μs")
-        println("    With BVH: $(round(time_per_face_bvh * 1e6, digits=2)) μs")
+        println("    With visibility graph : $(round(time_per_face_with_vis * 1e6, digits=2)) μs")
+        println("    With BVH             : $(round(time_per_face_bvh * 1e6, digits=2)) μs")
         
         # Note: BVH may be slower for isilluminated because it checks all obstructions
         # while no-accel version returns immediately
