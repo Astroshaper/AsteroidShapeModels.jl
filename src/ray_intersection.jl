@@ -259,15 +259,6 @@ function _intersect_ray_shape_bvh(ray::Ray, shape::ShapeModel)
     # Extract contacts from traversal
     for contact in traversal.contacts
         i = Int(contact[1])  # The first element is the leaf/face index
-        face = shape.faces[i]
-        
-        # Backface culling
-        n̂ = shape.face_normals[i]
-        dot(ray.direction, n̂) ≥ 0 && continue
-
-        # Visibility check from observer
-        c = shape.face_centers[i]
-        dot(c - ray.origin, n̂) ≥ 0 && continue
         
         result = intersect_ray_triangle(ray, shape, i)
         

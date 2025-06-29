@@ -245,9 +245,7 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
             j == i && continue   # Skip self-intersection
             
             # Perform actual intersection test
-            if intersect_ray_triangle(ray, shape, j).hit
-                return false  # Face is in shadow
-            end
+            intersect_ray_triangle(ray, shape, j).hit && return false
         end
         return true  # No obstruction found
     end
