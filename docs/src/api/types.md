@@ -19,8 +19,14 @@ RayTriangleIntersectionResult
 RayShapeIntersectionResult
 ```
 
-## Visibility Types
+## Face-Face Visibility Types
 
 ```@docs
 FaceVisibilityGraph
+```
+
+## Functions to accelerate ray tracing
+
+```@docs
+build_bvh!
 ```
