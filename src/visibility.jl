@@ -174,13 +174,23 @@ function build_face_visibility_graph!(shape::ShapeModel)
 
             # Build list of candidate faces that are potentially visible from face i
             candidates = Int64[]
+            distances = Float64[]
             for j in eachindex(faces)
                 i == j && continue
                 cⱼ = face_centers[j]
                 n̂ⱼ = face_normals[j]
 
                 Rᵢⱼ = cⱼ - cᵢ
-                Rᵢⱼ ⋅ n̂ᵢ > 0 && Rᵢⱼ ⋅ n̂ⱼ < 0 && push!(candidates, j)
+                if Rᵢⱼ ⋅ n̂ᵢ > 0 && Rᵢⱼ ⋅ n̂ⱼ < 0
+                    push!(candidates, j)
+                    push!(distances, norm(Rᵢⱼ))
+                end
+            end
+            
+            # Sort candidates by distance
+            if !isempty(candidates)
+                perm = sortperm(distances)
+                candidates = candidates[perm]
             end
             
             # Check visibility for each candidate face
@@ -196,13 +206,13 @@ function build_face_visibility_graph!(shape::ShapeModel)
                 # Check if any face from the candidate list blocks the view from i to j
                 blocked = false
                 for k in candidates
-                    j == k && continue
+                    k == j && continue
                     cₖ = face_centers[k]
 
                     Rᵢₖ = cₖ - cᵢ
                     dᵢₖ = norm(Rᵢₖ)
                     
-                    dᵢⱼ < dᵢₖ && continue  # Skip if face k is farther than face j
+                    dᵢₖ > dᵢⱼ  && continue  # Skip if face k is farther than face j
                     
                     ray = Ray(cᵢ, Rᵢⱼ)
                     intersection = intersect_ray_triangle(ray, shape, k)
