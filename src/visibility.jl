@@ -173,8 +173,8 @@ function build_face_visibility_graph!(shape::ShapeModel)
             aᵢ = face_areas[i]
 
             # Build list of candidate faces that are potentially visible from face i
-            candidates = Int64[]
-            distances = Float64[]
+            candidates = Int64[]   # Indices of candidate faces
+            distances = Float64[]  # Distances to candidate faces from face i
             for j in eachindex(faces)
                 i == j && continue
                 cⱼ = face_centers[j]
@@ -191,10 +191,11 @@ function build_face_visibility_graph!(shape::ShapeModel)
             if !isempty(candidates)
                 perm = sortperm(distances)
                 candidates = candidates[perm]
+                distances = distances[perm]
             end
             
             # Check visibility for each candidate face
-            for j in candidates
+            for (j, dᵢⱼ) in zip(candidates, distances)
                 # Skip if already processed
                 j in (vf.id for vf in temp_visible[i]) && continue
 
@@ -202,20 +203,12 @@ function build_face_visibility_graph!(shape::ShapeModel)
                 n̂ⱼ = face_normals[j]
                 aⱼ = face_areas[j]
 
-                Rᵢⱼ = cⱼ - cᵢ       # Vector from face i to face j
-                dᵢⱼ = norm(Rᵢⱼ)     # Distance between face i and face j
-
-                ray = Ray(cᵢ, Rᵢⱼ)  # Ray from face i to face j
+                ray = Ray(cᵢ, cⱼ - cᵢ)  # Ray from face i to face j
 
                 # Check if any face from the candidate list blocks the view from i to j
                 blocked = false
-                for k in candidates
+                for (k, dᵢₖ) in zip(candidates, distances)
                     k == j && continue
-                    cₖ = face_centers[k]
-
-                    Rᵢₖ = cₖ - cᵢ    # Vector from face i to face k
-                    dᵢₖ = norm(Rᵢₖ)  # Distance between face i and face k
-                    
                     dᵢₖ > dᵢⱼ  && continue  # Skip if face k is farther than face j
                     
                     intersection = intersect_ray_triangle(ray, shape, k)
