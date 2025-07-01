@@ -195,25 +195,26 @@ function build_face_visibility_graph!(shape::ShapeModel)
             
             # Check visibility for each candidate face
             for j in candidates
+                # Skip if already processed
                 j in (vf.id for vf in temp_visible[i]) && continue
+
                 cⱼ = face_centers[j]
                 n̂ⱼ = face_normals[j]
                 aⱼ = face_areas[j]
 
-                Rᵢⱼ = cⱼ - cᵢ
-                dᵢⱼ = norm(Rᵢⱼ)
+                Rᵢⱼ = cⱼ - cᵢ       # Vector from face i to face j
+                dᵢⱼ = norm(Rᵢⱼ)     # Distance between face i and face j
 
-                # Ray from face i to face j
-                ray = Ray(cᵢ, Rᵢⱼ)
-                
+                ray = Ray(cᵢ, Rᵢⱼ)  # Ray from face i to face j
+
                 # Check if any face from the candidate list blocks the view from i to j
                 blocked = false
                 for k in candidates
                     k == j && continue
                     cₖ = face_centers[k]
 
-                    Rᵢₖ = cₖ - cᵢ
-                    dᵢₖ = norm(Rᵢₖ)
+                    Rᵢₖ = cₖ - cᵢ    # Vector from face i to face k
+                    dᵢₖ = norm(Rᵢₖ)  # Distance between face i and face k
                     
                     dᵢₖ > dᵢⱼ  && continue  # Skip if face k is farther than face j
                     
