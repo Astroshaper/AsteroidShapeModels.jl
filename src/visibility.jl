@@ -202,6 +202,9 @@ function build_face_visibility_graph!(shape::ShapeModel)
 
                 Rᵢⱼ = cⱼ - cᵢ
                 dᵢⱼ = norm(Rᵢⱼ)
+
+                # Ray from face i to face j
+                ray = Ray(cᵢ, Rᵢⱼ)
                 
                 # Check if any face from the candidate list blocks the view from i to j
                 blocked = false
@@ -214,7 +217,6 @@ function build_face_visibility_graph!(shape::ShapeModel)
                     
                     dᵢₖ > dᵢⱼ  && continue  # Skip if face k is farther than face j
                     
-                    ray = Ray(cᵢ, Rᵢⱼ)
                     intersection = intersect_ray_triangle(ray, shape, k)
                     if intersection.hit
                         blocked = true
