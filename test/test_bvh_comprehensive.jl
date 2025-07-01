@@ -229,21 +229,21 @@ All tests include correctness verification and performance benchmarks.
         time_no_bvh = @elapsed build_face_visibility_graph!(shape_subset_no_bvh)
         nnz_no_bvh = shape_subset_no_bvh.face_visibility_graph.nnz
         println(" done")
-        println("    Time: $(round(time_no_bvh, digits=3)) seconds")
-        println("    Visible pairs: $nnz_no_bvh")
+        println("    Time          : $(round(time_no_bvh, digits=3)) seconds")
+        println("    Visible pairs : $nnz_no_bvh")
         
         print("\n  Building visibility graph with BVH...")
         GC.gc()
         time_with_bvh = @elapsed build_face_visibility_graph!(shape_subset_with_bvh)
         nnz_with_bvh = shape_subset_with_bvh.face_visibility_graph.nnz
         println(" done")
-        println("    Time: $(round(time_with_bvh, digits=3)) seconds")
-        println("    Visible pairs: $nnz_with_bvh")
+        println("    Time          : $(round(time_with_bvh, digits=3)) seconds")
+        println("    Visible pairs : $nnz_with_bvh")
         
         # Compare results
         println("\n3.2 Comparing results:")
-        println("  Visible pairs difference: $(abs(nnz_no_bvh - nnz_with_bvh))")
-        println("  Performance: $(round(time_no_bvh / time_with_bvh, digits=2))x")
+        println("  Visible pairs difference : $(abs(nnz_no_bvh - nnz_with_bvh))")
+        println("  Performance              : $(round(time_no_bvh / time_with_bvh, digits=2))x")
         
         # Note: Results may differ due to numerical precision or algorithm differences
         # The important thing is that both methods produce reasonable results

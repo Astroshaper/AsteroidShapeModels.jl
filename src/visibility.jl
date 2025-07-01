@@ -99,36 +99,30 @@ function build_face_visibility_graph!(shape::ShapeModel)
     # Accumulate temporary visible face data
     temp_visible = [Vector{VisibleFace}() for _ in faces]
     
-    for i in eachindex(faces)
-        cᵢ = face_centers[i]
-        n̂ᵢ = face_normals[i]
-        aᵢ = face_areas[i]
-
-        candidates = Int64[]
-        for j in eachindex(faces)
-            i == j && continue
-            cⱼ = face_centers[j]
-            n̂ⱼ = face_normals[j]
-
-            Rᵢⱼ = cⱼ - cᵢ
-            Rᵢⱼ ⋅ n̂ᵢ > 0 && Rᵢⱼ ⋅ n̂ⱼ < 0 && push!(candidates, j)
-        end
-        
-        for j in candidates
-            j in (vf.id for vf in temp_visible[i]) && continue
-            cⱼ = face_centers[j]
-            n̂ⱼ = face_normals[j]
-            aⱼ = face_areas[j]
-
-            Rᵢⱼ = cⱼ - cᵢ
-            dᵢⱼ = norm(Rᵢⱼ)
-            d̂ᵢⱼ = Rᵢⱼ / dᵢⱼ  # Normalized direction
+    if !isnothing(shape.bvh)
+        # BVH-accelerated visibility computation
+        for i in eachindex(faces)
+            cᵢ = face_centers[i]
+            n̂ᵢ = face_normals[i]
+            aᵢ = face_areas[i]
             
-            # Use BVH to check for obstructions
-            blocked = false
-            
-            if !isnothing(shape.bvh)
-                # Create ray from face i to face j
+            for j in eachindex(faces)
+                i == j && continue
+                j in (vf.id for vf in temp_visible[i]) && continue  # Skip if already processed
+                
+                cⱼ = face_centers[j]
+                n̂ⱼ = face_normals[j]
+                aⱼ = face_areas[j]
+                
+                # Check if faces are potentially visible to each other
+                Rᵢⱼ = cⱼ - cᵢ
+                Rᵢⱼ ⋅ n̂ᵢ <= 0 && continue  # Face i not facing towards face j
+                Rᵢⱼ ⋅ n̂ⱼ >= 0 && continue  # Face j not facing towards face i
+                
+                dᵢⱼ = norm(Rᵢⱼ)
+                d̂ᵢⱼ = Rᵢⱼ / dᵢⱼ  # Normalized direction
+                
+                # Use BVH to check for obstructions
                 origins    = reshape([cᵢ[1], cᵢ[2], cᵢ[3]], 3, 1)
                 directions = reshape([d̂ᵢⱼ[1], d̂ᵢⱼ[2], d̂ᵢⱼ[3]], 3, 1)
                 
@@ -136,6 +130,7 @@ function build_face_visibility_graph!(shape::ShapeModel)
                 traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
                 
                 # Check if any face blocks the path
+                blocked = false
                 for contact in traversal.contacts
                     k = Int(contact[1])  # Face index
                     k == i && continue   # Skip source face
@@ -149,8 +144,41 @@ function build_face_visibility_graph!(shape::ShapeModel)
                         break
                     end
                 end
-            else
-                # Fallback to linear search if BVH not available
+                
+                blocked && continue
+                push!(temp_visible[i], VisibleFace(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))
+                push!(temp_visible[j], VisibleFace(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))
+            end
+        end
+    else
+        # Traditional algorithm with candidate filtering
+        for i in eachindex(faces)
+            cᵢ = face_centers[i]
+            n̂ᵢ = face_normals[i]
+            aᵢ = face_areas[i]
+
+            candidates = Int64[]
+            for j in eachindex(faces)
+                i == j && continue
+                cⱼ = face_centers[j]
+                n̂ⱼ = face_normals[j]
+
+                Rᵢⱼ = cⱼ - cᵢ
+                Rᵢⱼ ⋅ n̂ᵢ > 0 && Rᵢⱼ ⋅ n̂ⱼ < 0 && push!(candidates, j)
+            end
+            
+            for j in candidates
+                j in (vf.id for vf in temp_visible[i]) && continue
+                cⱼ = face_centers[j]
+                n̂ⱼ = face_normals[j]
+                aⱼ = face_areas[j]
+
+                Rᵢⱼ = cⱼ - cᵢ
+                dᵢⱼ = norm(Rᵢⱼ)
+                d̂ᵢⱼ = Rᵢⱼ / dᵢⱼ  # Normalized direction
+                
+                # Linear search for obstructions
+                blocked = false
                 for k in candidates
                     j == k && continue
                     cₖ = face_centers[k]
@@ -167,11 +195,11 @@ function build_face_visibility_graph!(shape::ShapeModel)
                         break
                     end
                 end
+                
+                blocked && continue
+                push!(temp_visible[i], VisibleFace(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))
+                push!(temp_visible[j], VisibleFace(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))
             end
-
-            blocked && continue
-            push!(temp_visible[i], VisibleFace(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))
-            push!(temp_visible[j], VisibleFace(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))
         end
     end
     
