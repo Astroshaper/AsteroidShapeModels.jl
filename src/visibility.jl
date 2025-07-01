@@ -101,6 +101,10 @@ function build_face_visibility_graph!(shape::ShapeModel)
     
     if !isnothing(shape.bvh)
         # BVH-accelerated visibility computation
+        # Double nested loop structure (BVH replaces the k-loop):
+        # - i: source face (viewpoint)
+        # - j: target face (potentially visible from i)
+        # - BVH traversal finds potential occluders efficiently
         for i in eachindex(faces)
             cᵢ = face_centers[i]
             n̂ᵢ = face_normals[i]
@@ -152,11 +156,16 @@ function build_face_visibility_graph!(shape::ShapeModel)
         end
     else
         # Traditional algorithm with candidate filtering
+        # Loop structure:
+        # - i: source face (viewpoint)
+        # - j: candidate faces that might be visible from i (pre-filtered)
+        # - k: potential occluding faces (from the same candidate list)
         for i in eachindex(faces)
             cᵢ = face_centers[i]
             n̂ᵢ = face_normals[i]
             aᵢ = face_areas[i]
 
+            # Build list of candidate faces that are potentially visible from face i
             candidates = Int64[]
             for j in eachindex(faces)
                 i == j && continue
@@ -167,6 +176,7 @@ function build_face_visibility_graph!(shape::ShapeModel)
                 Rᵢⱼ ⋅ n̂ᵢ > 0 && Rᵢⱼ ⋅ n̂ⱼ < 0 && push!(candidates, j)
             end
             
+            # Check visibility for each candidate face
             for j in candidates
                 j in (vf.id for vf in temp_visible[i]) && continue
                 cⱼ = face_centers[j]
@@ -175,9 +185,8 @@ function build_face_visibility_graph!(shape::ShapeModel)
 
                 Rᵢⱼ = cⱼ - cᵢ
                 dᵢⱼ = norm(Rᵢⱼ)
-                d̂ᵢⱼ = Rᵢⱼ / dᵢⱼ  # Normalized direction
                 
-                # Linear search for obstructions
+                # Check if any face from the candidate list blocks the view from i to j
                 blocked = false
                 for k in candidates
                     j == k && continue
@@ -186,7 +195,7 @@ function build_face_visibility_graph!(shape::ShapeModel)
                     Rᵢₖ = cₖ - cᵢ
                     dᵢₖ = norm(Rᵢₖ)
                     
-                    dᵢⱼ < dᵢₖ && continue
+                    dᵢⱼ < dᵢₖ && continue  # Skip if face k is farther than face j
                     
                     ray = Ray(cᵢ, Rᵢⱼ)
                     intersection = intersect_ray_triangle(ray, shape, k)
