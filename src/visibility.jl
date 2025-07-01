@@ -120,8 +120,8 @@ function build_face_visibility_graph!(shape::ShapeModel)
                 
                 # Check if faces are potentially visible to each other
                 Rᵢⱼ = cⱼ - cᵢ
-                Rᵢⱼ ⋅ n̂ᵢ <= 0 && continue  # Face i not facing towards face j
-                Rᵢⱼ ⋅ n̂ⱼ >= 0 && continue  # Face j not facing towards face i
+                Rᵢⱼ ⋅ n̂ᵢ ≤ 0 && continue  # Face i not facing towards face j
+                Rᵢⱼ ⋅ n̂ⱼ ≥ 0 && continue  # Face j not facing towards face i
                 
                 dᵢⱼ = norm(Rᵢⱼ)
                 d̂ᵢⱼ = Rᵢⱼ / dᵢⱼ  # Normalized direction
@@ -132,6 +132,9 @@ function build_face_visibility_graph!(shape::ShapeModel)
                 
                 # Traverse BVH to find all potential intersections
                 traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
+
+                # Ray from face i to face j
+                ray = Ray(cᵢ, d̂ᵢⱼ)
                 
                 # Check if any face blocks the path
                 blocked = false
@@ -141,7 +144,6 @@ function build_face_visibility_graph!(shape::ShapeModel)
                     k == j && continue   # Skip target face
                     
                     # Perform actual intersection test
-                    ray = Ray(cᵢ, d̂ᵢⱼ)
                     result = intersect_ray_triangle(ray, shape, k)
                     if result.hit && result.distance < dᵢⱼ
                         blocked = true
