@@ -105,6 +105,11 @@ function build_face_visibility_graph!(shape::ShapeModel)
         # - i: source face (viewpoint)
         # - j: target face (potentially visible from i)
         # - BVH traversal finds potential occluders efficiently
+        
+        # Pre-allocate arrays for BVH traversal
+        origins = zeros(3, 1)
+        directions = zeros(3, 1)
+        
         for i in eachindex(faces)
             cᵢ = face_centers[i]
             n̂ᵢ = face_normals[i]
@@ -127,8 +132,8 @@ function build_face_visibility_graph!(shape::ShapeModel)
                 d̂ᵢⱼ = Rᵢⱼ / dᵢⱼ  # Normalized direction
                 
                 # Use BVH to check for obstructions
-                origins    = reshape([cᵢ[1], cᵢ[2], cᵢ[3]], 3, 1)
-                directions = reshape([d̂ᵢⱼ[1], d̂ᵢⱼ[2], d̂ᵢⱼ[3]], 3, 1)
+                origins[:, 1] .= cᵢ
+                directions[:, 1] .= d̂ᵢⱼ
                 
                 # Traverse BVH to find all potential intersections
                 traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
