@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-07-02
+
+### Added
+- **BVH (Bounding Volume Hierarchy) acceleration** (#22)
+  - Optional BVH support via `with_bvh` parameter in `load_shape_obj`
+  - New `build_bvh!` function to add BVH to existing shapes
+  - BVH acceleration in three core functions:
+    - `intersect_ray_shape`: ~50x speedup for ray-shape intersections
+    - `isilluminated`: BVH-based shadow testing
+    - `build_face_visibility_graph!`: Foundation for future optimizations
+  - Uses `ImplicitBVH.jl as an optional dependency
+
+### Improved
+- **Non-BVH visibility calculations** (#22)
+  - Distance-based candidate sorting: ~2x speedup
+  - Pre-computed distance reuse via `zip()` iteration
+  - Optimized Ray object creation (moved outside loops)
+  - Clearer code structure with detailed comments
+
+### Documentation
+- Updated README with BVH feature highlights
+- Added BVH usage examples in Quick Start sections
+- Updated feature descriptions in documentation
+
+### Notes
+- Backward compatible - no breaking changes
+- BVH support is opt-in and does not affect existing code
+- Current BVH visibility implementation has room for future optimization
+
 ## [0.3.0] - 2025-06-20
 
 ### Breaking Changes
