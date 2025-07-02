@@ -90,7 +90,7 @@ compared to the industry-standard SPICE toolkit.
     # Load the Didymos shape model and prepare for ray intersection
 
     obj_path = joinpath("shape", "g_01165mm_spc_obj_didy_0000n00000_v003.obj")
-    shape = load_shape_obj(obj_path; scale=1000.0)  # Convert km to m
+    shape = load_shape_obj(obj_path; scale=1000.0, with_bvh=true)  # Convert km to m
     println(shape)
 
     # ================================================================
