@@ -29,7 +29,7 @@ All tests include correctness verification and performance benchmarks.
     
     # Load shape models
     println("\nLoading shape models...")
-    shape_no_bvh = load_shape_obj(shape_filepath; with_bvh=false, with_face_visibility=false)
+    shape_no_bvh   = load_shape_obj(shape_filepath; with_bvh=false, with_face_visibility=false)
     shape_with_bvh = load_shape_obj(shape_filepath; with_bvh=true, with_face_visibility=false)
     
     n_nodes = length(shape_no_bvh.nodes)
@@ -41,7 +41,7 @@ All tests include correctness verification and performance benchmarks.
     println("  - BVH built: $(!isnothing(shape_with_bvh.bvh))")
     
     # ═══════════════════════════════════════════════════════════════════
-    # Part 1: Ray-Shape Intersection with BVH
+    #   Part 1: Ray-Shape Intersection with BVH
     # ═══════════════════════════════════════════════════════════════════
     
     @testset "Ray-Shape Intersection BVH" begin
@@ -50,7 +50,6 @@ All tests include correctness verification and performance benchmarks.
         println("="^70)
         
         # Generate test rays
-        bbox = compute_bounding_box(shape_no_bvh)
         Random.seed!(42)
         n_test_rays = 50
         rays = []
@@ -69,8 +68,8 @@ All tests include correctness verification and performance benchmarks.
         
         mismatches = 0
         for (i, ray) in enumerate(rays)
-            result_no_bvh = intersect_ray_shape(ray, shape_no_bvh, bbox)
-            result_with_bvh = intersect_ray_shape(ray, shape_with_bvh, bbox)
+            result_no_bvh   = intersect_ray_shape(ray, shape_no_bvh)
+            result_with_bvh = intersect_ray_shape(ray, shape_with_bvh)
             
             if result_no_bvh.hit != result_with_bvh.hit
                 mismatches += 1
@@ -96,21 +95,21 @@ All tests include correctness verification and performance benchmarks.
         
         test_ray = rays[1]
         
-        time_no_bvh = @belapsed intersect_ray_shape($test_ray, $shape_no_bvh, $bbox)
+        time_no_bvh = @belapsed intersect_ray_shape($test_ray, $shape_no_bvh)
         println("  Single ray - Without BVH : $(round(time_no_bvh * 1e6, digits=2)) μs")
         
-        time_with_bvh = @belapsed intersect_ray_shape($test_ray, $shape_with_bvh, $bbox)
+        time_with_bvh = @belapsed intersect_ray_shape($test_ray, $shape_with_bvh)
         println("  Single ray - With BVH    : $(round(time_with_bvh * 1e6, digits=2)) μs")
         println("  Single ray - Speedup     : $(round(time_no_bvh / time_with_bvh, digits=2))x")
         
         # Batch rays
         time_batch_no_bvh = @belapsed for ray in $rays
-            intersect_ray_shape(ray, $shape_no_bvh, $bbox)
+            intersect_ray_shape(ray, $shape_no_bvh)
         end
         println("\n  Batch ($n_test_rays rays) - Without BVH: $(round(time_batch_no_bvh * 1000, digits=2)) ms")
         
         time_batch_with_bvh = @belapsed for ray in $rays
-            intersect_ray_shape(ray, $shape_with_bvh, $bbox)
+            intersect_ray_shape(ray, $shape_with_bvh)
         end
         println("  Batch ($n_test_rays rays) - With BVH: $(round(time_batch_with_bvh * 1000, digits=2)) ms")
         println("  Batch - Speedup: $(round(time_batch_no_bvh / time_batch_with_bvh, digits=2))x")
@@ -118,8 +117,8 @@ All tests include correctness verification and performance benchmarks.
         @test time_batch_with_bvh < time_batch_no_bvh
         
         # Hit rate
-        hits_no_bvh = sum(ray -> intersect_ray_shape(ray, shape_no_bvh, bbox).hit, rays)
-        hits_with_bvh = sum(ray -> intersect_ray_shape(ray, shape_with_bvh, bbox).hit, rays)
+        hits_no_bvh   = sum(ray -> intersect_ray_shape(ray, shape_no_bvh).hit, rays)
+        hits_with_bvh = sum(ray -> intersect_ray_shape(ray, shape_with_bvh).hit, rays)
         
         println("\n  Hit rate:")
         println("    Without BVH : $hits_no_bvh / $n_test_rays")
@@ -129,7 +128,7 @@ All tests include correctness verification and performance benchmarks.
     end
     
     # ═══════════════════════════════════════════════════════════════════
-    # Part 2: isilluminated Function with BVH
+    #   Part 2: isilluminated Function with BVH
     # ═══════════════════════════════════════════════════════════════════
     
     @testset "isilluminated BVH" begin
@@ -198,7 +197,7 @@ All tests include correctness verification and performance benchmarks.
     end
     
     # ═══════════════════════════════════════════════════════════════════
-    # Part 3: build_face_visibility_graph! with BVH
+    #   Part 3: build_face_visibility_graph! with BVH
     # ═══════════════════════════════════════════════════════════════════
     
     @testset "build_face_visibility_graph! BVH" begin
