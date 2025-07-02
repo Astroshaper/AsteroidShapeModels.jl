@@ -14,8 +14,8 @@ AsteroidShapeModels
 
 - Loading shape models from OBJ files
 - Computing geometric properties (area, volume, normals)
-- Ray-shape intersection testing
-- Face-to-face visibility analysis
+- Ray-shape intersection testing with optional BVH acceleration
+- Face-to-face visibility analysis with BVH support
 - Surface roughness modeling
 - Illumination calculations
 
@@ -33,6 +33,12 @@ using AsteroidShapeModels
 
 # Load an asteroid shape model with face-face visibility
 shape = load_shape_obj("path/to/shape.obj", scale=1000, with_face_visibility=true)  # Convert km to m
+
+# NEW: Load with BVH acceleration for ray tracing
+shape_bvh = load_shape_obj("path/to/shape.obj", scale=1000, with_bvh=true)
+
+# Or build BVH for an existing shape
+build_bvh!(shape)
 
 # Access to face properties
 shape.face_centers  # Center position of each face
@@ -53,14 +59,14 @@ shape.face_areas    # Area of of each face
 - Bounding box computation
 
 ### Ray Intersection
-- Fast ray-triangle intersection
-- Ray-shape intersection
-- Bounding box acceleration
+- Fast ray-triangle intersection using Möller–Trumbore algorithm
+- Ray-shape intersection with optional BVH acceleration (~50x speedup)
+- Bounding box culling for efficiency
 
 ### Visibility Analysis
-- Face-to-face visibility computation
-- View factor calculations
-- Illumination determination
+- Face-to-face visibility computation with BVH support
+- View factor calculations for thermal modeling
+- Illumination determination with BVH-based shadow testing (The current BVH option is slower than the non-BVH version.)
 
 ### Surface Roughness
 - Crater modeling

@@ -21,8 +21,10 @@ For detailed documentation, please visit:
 - **Shape Model Loading**: Load 3D models in OBJ file format
 - **Face Geometric Properties**: Calculate face centers, normal vectors, and areas
 - **Ray Intersection Detection**: High-precision ray-triangle intersection using the Möller–Trumbore algorithm
+  - **NEW**: Optional BVH acceleration for ~50x speedup
 - **Bounding Boxes**: Boundary boxes for efficient collision detection
 - **Visibility Analysis**: Calculate visibility and view factors between faces
+  - **NEW**: BVH-accelerated visibility calculations (The current BVH implementation is slower than traditional implementations and has room for optimization.)
 - **Shape Characteristics**: Calculate volume, equivalent radius, maximum and minimum radii
 
 ## Requirements
@@ -52,6 +54,12 @@ using AsteroidShapeModels
 
 # Load an asteroid shape model with face-face visibility
 shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true)  # Convert km to m
+
+# NEW: Load with BVH acceleration for ray tracing
+shape_bvh = load_shape_obj("path/to/shape.obj"; scale=1000, with_bvh=true)
+
+# Or build BVH for an existing shape
+build_bvh!(shape)
 
 # Access to face properties
 shape.face_centers  # Center position of each face
