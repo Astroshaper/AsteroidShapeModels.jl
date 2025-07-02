@@ -182,68 +182,33 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox) -> RayShapeIntersectionResult
+    intersect_ray_shape(ray::Ray, shape::ShapeModel) -> RayShapeIntersectionResult
 
-Perform accelerated ray-shape intersection test using bounding box optimization.
+Perform ray-shape intersection test using BVH acceleration when available.
 Uses the Möller–Trumbore algorithm for ray-triangle mesh intersection.
 
 # Arguments
 - `ray`: Ray
 - `shape`: Shape model
-- `bbox`: Bounding box of the shape model
 
 # Returns
 - `RayShapeIntersectionResult` object containing the intersection test result
+
+# Notes
+This function automatically builds BVH if not already present for better performance.
+To pre-build BVH, use the `load_shape_obj` function with `with_bvh=true`.
+For example:
+```julia
+shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_bvh=true)
+
+# For an existing `ShapeModel` object:
+build_bvh!(shape)
+```
 """
-function intersect_ray_shape(ray::Ray, shape::ShapeModel, bbox::BoundingBox)
-    # Use BVH if available, otherwise fall back to bounding box check
-    if isnothing(shape.bvh)
-        if !intersect_ray_bounding_box(ray, bbox)
-            return NO_INTERSECTION_RAY_SHAPE
-        end
-        # Linear search through all faces
-        return _intersect_ray_shape_linear(ray, shape)
-    else
-        # BVH-accelerated intersection
-        return _intersect_ray_shape_bvh(ray, shape)
-    end
-end
-
-# Linear search implementation (original algorithm)
-function _intersect_ray_shape_linear(ray::Ray, shape::ShapeModel)
-    min_distance   = Inf
-    closest_point  = SVector{3, Float64}(0.0, 0.0, 0.0)
-    hit_face_index = 0
-    hit_any        = false
+function intersect_ray_shape(ray::Ray, shape::ShapeModel)::RayShapeIntersectionResult
+    # Build BVH if not already built
+    isnothing(shape.bvh) && build_bvh!(shape)
     
-    for i in eachindex(shape.faces)
-        # Backface culling
-        n̂ = shape.face_normals[i]
-        dot(ray.direction, n̂) ≥ 0 && continue
-
-        # Visibility check from observer
-        c = shape.face_centers[i]
-        dot(c - ray.origin, n̂) ≥ 0 && continue
-        
-        result = intersect_ray_triangle(ray, shape, i)
-        
-        if result.hit && result.distance < min_distance
-            min_distance   = result.distance
-            closest_point  = result.point
-            hit_face_index = i
-            hit_any        = true
-        end
-    end
-    
-    if hit_any
-        return RayShapeIntersectionResult(true, min_distance, closest_point, hit_face_index)
-    else
-        return NO_INTERSECTION_RAY_SHAPE
-    end
-end
-
-# BVH-accelerated implementation
-function _intersect_ray_shape_bvh(ray::Ray, shape::ShapeModel)
     min_distance   = Inf
     closest_point  = SVector{3, Float64}(0.0, 0.0, 0.0)
     hit_face_index = 0
