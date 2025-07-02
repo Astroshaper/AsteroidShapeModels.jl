@@ -99,51 +99,129 @@ function build_face_visibility_graph!(shape::ShapeModel)
     # Accumulate temporary visible face data
     temp_visible = [Vector{VisibleFace}() for _ in faces]
     
-    for i in eachindex(faces)
-        cᵢ = face_centers[i]
-        n̂ᵢ = face_normals[i]
-        aᵢ = face_areas[i]
-
-        candidates = Int64[]
-        for j in eachindex(faces)
-            i == j && continue
-            cⱼ = face_centers[j]
-            n̂ⱼ = face_normals[j]
-
-            Rᵢⱼ = cⱼ - cᵢ
-            Rᵢⱼ ⋅ n̂ᵢ > 0 && Rᵢⱼ ⋅ n̂ⱼ < 0 && push!(candidates, j)
-        end
+    if !isnothing(shape.bvh)
+        # BVH-accelerated visibility computation
+        # Double nested loop structure (BVH replaces the k-loop):
+        # - i: source face (viewpoint)
+        # - j: target face (potentially visible from i)
+        # - BVH traversal finds potential occluders efficiently
         
-        for j in candidates
-            j in (vf.id for vf in temp_visible[i]) && continue
-            cⱼ = face_centers[j]
-            n̂ⱼ = face_normals[j]
-            aⱼ = face_areas[j]
-
-            Rᵢⱼ = cⱼ - cᵢ
-            dᵢⱼ = norm(Rᵢⱼ)
+        # Pre-allocate arrays for BVH traversal
+        origins = zeros(3, 1)
+        directions = zeros(3, 1)
+        
+        for i in eachindex(faces)
+            cᵢ = face_centers[i]
+            n̂ᵢ = face_normals[i]
+            aᵢ = face_areas[i]
             
-            blocked = false
-            for k in candidates
-                j == k && continue
-                cₖ = face_centers[k]
+            for j in eachindex(faces)
+                i == j && continue
+                j in (vf.id for vf in temp_visible[i]) && continue  # Skip if already processed
+                
+                cⱼ = face_centers[j]
+                n̂ⱼ = face_normals[j]
+                aⱼ = face_areas[j]
+                
+                # Check if faces are potentially visible to each other
+                Rᵢⱼ = cⱼ - cᵢ
+                Rᵢⱼ ⋅ n̂ᵢ ≤ 0 && continue  # Face i not facing towards face j
+                Rᵢⱼ ⋅ n̂ⱼ ≥ 0 && continue  # Face j not facing towards face i
+                
+                dᵢⱼ = norm(Rᵢⱼ)
+                d̂ᵢⱼ = Rᵢⱼ / dᵢⱼ  # Normalized direction
+                
+                # Use BVH to check for obstructions
+                origins[:, 1] .= cᵢ
+                directions[:, 1] .= d̂ᵢⱼ
+                
+                # Traverse BVH to find all potential intersections
+                traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
 
-                Rᵢₖ = cₖ - cᵢ
-                dᵢₖ = norm(Rᵢₖ)
+                # Ray from face i to face j
+                ray = Ray(cᵢ, d̂ᵢⱼ)
                 
-                dᵢⱼ < dᵢₖ && continue
+                # Check if any face blocks the path
+                blocked = false
+                for contact in traversal.contacts
+                    k = Int(contact[1])  # Face index
+                    k == i && continue   # Skip source face
+                    k == j && continue   # Skip target face
+                    
+                    # Perform actual intersection test
+                    result = intersect_ray_triangle(ray, shape, k)
+                    if result.hit && result.distance < dᵢⱼ
+                        blocked = true
+                        break
+                    end
+                end
                 
-                ray = Ray(cᵢ, Rᵢⱼ)
-                intersection = intersect_ray_triangle(ray, nodes, faces, k)
-                if intersection.hit
-                    blocked = true
-                    break
+                blocked && continue
+                push!(temp_visible[i], VisibleFace(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))
+                push!(temp_visible[j], VisibleFace(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))
+            end
+        end
+    else
+        # Traditional algorithm with candidate filtering
+        # Loop structure:
+        # - i: source face (viewpoint)
+        # - j: candidate faces that might be visible from i (pre-filtered)
+        # - k: potential occluding faces (from the same candidate list)
+        for i in eachindex(faces)
+            cᵢ = face_centers[i]
+            n̂ᵢ = face_normals[i]
+            aᵢ = face_areas[i]
+
+            # Build list of candidate faces that are potentially visible from face i
+            candidates = Int64[]   # Indices of candidate faces
+            distances = Float64[]  # Distances to candidate faces from face i
+            for j in eachindex(faces)
+                i == j && continue
+                cⱼ = face_centers[j]
+                n̂ⱼ = face_normals[j]
+
+                Rᵢⱼ = cⱼ - cᵢ
+                if Rᵢⱼ ⋅ n̂ᵢ > 0 && Rᵢⱼ ⋅ n̂ⱼ < 0
+                    push!(candidates, j)
+                    push!(distances, norm(Rᵢⱼ))
                 end
             end
+            
+            # Sort candidates by distance
+            if !isempty(candidates)
+                perm = sortperm(distances)
+                candidates = candidates[perm]
+                distances = distances[perm]
+            end
+            
+            # Check visibility for each candidate face
+            for (j, dᵢⱼ) in zip(candidates, distances)
+                # Skip if already processed
+                j in (vf.id for vf in temp_visible[i]) && continue
 
-            blocked && continue
-            push!(temp_visible[i], VisibleFace(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))
-            push!(temp_visible[j], VisibleFace(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))
+                cⱼ = face_centers[j]
+                n̂ⱼ = face_normals[j]
+                aⱼ = face_areas[j]
+
+                ray = Ray(cᵢ, cⱼ - cᵢ)  # Ray from face i to face j
+
+                # Check if any face from the candidate list blocks the view from i to j
+                blocked = false
+                for (k, dᵢₖ) in zip(candidates, distances)
+                    k == j && continue
+                    dᵢₖ > dᵢⱼ  && continue  # Skip if face k is farther than face j
+                    
+                    intersection = intersect_ray_triangle(ray, shape, k)
+                    if intersection.hit
+                        blocked = true
+                        break
+                    end
+                end
+                
+                blocked && continue
+                push!(temp_visible[i], VisibleFace(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))
+                push!(temp_visible[j], VisibleFace(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))
+            end
         end
     end
     
@@ -202,12 +280,34 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
 
     ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
 
-    # Use FaceVisibilityGraph
+    # Use BVH if available for faster ray intersection
+    if !isnothing(shape.bvh)
+        # Use ImplicitBVH to check for any obstruction
+        origins    = reshape([cᵢ[1], cᵢ[2], cᵢ[3]], 3, 1)
+        directions = reshape([r̂☉[1], r̂☉[2], r̂☉[3]], 3, 1)
+        
+        # Traverse BVH to find all potential intersections
+        traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
+        
+        # Check for any valid intersection (excluding self-intersection)
+        for contact in traversal.contacts
+            j = Int(contact[1])  # Face index
+            j == i && continue   # Skip self-intersection
+            
+            # Perform actual intersection test
+            intersect_ray_triangle(ray, shape, j).hit && return false
+        end
+        return true  # No obstruction found
+    end
+    
+    # Fallback to FaceVisibilityGraph
     if !isnothing(shape.face_visibility_graph)
         visible_faces = get_visible_face_indices(shape.face_visibility_graph, i)
         for j in visible_faces
             intersect_ray_triangle(ray, shape, j).hit && return false
         end
+        return true  # No obstruction found
     end
-    return true
+
+    return true  # No obstruction found
 end
