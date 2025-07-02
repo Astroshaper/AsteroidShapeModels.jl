@@ -16,6 +16,8 @@ For detailed documentation, please visit:
 - [Stable Documentation](https://Astroshaper.github.io/AsteroidShapeModels.jl/stable)
 - [Development Documentation](https://Astroshaper.github.io/AsteroidShapeModels.jl/dev)
 
+For future development plans, see our [Development Roadmap](ROADMAP.md).
+
 ## Key Features
 
 - **Shape Model Loading**: Load 3D models in OBJ file format
