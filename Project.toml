@@ -4,7 +4,6 @@ authors = ["Masanori Kanamaru <kanamaru-masanori@hotmail.co.jp>"]
 version = "0.3.1"
 
 [deps]
-BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
 ImplicitBVH = "932a18dc-bb55-4cd5-bdd6-1368ec9cea29"
@@ -23,6 +22,7 @@ StaticArrays = "1"
 julia = "1.10"
 
 [extras]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
