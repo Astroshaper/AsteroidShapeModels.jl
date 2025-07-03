@@ -212,7 +212,7 @@ ray = Ray(SA[0.0, 0.0, 1000.0], SA[0.0, 0.0, -1.0])
 result = intersect_ray_shape(ray, shape)
 
 if result.hit
-    println("Hit face $(result.face_index) at distance $(result.distance)")
+    println("Hit face \$(result.face_index) at distance \$(result.distance)")
 end
 ```
 """
@@ -248,7 +248,7 @@ results = intersect_ray_shape(rays, shape)
 
 # Count hits
 n_hits = count(r -> r.hit, results)
-println("$n_hits out of $(length(rays)) rays hit the shape")
+println("\$n_hits out of \$(length(rays)) rays hit the shape")
 ```
 """
 function intersect_ray_shape(rays::AbstractVector{Ray}, shape::ShapeModel)::Vector{RayShapeIntersectionResult}
@@ -289,7 +289,7 @@ results = intersect_ray_shape(rays, shape)
 # Process results while preserving grid structure
 for i in 1:size(results, 1), j in 1:size(results, 2)
     if results[i, j].hit
-        println("Ray at ($i, $j) hit at $(results[i, j].point)")
+        println("Ray at (\$i, \$j) hit at \$(results[i, j].point)")
     end
 end
 ```
