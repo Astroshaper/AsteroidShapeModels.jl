@@ -262,15 +262,34 @@ end
 ```
 """
 function intersect_ray_shape(ray::Ray, shape::ShapeModel)::RayShapeIntersectionResult
-    # Create single-element arrays for the input ray
+    # Build BVH if not already built
+    isnothing(shape.bvh) && build_bvh!(shape)
+    
+    # Use reshape to avoid allocation - ImplicitBVH expects matrices
     origins    = reshape(ray.origin, 3, 1)
     directions = reshape(ray.direction, 3, 1)
     
-    # Use batch processing function
-    results = intersect_ray_shape(shape, origins, directions)
+    # Perform traversal
+    traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
     
-    # Return the single result
-    return results[1]
+    # Track closest hit
+    min_distance = Inf
+    closest_result = NO_INTERSECTION_RAY_SHAPE
+    
+    # Process contacts
+    for contact in traversal.contacts
+        face_idx = Int(contact[1])
+        
+        # Test intersection with this face
+        result = intersect_ray_triangle(ray, shape, face_idx)
+        
+        if result.hit && result.distance < min_distance
+            min_distance = result.distance
+            closest_result = RayShapeIntersectionResult(true, result.distance, result.point, face_idx)
+        end
+    end
+    
+    return closest_result
 end
 
 """
