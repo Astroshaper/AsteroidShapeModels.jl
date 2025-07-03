@@ -24,13 +24,38 @@ Exported Functions:
 Perform ray-triangle intersection test using the Möller–Trumbore algorithm.
 
 # Arguments
-- `ray`: Ray
+- `ray`: Ray with origin and direction
 - `v1`: Triangle vertex 1
 - `v2`: Triangle vertex 2
 - `v3`: Triangle vertex 3
 
 # Returns
 - `RayTriangleIntersectionResult` object containing the intersection test result
+
+# Algorithm Details
+This implementation has the following characteristics:
+- **No backface culling**: Triangles are hit from both sides (front and back)
+- **Forward rays only**: Only intersections in the ray direction are detected (distance > 0)
+- **No self-intersection**: Rays starting exactly on the triangle surface typically miss due to numerical precision
+
+# Example
+```julia
+# Ray from above hits triangle on XY plane
+ray = Ray(SA[0.5, 0.5, 1.0], SA[0.0, 0.0, -1.0])
+v1, v2, v3 = SA[0.0, 0.0, 0.0], SA[1.0, 0.0, 0.0], SA[0.0, 1.0, 0.0]
+result = intersect_ray_triangle(ray, v1, v2, v3)
+# result.hit == true, result.distance ≈ 1.0
+
+# Ray from below also hits (no backface culling)
+ray_below = Ray(SA[0.5, 0.5, -1.0], SA[0.0, 0.0, 1.0])
+result = intersect_ray_triangle(ray_below, v1, v2, v3)
+# result.hit == true
+
+# Ray pointing away misses (backward intersection rejected)
+ray_away = Ray(SA[0.5, 0.5, 1.0], SA[0.0, 0.0, 1.0])
+result = intersect_ray_triangle(ray_away, v1, v2, v3)
+# result.hit == false
+```
 """
 function intersect_ray_triangle(ray::Ray, v1::AbstractVector{<:Real}, v2::AbstractVector{<:Real}, v3::AbstractVector{<:Real})
     e1 = v2 - v1
@@ -78,15 +103,25 @@ end
 Perform ray-triangle intersection test for a specific face in a shape model.
 
 # Arguments
-- `ray`: Ray
+- `ray`: Ray with origin and direction
 - `shape`: Shape model containing the triangle
-- `face_id`: Index of the face to test
+- `face_id`: Index of the face to test (1-based)
 
 # Returns
 - `RayTriangleIntersectionResult` object containing the intersection test result
 
-# Notes
-This is a convenience function that delegates to the more general `intersect_ray_triangle` with nodes and faces.
+# Algorithm Details
+This function uses the same Möller-Trumbore algorithm as the base implementation:
+- No backface culling (triangles are hit from both sides)
+- Forward rays only (distance > 0)
+- Inlined for performance
+
+# Example
+```julia
+shape = load_shape_obj("asteroid.obj")
+ray = Ray(SA[0.0, 0.0, 100.0], SA[0.0, 0.0, -1.0])
+result = intersect_ray_triangle(ray, shape, 1)  # Test first face
+```
 """
 @inline function intersect_ray_triangle(ray::Ray, shape::ShapeModel, face_id::Integer)
     return intersect_ray_triangle(ray, shape.nodes, shape.faces, face_id)
@@ -98,13 +133,23 @@ end
 Perform ray-triangle intersection test for a specific face given nodes and faces arrays.
 
 # Arguments
-- `ray`: Ray
-- `nodes`: Array of node positions
-- `faces`: Array of face definitions (each face is an array of node indices)
-- `face_id`: Index of the face to test
+- `ray`: Ray with origin and direction
+- `nodes`: Array of node positions (3D vectors)
+- `faces`: Array of face definitions (each face is an array of 3 node indices)
+- `face_id`: Index of the face to test (1-based)
 
 # Returns
 - `RayTriangleIntersectionResult` object containing the intersection test result
+
+# Algorithm Details
+This function uses the same Möller-Trumbore algorithm as the base implementation:
+- No backface culling (triangles are hit from both sides)
+- Forward rays only (distance > 0)
+- Inlined for performance
+
+# Notes
+This is a lower-level interface useful when working directly with node and face arrays
+without a full `ShapeModel` structure.
 """
 @inline function intersect_ray_triangle(ray::Ray, nodes::AbstractVector, faces::AbstractVector, face_id::Integer)
     face = faces[face_id]
