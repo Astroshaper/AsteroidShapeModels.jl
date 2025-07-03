@@ -117,45 +117,11 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    intersect_ray_shape(ray::Ray, shape::ShapeModel) -> RayShapeIntersectionResult
-
-Perform ray-shape intersection test using BVH acceleration when available.
-Uses the Möller–Trumbore algorithm for ray-triangle mesh intersection.
-
-# Arguments
-- `ray`: Ray
-- `shape`: Shape model
-
-# Returns
-- `RayShapeIntersectionResult` object containing the intersection test result
-
-# Notes
-This function automatically builds BVH if not already present for better performance.
-To pre-build BVH, use the `load_shape_obj` function with `with_bvh=true`.
-For example:
-```julia
-shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_bvh=true)
-
-# For an existing `ShapeModel` object:
-build_bvh!(shape)
-```
-"""
-function intersect_ray_shape(ray::Ray, shape::ShapeModel)::RayShapeIntersectionResult
-    # Create single-element arrays for the input ray
-    origins    = reshape(ray.origin, 3, 1)
-    directions = reshape(ray.direction, 3, 1)
-    
-    # Use batch processing function
-    results = intersect_ray_shape(shape, origins, directions)
-    
-    # Return the single result
-    return results[1]
-end
-
-"""
     intersect_ray_shape(shape::ShapeModel, origins::AbstractMatrix{<:Real}, directions::AbstractMatrix{<:Real}) -> Vector{RayShapeIntersectionResult}
 
 Perform batch ray-shape intersection tests using the same interface as `ImplicitBVH.traverse_rays`.
+
+This is the core implementation that all other `intersect_ray_shape` methods delegate to.
 
 # Arguments
 - `shape`      : Shape model with BVH
@@ -166,8 +132,9 @@ Perform batch ray-shape intersection tests using the same interface as `Implicit
 - Vector of `RayShapeIntersectionResult` objects, one for each input ray
 
 # Notes
-This function provides a convenient interface that matches `ImplicitBVH.traverse_rays` parameters.
-The BVH is automatically built if not already present.
+- This function provides a convenient interface that matches `ImplicitBVH.traverse_rays` parameters
+- The BVH is automatically built if not already present
+- All rays are processed in a single batch for efficiency
 
 # Example
 ```julia
@@ -222,39 +189,66 @@ function intersect_ray_shape(shape::ShapeModel, origins::AbstractMatrix{<:Real},
 end
 
 """
+    intersect_ray_shape(ray::Ray, shape::ShapeModel) -> RayShapeIntersectionResult
+
+Perform ray-shape intersection test using BVH acceleration.
+Uses the Möller–Trumbore algorithm for ray-triangle mesh intersection.
+
+# Arguments
+- `ray`   : Ray with origin and direction
+- `shape` : Shape model
+
+# Returns
+- `RayShapeIntersectionResult` object containing the intersection test result
+
+# Notes
+- This function automatically builds BVH if not already present for better performance
+- To pre-build BVH, use `load_shape_obj("path/to/shape.obj"; with_bvh=true)`
+- Or for an existing `ShapeModel`: `build_bvh!(shape)`
+
+# Example
+```julia
+ray = Ray(SA[0.0, 0.0, 1000.0], SA[0.0, 0.0, -1.0])
+result = intersect_ray_shape(ray, shape)
+
+if result.hit
+    println("Hit face $(result.face_index) at distance $(result.distance)")
+end
+```
+"""
+function intersect_ray_shape(ray::Ray, shape::ShapeModel)::RayShapeIntersectionResult
+    # Create single-element arrays for the input ray
+    origins    = reshape(ray.origin, 3, 1)
+    directions = reshape(ray.direction, 3, 1)
+    
+    # Use batch processing function
+    results = intersect_ray_shape(shape, origins, directions)
+    
+    # Return the single result
+    return results[1]
+end
+
+"""
     intersect_ray_shape(rays::AbstractVector{Ray}, shape::ShapeModel) -> Vector{RayShapeIntersectionResult}
-    intersect_ray_shape(rays::AbstractMatrix{Ray}, shape::ShapeModel) -> Matrix{RayShapeIntersectionResult}
 
 Perform batch ray-shape intersection tests for multiple rays.
 
 # Arguments
-- `rays`  : Vector or Matrix of Ray objects
+- `rays`  : Vector of Ray objects
 - `shape` : Shape model
 
 # Returns
-- If `rays` is a Vector: Vector of `RayShapeIntersectionResult` objects
-- If `rays` is a Matrix: Matrix of `RayShapeIntersectionResult` objects with the same size
-
-# Notes
-The output shape matches the input shape, making it convenient for processing
-structured ray grids while preserving their spatial arrangement.
+- Vector of `RayShapeIntersectionResult` objects, one for each input ray
 
 # Example
 ```julia
-# Vector of rays - returns Vector
-rays_vec = [Ray(SA[x, 0.0, 1000.0], SA[0.0, 0.0, -1.0]) for x in -500:100:500]
-results_vec = intersect_ray_shape(rays_vec, shape)  # Vector
+# Create a vector of rays
+rays = [Ray(SA[x, 0.0, 1000.0], SA[0.0, 0.0, -1.0]) for x in -500:100:500]
+results = intersect_ray_shape(rays, shape)
 
-# Matrix of rays - returns Matrix  
-rays_mat = [Ray(SA[x, y, 1000.0], SA[0.0, 0.0, -1.0]) for x in -500:100:500, y in -500:100:500]
-results_mat = intersect_ray_shape(rays_mat, shape)  # Matrix with same size
-
-# Process matrix results while preserving structure
-for i in 1:size(results_mat, 1), j in 1:size(results_mat, 2)
-    if results_mat[i, j].hit
-        println("Ray at (\$i, \$j) hit face \$(results_mat[i, j].face_index)")
-    end
-end
+# Count hits
+n_hits = count(r -> r.hit, results)
+println("$n_hits out of $(length(rays)) rays hit the shape")
 ```
 """
 function intersect_ray_shape(rays::AbstractVector{Ray}, shape::ShapeModel)::Vector{RayShapeIntersectionResult}
@@ -273,6 +267,33 @@ function intersect_ray_shape(rays::AbstractVector{Ray}, shape::ShapeModel)::Vect
     return intersect_ray_shape(shape, origins, directions)
 end
 
+"""
+    intersect_ray_shape(rays::AbstractMatrix{Ray}, shape::ShapeModel) -> Matrix{RayShapeIntersectionResult}
+
+Perform batch ray-shape intersection tests for a matrix of rays.
+The output shape matches the input shape, preserving spatial arrangement.
+
+# Arguments
+- `rays`  : Matrix of Ray objects
+- `shape` : Shape model
+
+# Returns
+- Matrix of `RayShapeIntersectionResult` objects with the same size as input
+
+# Example
+```julia
+# Create a matrix of rays
+rays = [Ray(SA[x, y, 1000.0], SA[0.0, 0.0, -1.0]) for x in -500:100:500, y in -500:100:500]
+results = intersect_ray_shape(rays, shape)
+
+# Process results while preserving grid structure
+for i in 1:size(results, 1), j in 1:size(results, 2)
+    if results[i, j].hit
+        println("Ray at ($i, $j) hit at $(results[i, j].point)")
+    end
+end
+```
+"""
 function intersect_ray_shape(rays::AbstractMatrix{Ray}, shape::ShapeModel)::Matrix{RayShapeIntersectionResult}
     # Flatten rays-matrix to vector for batch processing
     rays_flat = vec(rays)
