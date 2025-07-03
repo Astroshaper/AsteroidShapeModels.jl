@@ -141,38 +141,145 @@ build_bvh!(shape)
 ```
 """
 function intersect_ray_shape(ray::Ray, shape::ShapeModel)::RayShapeIntersectionResult
+    # Create single-element arrays for the input ray
+    origins    = reshape(ray.origin, 3, 1)
+    directions = reshape(ray.direction, 3, 1)
+    
+    # Use batch processing function
+    results = intersect_ray_shape(shape, origins, directions)
+    
+    # Return the single result
+    return results[1]
+end
+
+"""
+    intersect_ray_shape(shape::ShapeModel, origins::AbstractMatrix{<:Real}, directions::AbstractMatrix{<:Real}) -> Vector{RayShapeIntersectionResult}
+
+Perform batch ray-shape intersection tests using the same interface as `ImplicitBVH.traverse_rays`.
+
+# Arguments
+- `shape`      : Shape model with BVH
+- `origins`    : 3×N matrix where each column is a ray origin
+- `directions` : 3×N matrix where each column is a ray direction
+
+# Returns
+- Vector of `RayShapeIntersectionResult` objects, one for each input ray
+
+# Notes
+This function provides a convenient interface that matches `ImplicitBVH.traverse_rays` parameters.
+The BVH is automatically built if not already present.
+
+# Example
+```julia
+# Create ray data
+n_rays = 100
+origins = rand(3, n_rays) .* 1000  # Random origins
+directions = normalize.(eachcol(rand(3, n_rays) .- 0.5))  # Random directions
+
+# Convert directions back to matrix
+directions = hcat(directions...)
+
+# Perform batch intersection
+results = intersect_ray_shape(shape, origins, directions)
+```
+"""
+function intersect_ray_shape(shape::ShapeModel, origins::AbstractMatrix{<:Real}, directions::AbstractMatrix{<:Real})::Vector{RayShapeIntersectionResult}
     # Build BVH if not already built
     isnothing(shape.bvh) && build_bvh!(shape)
     
-    min_distance   = Inf
-    closest_point  = SVector{3, Float64}(0.0, 0.0, 0.0)
-    hit_face_index = 0
-    hit_any        = false
-    
-    # Use ImplicitBVH to traverse and find candidate triangles
-    # Note: traverse_rays expects arrays, so we create single-element arrays
-    origins    = reshape([ray.origin[1], ray.origin[2], ray.origin[3]], 3, 1)
-    directions = reshape([ray.direction[1], ray.direction[2], ray.direction[3]], 3, 1)
-    
+    # Validate input dimensions
+    size(origins, 1) == 3 || throw(ArgumentError("`origins` must have 3 rows."))
+    size(directions, 1) == 3 || throw(ArgumentError("`directions` must have 3 rows."))
+    size(origins, 2) == size(directions, 2) || throw(ArgumentError("`origins` and `directions` must have the same number of columns."))
+
+    # Perform batch traversal
     traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
     
-    # Extract contacts from traversal
+    # Initialize intersection results
+    n_rays = size(origins, 2)
+    results = fill(NO_INTERSECTION_RAY_SHAPE, n_rays)
+    min_distances = fill(Inf, n_rays)  # For tracking closest hit for each ray
+    
+    # Process all contacts
     for contact in traversal.contacts
-        i = Int(contact[1])  # The first element is the leaf/face index
+        face_idx = Int(contact[1])
+        ray_idx = Int(contact[2])
         
-        result = intersect_ray_triangle(ray, shape, i)
+        # Create Ray object for intersection test
+        ray_origin = SVector{3, Float64}(origins[:, ray_idx])
+        ray_direction = SVector{3, Float64}(directions[:, ray_idx])
+        ray = Ray(ray_origin, ray_direction)
         
-        if result.hit && result.distance < min_distance
-            min_distance   = result.distance
-            closest_point  = result.point
-            hit_face_index = i
-            hit_any        = true
+        result = intersect_ray_triangle(ray, shape, face_idx)
+        
+        if result.hit && result.distance < min_distances[ray_idx]
+            min_distances[ray_idx] = result.distance
+            results[ray_idx] = RayShapeIntersectionResult(true, result.distance, result.point, face_idx)
         end
     end
     
-    if hit_any
-        return RayShapeIntersectionResult(true, min_distance, closest_point, hit_face_index)
-    else
-        return NO_INTERSECTION_RAY_SHAPE
+    return results
+end
+
+"""
+    intersect_ray_shape(rays::AbstractVector{Ray}, shape::ShapeModel) -> Vector{RayShapeIntersectionResult}
+    intersect_ray_shape(rays::AbstractMatrix{Ray}, shape::ShapeModel) -> Matrix{RayShapeIntersectionResult}
+
+Perform batch ray-shape intersection tests for multiple rays.
+
+# Arguments
+- `rays`  : Vector or Matrix of Ray objects
+- `shape` : Shape model
+
+# Returns
+- If `rays` is a Vector: Vector of `RayShapeIntersectionResult` objects
+- If `rays` is a Matrix: Matrix of `RayShapeIntersectionResult` objects with the same size
+
+# Notes
+The output shape matches the input shape, making it convenient for processing
+structured ray grids while preserving their spatial arrangement.
+
+# Example
+```julia
+# Vector of rays - returns Vector
+rays_vec = [Ray(SA[x, 0.0, 1000.0], SA[0.0, 0.0, -1.0]) for x in -500:100:500]
+results_vec = intersect_ray_shape(rays_vec, shape)  # Vector
+
+# Matrix of rays - returns Matrix  
+rays_mat = [Ray(SA[x, y, 1000.0], SA[0.0, 0.0, -1.0]) for x in -500:100:500, y in -500:100:500]
+results_mat = intersect_ray_shape(rays_mat, shape)  # Matrix with same size
+
+# Process matrix results while preserving structure
+for i in 1:size(results_mat, 1), j in 1:size(results_mat, 2)
+    if results_mat[i, j].hit
+        println("Ray at (\$i, \$j) hit face \$(results_mat[i, j].face_index)")
     end
+end
+```
+"""
+function intersect_ray_shape(rays::AbstractVector{Ray}, shape::ShapeModel)::Vector{RayShapeIntersectionResult}
+    n_rays = length(rays)
+    
+    # Convert rays to matrix format for ImplicitBVH.traverse_rays
+    origins = zeros(Float64, 3, n_rays)
+    directions = zeros(Float64, 3, n_rays)
+    
+    for (i, ray) in enumerate(rays)
+        origins[:, i] = ray.origin
+        directions[:, i] = ray.direction
+    end
+    
+    # Delegate to matrix-based function
+    return intersect_ray_shape(shape, origins, directions)
+end
+
+function intersect_ray_shape(rays::AbstractMatrix{Ray}, shape::ShapeModel)::Matrix{RayShapeIntersectionResult}
+    # Flatten rays-matrix to vector for batch processing
+    rays_flat = vec(rays)
+    
+    # Get results as vector
+    results_flat = intersect_ray_shape(rays_flat, shape)
+    
+    # Reshape to match input shape
+    return reshape(results_flat, size(rays))
 end
