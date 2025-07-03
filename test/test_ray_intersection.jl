@@ -141,19 +141,38 @@ This file verifies:
         v1, v2, v3 = nodes[1], nodes[2], nodes[3]
         
         # Create shape model
-        shape = ShapeModel(nodes, faces)
+        shape = ShapeModel(nodes, faces; with_bvh=true)
         
         # Test ray intersection with the shape
         ray = Ray(@SVector([0.25, 0.25, 1.0]), @SVector([0.0, 0.0, -1.0]))
         
-        # Compute bounding box for acceleration
-        bbox = compute_bounding_box(shape)
-        
         # Test intersection
-        result = intersect_ray_shape(ray, shape, bbox)
+        result = intersect_ray_shape(ray, shape)
         
         # Verify results
         test_ray_intersection(result, true, 1.0, @SVector([0.25, 0.25, 0.0]))
         @test result.face_index == 1  # Hit the first (and only) face
+    end
+    
+    @testset "BVH Auto-build Test" begin
+        # Test that BVH is automatically built when needed
+        
+        # Create shape model WITHOUT BVH
+        nodes, faces = create_xy_triangle()
+        shape_no_bvh = ShapeModel(nodes, faces; with_bvh=false)
+        
+        # Verify BVH is not built initially
+        @test isnothing(shape_no_bvh.bvh)
+        
+        # Perform ray intersection - this should trigger BVH build
+        ray = Ray(@SVector([0.25, 0.25, 1.0]), @SVector([0.0, 0.0, -1.0]))
+        result = intersect_ray_shape(ray, shape_no_bvh)
+        
+        # Verify BVH was built automatically
+        @test !isnothing(shape_no_bvh.bvh)
+        
+        # Verify intersection result is correct
+        test_ray_intersection(result, true, 1.0, @SVector([0.25, 0.25, 0.0]))
+        @test result.face_index == 1
     end
 end

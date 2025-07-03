@@ -24,6 +24,7 @@ using LinearAlgebra
 using Random
 using SPICE
 using StaticArrays
+using Statistics
 using Test
 
 # Include test helper functions

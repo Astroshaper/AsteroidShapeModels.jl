@@ -90,7 +90,7 @@ compared to the industry-standard SPICE toolkit.
     # Load the Didymos shape model and prepare for ray intersection
 
     obj_path = joinpath("shape", "g_01165mm_spc_obj_didy_0000n00000_v003.obj")
-    shape = load_shape_obj(obj_path; scale=1000.0)  # Convert km to m
+    shape = load_shape_obj(obj_path; scale=1000.0, with_bvh=true)  # Convert km to m
     println(shape)
 
     # ================================================================
@@ -125,11 +125,8 @@ compared to the industry-standard SPICE toolkit.
     # Create ray for intersection test
     ray = Ray(camera_position, camera_boresight)
         
-    # Compute bounding box for acceleration
-    bbox = compute_bounding_box(shape)
-        
     # Perform ray intersection with our implementation
-    intersection = intersect_ray_shape(ray, shape, bbox)
+    intersection = intersect_ray_shape(ray, shape)
 
     # ================================================================
     #                  SPICE sincpt Comparison
@@ -177,7 +174,7 @@ compared to the industry-standard SPICE toolkit.
     # Compare computation times between implementations
     println("Computation time")
     print("    ∘ intersect_ray_shape in AsteroidShapeModels.jl :")
-    @time intersect_ray_shape(ray, shape, bbox)
+    @time intersect_ray_shape(ray, shape)
     print("    ∘ sincpt in SPICE.jl                            :")
     @time SPICE.sincpt("DSK/UNPRIORITIZED", obs, et, ref, abcorr, "HERA_TIRI", "HERA_TIRI", collect(boresight))
 

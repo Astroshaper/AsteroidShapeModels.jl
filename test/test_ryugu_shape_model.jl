@@ -56,8 +56,7 @@ This file benchmarks performance with a realistic asteroid shape model:
     # 4. Benchmark ray intersection
     println("\n4. Benchmarking ray-shape intersection:")
     ray = Ray([0.0, 0.0, 1000.0], [0.0, 0.0, -1.0])
-    bbox = compute_bounding_box(shape)
-    bench_ray = @benchmark intersect_ray_shape($ray, $shape, $bbox)
+    bench_ray = @benchmark intersect_ray_shape($ray, $shape)
     display(bench_ray)
     println()
         

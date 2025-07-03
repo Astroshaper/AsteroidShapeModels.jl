@@ -83,7 +83,7 @@ direction = normalize(SA[-1.0, 0.0, 0.0])  # Point toward origin
 ray = Ray(origin, direction)
 
 # Find intersection with shape
-result = intersect_ray_shape(ray, shape, bbox)
+result = intersect_ray_shape(ray, shape)
 
 if result.hit
     println("Ray hit face $(result.face_index) at distance $(result.distance).")
