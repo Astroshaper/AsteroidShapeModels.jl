@@ -7,7 +7,6 @@ using StaticArrays
 const SHAPE_PATH = joinpath(@__DIR__, "..", "test", "shape", "ryugu_test.obj")
 const SHAPE     = load_shape_obj(SHAPE_PATH; with_face_visibility=false)
 const SHAPE_VIS = load_shape_obj(SHAPE_PATH; with_face_visibility=true)
-const BBOX = compute_bounding_box(SHAPE)
 
 # Benchmark suite
 const SUITE = BenchmarkGroup()
@@ -84,32 +83,25 @@ let ray = Ray([0.0, 0.0, 1000.0], [0.0, 0.0, -1.0])
     SUITE["ray_intersection"]["single_triangle"] = @benchmarkable intersect_ray_triangle($ray, $A, $B, $C)
     
     # Full shape intersection
-    SUITE["ray_intersection"]["full_shape"] = @benchmarkable intersect_ray_shape($ray, $SHAPE, $BBOX)
+    SUITE["ray_intersection"]["full_shape"] = @benchmarkable intersect_ray_shape($ray, $SHAPE)
     
     # Multiple rays
     rays = [Ray([x, y, 1000.0], [0.0, 0.0, -1.0]) for x in -500:100:500, y in -500:100:500]
     SUITE["ray_intersection"]["multiple_rays"] = @benchmarkable begin
         for ray in $rays
-            intersect_ray_shape(ray, $SHAPE, $BBOX)
+            intersect_ray_shape(ray, $SHAPE)
         end
     end
 end
 
-# 5. Bounding box operations
-SUITE["bounding_box"] = BenchmarkGroup()
-SUITE["bounding_box"]["compute"] = @benchmarkable compute_bounding_box($SHAPE)
-let ray = Ray([0.0, 0.0, 1000.0], [0.0, 0.0, -1.0])
-    SUITE["bounding_box"]["intersection"] = @benchmarkable intersect_ray_bounding_box($ray, $BBOX)
-end
-
-# 6. Shape characteristics
+# 5. Shape characteristics
 SUITE["shape_characteristics"] = BenchmarkGroup()
 SUITE["shape_characteristics"]["volume"] = @benchmarkable polyhedron_volume($SHAPE)
 SUITE["shape_characteristics"]["equivalent_radius"] = @benchmarkable equivalent_radius($SHAPE)
 SUITE["shape_characteristics"]["maximum_radius"] = @benchmarkable maximum_radius($SHAPE)
 SUITE["shape_characteristics"]["minimum_radius"] = @benchmarkable minimum_radius($SHAPE)
 
-# 7. Memory allocation benchmarks
+# 6. Memory allocation benchmarks
 SUITE["memory"] = BenchmarkGroup()
 SUITE["memory"]["shape_model_creation"] = @benchmarkable begin
     nodes = [SA[rand(), rand(), rand()] for _ in 1:1000]
@@ -122,7 +114,7 @@ SUITE["memory"]["visibility_graph_size"] = @benchmarkable begin
     Base.summarysize($SHAPE_VIS.face_visibility_graph)
 end
 
-# 8. Find visible facets performance
+# 7. Find visible facets performance
 SUITE["find_visible_facets"] = BenchmarkGroup()
 SUITE["find_visible_facets"]["small_shape"] = @benchmarkable begin
     shape = deepcopy($SHAPE)
