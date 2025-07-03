@@ -5,7 +5,6 @@ Core type definitions for `AsteroidShapeModels.jl`.
 This file contains fundamental data structures used throughout the package:
 - `VisibleFace`: Internal type for temporary visibility data storage
 - `Ray`: Represents a ray in 3D space for intersection tests
-- `BoundingBox`: Axis-aligned bounding box for acceleration structures
 - `RayTriangleIntersectionResult`: Result of ray-triangle intersection test
 - `RayShapeIntersectionResult`: Result of ray-shape intersection test
 =#
@@ -66,33 +65,6 @@ function Base.show(io::IO, ray::Ray)
     print(io, "Ray:\n")
     print(io, "    ∘ origin    = $(ray.origin)\n")
     print(io, "    ∘ direction = $(ray.direction)\n")
-end
-
-"""
-    BoundingBox
-
-Structure representing a bounding box for shape models.
-
-# Fields
-- `min_point` : Minimum point of the bounding box (minimum x, y, z values)
-- `max_point` : Maximum point of the bounding box (maximum x, y, z values)
-"""
-struct BoundingBox
-    min_point::SVector{3, Float64}
-    max_point::SVector{3, Float64}
-end
-
-"""
-    Base.show(io::IO, bbox::BoundingBox)
-
-Custom display method for BoundingBox objects.
-
-Displays minimum and maximum corner points.
-"""
-function Base.show(io::IO, bbox::BoundingBox)
-    print(io, "BoundingBox:\n")
-    print(io, "    ∘ min_point = $(bbox.min_point)\n")
-    print(io, "    ∘ max_point = $(bbox.max_point)\n")
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗

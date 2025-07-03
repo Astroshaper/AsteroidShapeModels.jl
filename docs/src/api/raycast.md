@@ -14,6 +14,4 @@ intersect_ray_shape
 
 ```@docs
 intersect_ray_triangle
-intersect_ray_bounding_box
-compute_bounding_box
 ```

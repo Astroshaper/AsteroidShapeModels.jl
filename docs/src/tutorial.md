@@ -45,9 +45,6 @@ println("Volume            : $volume m³")
 println("Equivalent radius : $eq_radius m")
 println("Maximum radius    : $max_radius m")
 println("Minimum radius    : $min_radius m")
-
-# Compute bounding box
-bbox = compute_bounding_box(shape)
 ```
 
 ## Face Visibility Analysis

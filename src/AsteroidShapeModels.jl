@@ -9,7 +9,7 @@ visibility analysis, and surface roughness modeling.
 
 # Main Types
 - `ShapeModel`: Core data structure for polyhedral shapes
-- `Ray`, `BoundingBox`: Ray casting and acceleration structures
+- `Ray`: Ray for ray casting operations
 - `FaceVisibilityGraph`: CSR-style data structure for face-to-face visibility
 
 # Key Functions
@@ -48,8 +48,7 @@ include("face_properties.jl")
 export face_center, face_normal, face_area, get_face_vertices
 
 include("types.jl")
-export Ray, BoundingBox
-export RayTriangleIntersectionResult, RayShapeIntersectionResult
+export Ray, RayTriangleIntersectionResult, RayShapeIntersectionResult
 
 include("face_visibility_graph.jl")
 export FaceVisibilityGraph
@@ -64,7 +63,6 @@ export load_obj, isobj
 
 include("ray_intersection.jl")
 export intersect_ray_triangle, intersect_ray_shape
-export intersect_ray_bounding_box, compute_bounding_box
 
 include("shape_operations.jl")
 export load_shape_obj, load_shape_grid, grid_to_faces

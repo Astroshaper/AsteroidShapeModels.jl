@@ -9,7 +9,6 @@ CurrentModule = AsteroidShapeModels
 ```@docs
 ShapeModel
 Ray
-BoundingBox
 ```
 
 ## Result Types
