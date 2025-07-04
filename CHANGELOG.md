@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Batch ray processing functionality**
+- **Batch ray processing functionality** (#29)
   - Multiple dispatch for `intersect_ray_shape` to handle various input formats:
     - `intersect_ray_shape(rays::Vector{Ray}, shape)` for ray collections
     - `intersect_ray_shape(rays::Matrix{Ray}, shape)` preserves grid structure.
@@ -16,10 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Efficient batch processing using single BVH traversal
   - Results maintain input shape for vector/matrix inputs
 
+### Changed
+- **Face visibility graph unified to non-BVH implementation**
+  - Removed BVH-based visibility graph construction in `build_face_visibility_graph!`
+  - Non-BVH algorithm with candidate filtering provides better performance (~2x faster than BVH)
+  - BVH was found to be ~0.5x slower for face-to-face visibility queries
+
 ### Documentation
 - Enhanced `intersect_ray_triangle` docstrings with backface culling behavior details
 - Added batch ray processing examples to tutorial
 - Updated performance tips with batch operation recommendations
+- Documented performance characteristics of BVH vs non-BVH for visibility graphs
 
 ## [0.3.1] - 2025-07-02
 
