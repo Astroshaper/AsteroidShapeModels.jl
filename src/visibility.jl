@@ -301,6 +301,11 @@ self-shadowing effects are negligible.
 This function ignores `face_visibility_graph` even if it exists, making it useful
 when you want to explicitly disable self-shadowing effects.
 
+# Implementation Note
+This implementation uses `isilluminated_pseudo_convex` for code reuse and clarity.
+While this causes `normalize(r☉)` to be computed N times instead of once, 
+the performance impact is negligible for most use cases.
+
 # Example
 ```julia
 # Always use pseudo-convex model regardless of `face_visibility_graph`
@@ -310,11 +315,8 @@ update_illumination_pseudo_convex!(illuminated, shape, sun_position)
 function update_illumination_pseudo_convex!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
     @assert length(illuminated) == length(shape.faces) "illuminated vector must have same length as number of faces."
     
-    r̂☉ = normalize(r☉)
-    
     @inbounds for i in eachindex(shape.faces)
-        n̂ᵢ = shape.face_normals[i]
-        illuminated[i] = n̂ᵢ ⋅ r̂☉ > 0
+        illuminated[i] = isilluminated_pseudo_convex(shape, r☉, i)
     end
     
     return nothing
@@ -336,6 +338,11 @@ It requires that `shape.face_visibility_graph` has been built using `build_face_
 
 If `face_visibility_graph` is not available, this function will throw an error.
 
+# Implementation Note
+This implementation uses `isilluminated_with_self_shadowing` for code reuse and clarity.
+While this causes `normalize(r☉)` to be computed N times instead of once, 
+the performance impact is negligible for most use cases.
+
 # Example
 ```julia
 # Ensure face visibility graph is built
@@ -350,29 +357,8 @@ function update_illumination_with_self_shadowing!(illuminated::AbstractVector{Bo
     @assert length(illuminated) == length(shape.faces) "illuminated vector must have same length as number of faces."
     @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using build_face_visibility_graph!(shape)."
     
-    r̂☉ = normalize(r☉)
-    
     @inbounds for i in eachindex(shape.faces)
-        n̂ᵢ = shape.face_normals[i]
-        
-        # First check if the face is oriented away from the sun
-        if n̂ᵢ ⋅ r̂☉ < 0
-            illuminated[i] = false
-        else
-            # Check for occlusions using face visibility graph
-            cᵢ = shape.face_centers[i]
-            ray = Ray(cᵢ, r̂☉)
-            visible_face_indices = get_visible_face_indices(shape.face_visibility_graph, i)
-            
-            occluded = false
-            for j in visible_face_indices
-                if intersect_ray_triangle(ray, shape, j).hit
-                    occluded = true
-                    break
-                end
-            end
-            illuminated[i] = !occluded
-        end
+        illuminated[i] = isilluminated_with_self_shadowing(shape, r☉, i)
     end
     
     return nothing
