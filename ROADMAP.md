@@ -19,8 +19,8 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
   - [ ] Add binary asteroid eclipse detection capability
 
 ### Infrastructure Improvements
-- [ ] Move BenchmarkTools to extras section
-- [ ] Optimize memory allocations in `visibility.jl`
+- [x] Move BenchmarkTools to extras section
+- [x] Optimize memory allocations in `visibility.jl` (experimental implementation in feature branch)
 
 ### Documentation
 - [ ] Add comprehensive BVH usage documentation
