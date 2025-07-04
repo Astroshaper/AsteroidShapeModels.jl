@@ -17,10 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Results maintain input shape for vector/matrix inputs
 
 ### Changed
-- **Face visibility graph unified to non-BVH implementation**
+- **Face visibility graph unified to non-BVH implementation** (#30)
   - Removed BVH-based visibility graph construction in `build_face_visibility_graph!`
   - Non-BVH algorithm with candidate filtering provides better performance (~2x faster than BVH)
   - BVH was found to be ~0.5x slower for face-to-face visibility queries
+- **Illumination check unified to non-BVH implementation**
+  - Removed BVH-based implementation from `isilluminated` function
+  - Uses FaceVisibilityGraph for efficient occlusion testing when available
+  - Falls back to checking all faces when visibility graph is not precomputed
 
 ### Documentation
 - Enhanced `intersect_ray_triangle` docstrings with backface culling behavior details

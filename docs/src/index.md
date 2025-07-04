@@ -64,9 +64,9 @@ shape.face_areas    # Area of of each face
 - Bounding box culling for efficiency
 
 ### Visibility Analysis
-- Face-to-face visibility computation with BVH support
+- Face-to-face visibility computation with optimized non-BVH algorithm
 - View factor calculations for thermal modeling
-- Illumination determination with BVH-based shadow testing (The current BVH option is slower than the non-BVH version.)
+- Illumination determination with optional occlusion testing
 
 ### Surface Roughness
 - Crater modeling
