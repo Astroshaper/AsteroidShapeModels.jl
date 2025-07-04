@@ -73,6 +73,8 @@ println("Face $face_id is ", illuminated ? "illuminated" : "in shadow")
 
 ## Ray-Shape Intersection
 
+### Single Ray
+
 ```julia
 # Define a ray
 origin = SA[1000.0, 0.0, 0.0]  # Start 1 km away
@@ -90,13 +92,45 @@ else
 end
 ```
 
+### Batch Ray Processing
+
+```julia
+# Process multiple rays efficiently
+rays = [Ray(SA[x, 0.0, 1000.0], SA[0.0, 0.0, -1.0]) for x in -500:100:500]
+results = intersect_ray_shape(rays, shape)
+
+# Count hits
+n_hits = count(r -> r.hit, results)
+println("$n_hits out of $(length(rays)) rays hit the shape.")
+
+# Process rays in a grid pattern
+ray_grid = [Ray(SA[x, y, 1000.0], SA[0.0, 0.0, -1.0]) 
+            for x in -500:100:500, y in -500:100:500]
+result_grid = intersect_ray_shape(ray_grid, shape)
+
+# Results maintain the same shape as input
+@assert size(result_grid) == size(ray_grid)
+
+# Alternative: Use matrix interface for maximum performance
+n_rays = 100
+origins = rand(3, n_rays) .* 2000 .- 1000  # Random origins
+directions = normalize.(eachcol(rand(3, n_rays) .- 0.5))
+directions = hcat(directions...)  # Convert back to matrix
+
+results = intersect_ray_shape(shape, origins, directions)
+```
+
 ## Performance Tips
 
 1. **Use StaticArrays**: All vector operations use `SVector` for performance
-2. **Batch operations**: Process multiple rays or faces together
-3. **Scale appropriately**: Use consistent units (typically meters)
-4. **Precompute visibility**: Use `with_face_visibility=true` when loading if you need visibility analysis
-5. **Access patterns**: The face visibility graph uses CSR format - sequential access is faster than random
+2. **Batch operations**: Process multiple rays together using vector/matrix interfaces:
+   - `intersect_ray_shape(rays::Vector{Ray}, shape)` for ray collections
+   - `intersect_ray_shape(rays::Matrix{Ray}, shape)` preserves grid structure
+   - `intersect_ray_shape(shape, origins, directions)` for maximum performance
+3. **BVH acceleration**: Automatically built on first ray intersection if not present
+4. **Scale appropriately**: Use consistent units (typically meters)
+5. **Precompute visibility**: Use `with_face_visibility=true` when loading if you need visibility analysis
+6. **Access patterns**: The face visibility graph uses CSR format - sequential access is faster than random
 
 ## Next Steps
 

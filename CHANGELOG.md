@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Batch ray processing functionality**
+  - Multiple dispatch for `intersect_ray_shape` to handle various input formats:
+    - `intersect_ray_shape(rays::Vector{Ray}, shape)` for ray collections
+    - `intersect_ray_shape(rays::Matrix{Ray}, shape)` preserves grid structure.
+    - `intersect_ray_shape(shape, origins, directions)` matching `ImplicitBVH`
+  - Efficient batch processing using single BVH traversal
+  - Results maintain input shape for vector/matrix inputs
+
+### Documentation
+- Enhanced `intersect_ray_triangle` docstrings with backface culling behavior details
+- Added batch ray processing examples to tutorial
+- Updated performance tips with batch operation recommendations
+
 ## [0.3.1] - 2025-07-02
 
 ### Added
