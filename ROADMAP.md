@@ -11,8 +11,8 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
     - [x] Remove legacy non-BVH implementation (#28)
     - [x] Remove custom `BoundingBox` type in favor of `ImplicitBVH`'s BBox (#28)
     - [x] Add batch ray processing capability (#29)
-  - [x] Unify face visibility graph to non-BVH implementation (cf. `build_face_visibility_graph` function) (current PR)
-  - [ ] Unify illumination check to non-BVH implementation (cf. `isilluminated` function)
+  - [x] Unify face visibility graph to non-BVH implementation (cf. `build_face_visibility_graph` function) (#30)
+  - [x] Unify illumination check to non-BVH implementation (cf. `isilluminated` function) (current PR)
   
 - **Illumination API Redesign**
   - [ ] Clarify self-shadowing and mutual-shadowing APIs

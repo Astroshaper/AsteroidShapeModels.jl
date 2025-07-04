@@ -214,50 +214,49 @@ end
 """
     isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool
 
-Return if the `i`-th face of the `shape` model is illuminated by the direct sunlight or not
+Return if the `i`-th face of `ShapeModel` is illuminated by direct sunlight.
 
 # Arguments
 - `shape` : Shape model of an asteroid
-- `r☉`    : Sun's position in the asteroid-fixed frame, which doesn't have to be normalized.
+- `r☉`    : Sun's position in the asteroid-fixed frame (doesn't need to be normalized)
 - `i`     : Index of the face to be checked
+
+# Algorithm
+The function operates in two modes depending on the availability of `face_visibility_graph`:
+
+1. **With face_visibility_graph**: Performs full occlusion testing
+   - Checks if the face is oriented towards the sun
+   - Tests occlusion only against faces visible from face `i`
+   - Efficient for complex, non-convex shapes
+
+2. **Without face_visibility_graph**: Assumes pseudo-convex model
+   - Only checks if the face is oriented towards the sun
+   - No occlusion testing is performed
+   - Suitable for approximately convex shapes or when performance is critical
+
+# Returns
+- `true` if the face is illuminated (facing the sun and not occluded)
+- `false` if the face is facing away from the sun or is in shadow
 """
-function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
+function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)::Bool
     cᵢ = shape.face_centers[i]
     n̂ᵢ = shape.face_normals[i]
     r̂☉ = normalize(r☉)
 
+    # First check if the face is oriented away from the sun
     n̂ᵢ ⋅ r̂☉ < 0 && return false
 
-    ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
-
-    # Use BVH if available for faster ray intersection
-    if !isnothing(shape.bvh)
-        # Use ImplicitBVH to check for any obstruction
-        origins    = reshape([cᵢ[1], cᵢ[2], cᵢ[3]], 3, 1)
-        directions = reshape([r̂☉[1], r̂☉[2], r̂☉[3]], 3, 1)
-        
-        # Traverse BVH to find all potential intersections
-        traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
-        
-        # Check for any valid intersection (excluding self-intersection)
-        for contact in traversal.contacts
-            j = Int(contact[1])  # Face index
-            j == i && continue   # Skip self-intersection
-            
-            # Perform actual intersection test
+    # If no face_visibility_graph, assume pseudo-convex model
+    # (only check face orientation, no occlusion testing)
+    if isnothing(shape.face_visibility_graph)
+        return true
+    else
+        # Use FaceVisibilityGraph to check for occlusions
+        ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
+        visible_face_indices = get_visible_face_indices(shape.face_visibility_graph, i)
+        for j in visible_face_indices
             intersect_ray_triangle(ray, shape, j).hit && return false
         end
         return true  # No obstruction found
     end
-    
-    # Fallback to FaceVisibilityGraph
-    if !isnothing(shape.face_visibility_graph)
-        visible_faces = get_visible_face_indices(shape.face_visibility_graph, i)
-        for j in visible_faces
-            intersect_ray_triangle(ray, shape, j).hit && return false
-        end
-        return true  # No obstruction found
-    end
-
-    return true  # No obstruction found
 end

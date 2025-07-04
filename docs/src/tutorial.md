@@ -127,7 +127,7 @@ results = intersect_ray_shape(shape, origins, directions)
    - `intersect_ray_shape(rays::Vector{Ray}, shape)` for ray collections
    - `intersect_ray_shape(rays::Matrix{Ray}, shape)` preserves grid structure
    - `intersect_ray_shape(shape, origins, directions)` for maximum performance
-3. **BVH acceleration**: Automatically built on first ray intersection if not present
+3. **BVH acceleration**: Automatically built for ray-shape intersection on first use
 4. **Scale appropriately**: Use consistent units (typically meters)
 5. **Precompute visibility**: Use `with_face_visibility=true` when loading if you need visibility analysis
 6. **Access patterns**: The face visibility graph uses CSR format - sequential access is faster than random
