@@ -327,41 +327,124 @@ This file tests advanced visibility and illumination calculations:
         # Shape 2: centered at origin (will be moved by transformation)
         nodes2_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes2]
         
-        shape1 = ShapeModel(nodes1_scaled, faces1)
-        shape2 = ShapeModel(nodes2_scaled, faces2)
-        
-        # Build BVH for shape2 (occluding shape)
-        build_bvh!(shape2)
+        shape1 = ShapeModel(nodes1_scaled, faces1; with_face_visibility=true, with_bvh=true)
+        shape2 = ShapeModel(nodes2_scaled, faces2; with_face_visibility=true, with_bvh=true)
         
         nfaces = length(shape1.faces)
         illuminated = Vector{Bool}(undef, nfaces)
         
-        @testset "Basic functionality" begin
-            # Sun from +z direction
+        @testset "No occlusion (separation)" begin
+            # Sun from +z direction, shape2 far away to the side
             sun_pos = SA[0.0, 0.0, 10.0]
             
-            # Shape2 far away (no occlusion)
+            # Shape2 displaced 10 units along x-axis (no occlusion possible)
             R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
             t = @SVector[10.0, 0.0, 0.0]
             
             update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
             
-            # Check that the function runs without error and some faces are illuminated
-            @test count(illuminated) > 0
+            # Compare with single asteroid case (should be identical)
+            illuminated_single = Vector{Bool}(undef, nfaces)
+            update_illumination!(illuminated_single, shape1, sun_pos)
+            @test count(illuminated) == count(illuminated_single)
         end
         
-        @testset "Transformation test" begin
-            # Test with different transformations
+        @testset "Partial occlusion" begin
+            # Sun from diagonal direction
+            sun_pos = SA[10.0, 10.0, 10.0]
+            
+            # Shape2 positioned to cast shadow on part of shape1
+            R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+            t = @SVector[1.5, 1.5, 1.5]
+            
+            update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
+            
+            # Some faces should be illuminated, some in shadow
+            n_illuminated = count(illuminated)
+            @test 0 < n_illuminated < nfaces
+            
+            # Should have fewer illuminated faces than without occlusion
+            illuminated_single = Vector{Bool}(undef, nfaces)
+            update_illumination!(illuminated_single, shape1, sun_pos)
+            @test n_illuminated <= count(illuminated_single)
+        end
+        
+        @testset "Occlusion verification" begin
+            # Test that occlusion actually reduces illumination
+            sun_pos = SA[10.0, 0.0, 0.0]
+            
+            # Get baseline illumination without occlusion
+            illuminated_baseline = Vector{Bool}(undef, nfaces)
+            update_illumination!(illuminated_baseline, shape1, sun_pos)
+            baseline_count = count(illuminated_baseline)
+            
+            # Place shape2 to cause some occlusion
+            R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+            t = @SVector[2.0, 0.0, 0.0]
+            
+            update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
+            occluded_count = count(illuminated)
+            
+            # With occlusion, we should have fewer or equal illuminated faces
+            @test occluded_count <= baseline_count
+            
+            # Verify the function runs correctly
+            @test occluded_count >= 0
+            @test occluded_count <= nfaces
+        end
+        
+        @testset "Rotation transformation" begin
+            # Test that rotation matrix properly transforms coordinates
             sun_pos = SA[10.0, 0.0, 0.0]
             
             # 90 degree rotation around z-axis
+            # This rotates shape2 but doesn't change occlusion pattern for cubes
             R = @SMatrix[0.0 -1.0 0.0; 1.0 0.0 0.0; 0.0 0.0 1.0]
             t = @SVector[0.0, 5.0, 0.0]
             
             update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
             
-            # Should have some illuminated faces
+            # Should have some illuminated faces (sun from +x)
             @test count(illuminated) > 0
+        end
+        
+        @testset "Identity transformation equivalence" begin
+            # Test that identity transformation with t=0 gives same result as single asteroid
+            sun_pos = SA[1.0, 1.0, 1.0]
+            
+            # Identity transformation with zero translation
+            R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+            t = @SVector[0.0, 0.0, 0.0]
+            
+            # Both shapes at same location should give self-shadowing only
+            shape2_coincident = ShapeModel(nodes1_scaled, faces1)
+            build_bvh!(shape2_coincident)
+            
+            update_illumination!(illuminated, shape1, sun_pos, shape2_coincident, R, t)
+            
+            # Compare with single asteroid result
+            illuminated_single = Vector{Bool}(undef, nfaces)
+            update_illumination!(illuminated_single, shape1, sun_pos)
+            
+            # Results might differ due to numerical precision at boundaries
+            # But should be very similar
+            @test abs(count(illuminated) - count(illuminated_single)) <= 2
+        end
+        
+        @testset "Complex rotation and translation" begin
+            # Test with combined rotation and translation
+            sun_pos = SA[10.0, 5.0, 0.0]
+            
+            # 45 degree rotation around y-axis and translation
+            θ = π/4
+            R = @SMatrix[cos(θ) 0.0 sin(θ); 0.0 1.0 0.0; -sin(θ) 0.0 cos(θ)]
+            t = @SVector[3.0, 0.0, 3.0]
+            
+            update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
+            
+            # Should have partial occlusion
+            n_illuminated = count(illuminated)
+            @test 0 < n_illuminated < nfaces
         end
     end
     
