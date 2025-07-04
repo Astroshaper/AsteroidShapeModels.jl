@@ -10,7 +10,11 @@ surface energy balance of asteroids.
 Exported Functions:
 - `view_factor`: Calculate the view factor between two triangular faces
 - `build_face_visibility_graph!`: Build the face-to-face visibility graph
-- `isilluminated`: Check if a face is illuminated by direct sunlight
+- `isilluminated_pseudo_convex`: Check face illumination using pseudo-convex model
+- `isilluminated_with_self_shadowing`: Check face illumination with self-shadowing
+- `update_illumination_pseudo_convex!`: Batch update illumination (pseudo-convex)
+- `update_illumination_with_self_shadowing!`: Batch update with self-shadowing
+- `apply_eclipse_shadowing!`: Apply mutual shadowing from another shape
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
