@@ -260,3 +260,136 @@ function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)::Bo
         return true  # No obstruction found
     end
 end
+
+"""
+    update_illumination!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+
+Update the illumination state for all faces of a shape model in-place.
+
+# Arguments
+- `illuminated` : Boolean vector to store illumination state (must have length equal to number of faces)
+- `shape`       : Shape model of an asteroid
+- `r☉`          : Sun's position in the asteroid-fixed frame
+
+# Description
+This function efficiently computes the illumination state for all faces at once,
+updating the provided boolean vector in-place to avoid memory allocations.
+This is particularly useful for thermal physics simulations where illumination
+states need to be updated at each time step.
+
+The function operates in two modes:
+1. With face visibility graph: Performs full occlusion testing
+2. Without face visibility graph: Assumes pseudo-convex model (only checks face orientation)
+
+# Example
+```julia
+shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true)
+nfaces = length(shape.faces)
+illuminated = Vector{Bool}(undef, nfaces)
+sun_position = SA[149597870700.0, 0.0, 0.0]  # 1 au along x-axis
+
+update_illumination!(illuminated, shape, sun_position)
+n_illuminated = count(illuminated)
+println("\$n_illuminated faces are illuminated.")
+```
+"""
+function update_illumination!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+    @assert length(illuminated) == length(shape.faces) "illuminated vector must have same length as number of faces."
+    
+    @inbounds for i in eachindex(shape.faces)
+        illuminated[i] = isilluminated(shape, r☉, i)
+    end
+    
+    return nothing
+end
+
+"""
+    update_illumination!(
+        illuminated::AbstractVector{Bool}, target_shape::ShapeModel, r☉::StaticVector{3}, 
+        occluding_shape::ShapeModel, R::StaticMatrix{3,3}, t::StaticVector{3}
+    )
+
+Update illumination state considering occlusion by another shape (for binary asteroids).
+
+# Arguments
+- `illuminated`     : Boolean vector to store illumination state (must have length equal to number of faces)
+- `target_shape`    : Target shape model to be determined for solar illumination
+- `r☉`              : Sun's position in the target shape's frame
+- `occluding_shape` : Shape model that may cast shadows on the target shape
+- `R`               : 3×3 rotation matrix from `target_shape` frame to `occluding_shape` frame
+- `t`               : 3D translation vector from `target_shape` frame to `occluding_shape` frame
+
+# Description
+This function computes illumination considering both self-shadowing and occlusion
+by another body. It's designed for binary asteroid systems where one component
+can eclipse the other.
+
+The function first checks self-shadowing using the standard algorithm, then checks
+if illuminated faces are occluded by the other body. This is purely geometric -
+physical effects like penumbra should be handled by the thermal modeling code.
+
+# Coordinate Systems
+The transformation from `target_shape` frame to `occluding_shape` frame is given by:
+`p_occluding = R * p_target + t`
+
+# Example
+```julia
+# Binary asteroid system
+shape1 = load_shape_obj("path/to/shape1.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
+shape2 = load_shape_obj("path/to/shape2.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
+
+# Rotation matrix (identity in this case)
+R = SA[
+    1.0 0.0 0.0;
+    0.0 1.0 0.0;
+    0.0 0.0 1.0;
+]
+
+# Translation vector: shape2 is 5 km away along x-axis from shape1
+t = SA[5000.0, 0.0, 0.0]
+
+illuminated = Vector{Bool}(undef, length(shape1.faces))
+sun_position = SA[149597870700.0, 0.0, 0.0]  # 1 au along x-axis
+
+update_illumination!(illuminated, shape1, sun_position, shape2, R, t)
+```
+"""
+function update_illumination!(
+    illuminated::AbstractVector{Bool}, target_shape::ShapeModel, r☉::StaticVector{3},
+    occluding_shape::ShapeModel, R::StaticMatrix{3,3}, t::StaticVector{3}
+)
+    @assert length(illuminated) == length(target_shape.faces) "illuminated vector must have same length as number of faces."
+    
+    # First check self-shadowing
+    update_illumination!(illuminated, target_shape, r☉)
+    
+    # If all faces are already in shadow, no need to check occlusion
+    if !any(illuminated)
+        return nothing
+    end
+    
+    # Check occlusion by the other body for illuminated faces only
+    r̂☉ = normalize(r☉)
+    
+    @inbounds for i in eachindex(target_shape.faces)
+        if illuminated[i]  # Only check if not already in shadow
+            # Ray from face center to sun in target's frame
+            ray_origin = target_shape.face_centers[i]
+            
+            # Transform ray's origin and direction to occluding shape's frame
+            # (Ray directions are not affected by translation)
+            origin_transformed = R * ray_origin + t
+            direction_transformed = R * r̂☉
+            
+            # Create ray in occluding shape's frame
+            ray_transformed = Ray(origin_transformed, direction_transformed)
+            
+            # Check intersection with occluding shape
+            if intersect_ray_shape(ray_transformed, occluding_shape).hit
+                illuminated[i] = false
+            end
+        end
+    end
+    
+    return nothing
+end

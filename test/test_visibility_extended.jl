@@ -231,6 +231,140 @@ This file tests advanced visibility and illumination calculations:
         end
     end
     
+    @testset "Batch Illumination Update" begin
+        # Create a simple cube shape using helper function
+        nodes_unit, faces_unit = create_unit_cube()
+        # Scale and center the cube
+        nodes = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes_unit]
+        
+        shape = ShapeModel(nodes, faces_unit)
+        nfaces = length(shape.faces)
+        illuminated = Vector{Bool}(undef, nfaces)
+        
+        @testset "Without Face Visibility (Pseudo-convex)" begin
+            # Sun from +z direction
+            sun_pos = SA[0.0, 0.0, 10.0]
+            update_illumination!(illuminated, shape, sun_pos)
+            
+            # Check which faces are illuminated
+            illuminated_indices = findall(illuminated)
+            
+            # For a cube centered at origin, faces with positive z-component normals should be illuminated
+            # The exact number depends on the face ordering from create_unit_cube
+            @test count(illuminated) > 0    # At least some faces should be illuminated
+            @test count(illuminated) ≤ 12  # At most all faces could be illuminated
+            
+            # Verify that illuminated faces have normals pointing towards the sun
+            @test all(i -> shape.face_normals[i][3] > -1e-10, illuminated_indices)
+        end
+        
+        @testset "With Face Visibility (Full occlusion)" begin
+            # Build visibility graph
+            build_face_visibility_graph!(shape)
+            
+            # Sun from diagonal direction
+            sun_pos = SA[1.0, 1.0, 1.0]
+            update_illumination!(illuminated, shape, sun_pos)
+            
+            # Three faces should be illuminated (top, right, back)
+            # The exact count depends on face normals
+            @test count(illuminated) > 0
+            @test count(illuminated) ≤ 6  # At most 3 sides visible = 6 triangles
+        end
+        
+        @testset "Compare with isilluminated" begin
+            # Sun from various directions
+            test_positions = [
+                SA[10.0, 0.0, 0.0],   # +x
+                SA[0.0, 10.0, 0.0],   # +y
+                SA[0.0, 0.0, 10.0],   # +z
+                SA[-10.0, 0.0, 0.0],  # -x
+                SA[0.0, -10.0, 0.0],  # -y
+                SA[0.0, 0.0, -10.0],  # -z
+                SA[1.0, 1.0, 1.0]     # diagonal
+            ]
+            
+            for sun_pos in test_positions
+                # Update using batch function
+                update_illumination!(illuminated, shape, sun_pos)
+                
+                # Compare with individual isilluminated calls
+                @test all(i -> illuminated[i] == isilluminated(shape, sun_pos, i), 1:nfaces)
+            end
+        end
+        
+        @testset "Performance comparison" begin
+            # Create a larger shape for performance testing (regular tetrahedron)
+            nodes_tet, faces_tet = create_regular_tetrahedron()
+            shape_large = ShapeModel(nodes_tet, faces_tet)
+            nfaces_large = length(shape_large.faces)
+            illuminated_large = Vector{Bool}(undef, nfaces_large)
+            sun_pos = SA[1.0, 0.0, 0.0]
+            
+            # Time batch update
+            t_batch = @elapsed update_illumination!(illuminated_large, shape_large, sun_pos)
+            
+            # Time individual calls
+            t_individual = @elapsed begin
+                for i in 1:nfaces_large
+                    isilluminated(shape_large, sun_pos, i)
+                end
+            end
+            
+            # Batch should be comparable or faster (avoiding repeated normalization)
+            @test t_batch < 2.0 * t_individual  # Should not be much slower
+        end
+    end
+    
+    @testset "Binary Asteroid Illumination" begin
+        # Create two simple shapes for binary asteroid testing
+        nodes1, faces1 = create_unit_cube()
+        nodes2, faces2 = create_unit_cube()
+        
+        # Scale and position the shapes
+        # Shape 1: centered at origin
+        nodes1_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes1]
+        # Shape 2: centered at origin (will be moved by transformation)
+        nodes2_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes2]
+        
+        shape1 = ShapeModel(nodes1_scaled, faces1)
+        shape2 = ShapeModel(nodes2_scaled, faces2)
+        
+        # Build BVH for shape2 (occluding shape)
+        build_bvh!(shape2)
+        
+        nfaces = length(shape1.faces)
+        illuminated = Vector{Bool}(undef, nfaces)
+        
+        @testset "Basic functionality" begin
+            # Sun from +z direction
+            sun_pos = SA[0.0, 0.0, 10.0]
+            
+            # Shape2 far away (no occlusion)
+            R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+            t = @SVector[10.0, 0.0, 0.0]
+            
+            update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
+            
+            # Check that the function runs without error and some faces are illuminated
+            @test count(illuminated) > 0
+        end
+        
+        @testset "Transformation test" begin
+            # Test with different transformations
+            sun_pos = SA[10.0, 0.0, 0.0]
+            
+            # 90 degree rotation around z-axis
+            R = @SMatrix[0.0 -1.0 0.0; 1.0 0.0 0.0; 0.0 0.0 1.0]
+            t = @SVector[0.0, 5.0, 0.0]
+            
+            update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
+            
+            # Should have some illuminated faces
+            @test count(illuminated) > 0
+        end
+    end
+    
     @testset "Edge Cases for View Factor" begin
         @testset "Zero Distance (Coincident Centers)" begin
             # This should be handled gracefully
