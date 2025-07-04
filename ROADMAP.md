@@ -7,10 +7,10 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
 ### Major Changes (Breaking Changes)
 - **Full Integration of `ImplicitBVH.jl`**
   - [x] Add performance benchmarks
-  - [x] Unify ray intersection to BVH implementation only
-    - [x] Remove legacy non-BVH implementation
-    - [x] Remove custom `BoundingBox` type in favor of `ImplicitBVH`'s BBox
-    - [ ] Add batch ray processing capability
+  - [x] Unify ray intersection to BVH implementation only (#28)
+    - [x] Remove legacy non-BVH implementation (#28)
+    - [x] Remove custom `BoundingBox` type in favor of `ImplicitBVH`'s BBox (#28)
+    - [x] Add batch ray processing capability (#29)
   - [ ] Unify face visibility graph to non-BVH implementation (cf. `build_face_visibility_graph` function)
   - [ ] Unify illumination check to non-BVH implementation (cf. `isilluminated` function)
   
