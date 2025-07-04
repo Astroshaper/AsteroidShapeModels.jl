@@ -16,7 +16,6 @@ Exported Functions:
 - `intersect_ray_shape`: Find ray-shape intersections (single ray or batch processing)
 =#
 
-
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║               Ray-Triangle Intersection (Möller-Trumbore)         ║
 # ╚═══════════════════════════════════════════════════════════════════╝
