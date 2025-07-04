@@ -85,13 +85,30 @@ let ray = Ray([0.0, 0.0, 1000.0], [0.0, 0.0, -1.0])
     # Full shape intersection
     SUITE["ray_intersection"]["full_shape"] = @benchmarkable intersect_ray_shape($ray, $SHAPE)
     
-    # Multiple rays
-    rays = [Ray([x, y, 1000.0], [0.0, 0.0, -1.0]) for x in -500:100:500, y in -500:100:500]
-    SUITE["ray_intersection"]["multiple_rays"] = @benchmarkable begin
-        for ray in $rays
+    # Multiple rays - old method (loop)
+    rays_mat = [Ray([x, y, 1000.0], [0.0, 0.0, -1.0]) for x in -500:100:500, y in -500:100:500]
+    SUITE["ray_intersection"]["multiple_rays_loop"] = @benchmarkable begin
+        for ray in $rays_mat
             intersect_ray_shape(ray, $SHAPE)
         end
     end
+    
+    # Batch processing - new method (vector)
+    rays_vec = vec(rays_mat)  # Convert to vector
+    SUITE["ray_intersection"]["batch_rays_vector"] = @benchmarkable intersect_ray_shape($rays_vec, $SHAPE)
+    
+    # Batch processing - matrix interface
+    SUITE["ray_intersection"]["batch_rays_matrix"] = @benchmarkable intersect_ray_shape($rays_mat, $SHAPE)
+    
+    # Raw matrix interface (maximum performance)
+    n_rays = length(rays_vec)
+    origins = zeros(3, n_rays)
+    directions = zeros(3, n_rays)
+    for (i, ray) in enumerate(rays_vec)
+        origins[:, i] = ray.origin
+        directions[:, i] = ray.direction
+    end
+    SUITE["ray_intersection"]["batch_rays_raw"] = @benchmarkable intersect_ray_shape($SHAPE, $origins, $directions)
 end
 
 # 5. Shape characteristics

@@ -175,4 +175,138 @@ This file verifies:
         test_ray_intersection(result, true, 1.0, @SVector([0.25, 0.25, 0.0]))
         @test result.face_index == 1
     end
+    
+    @testset "Batch Ray Intersection" begin
+        # Test batch ray-shape intersection functionality
+        
+        # Create a simple shape model
+        nodes, faces = create_xy_triangle()
+        shape = ShapeModel(nodes, faces; with_bvh=true)
+        
+        @testset "Matrix Interface (origins/directions)" begin
+            # Test with matrix interface matching ImplicitBVH.traverse_rays
+            n_rays = 5
+            origins = zeros(3, n_rays)
+            directions = zeros(3, n_rays)
+            
+            # Ray 1: Hit center
+            origins[:, 1] = [0.25, 0.25, 1.0]
+            directions[:, 1] = [0.0, 0.0, -1.0]
+            
+            # Ray 2: Miss (outside triangle)
+            origins[:, 2] = [2.0, 2.0, 1.0]
+            directions[:, 2] = [0.0, 0.0, -1.0]
+            
+            # Ray 3: Hit near edge (moved slightly inside to avoid edge case)
+            origins[:, 3] = [0.3, 0.1, 1.0]
+            directions[:, 3] = [0.0, 0.0, -1.0]
+            
+            # Ray 4: Parallel (miss)
+            origins[:, 4] = [0.25, 0.25, 1.0]
+            directions[:, 4] = [1.0, 0.0, 0.0]
+            
+            # Ray 5: Hit from below
+            origins[:, 5] = [0.1, 0.1, -1.0]
+            directions[:, 5] = [0.0, 0.0, 1.0]
+            
+            # Perform batch intersection
+            results = intersect_ray_shape(shape, origins, directions)
+            
+            # Verify results
+            @test length(results) == 5
+            
+            # Ray 1: Center hit
+            @test results[1].hit == true
+            @test results[1].face_index == 1
+            @test results[1].distance ≈ 1.0
+            @test results[1].point ≈ SA[0.25, 0.25, 0.0]
+            
+            # Ray 2: Miss
+            @test results[2].hit == false
+            
+            # Ray 3: Hit
+            @test results[3].hit == true
+            @test results[3].face_index == 1
+            @test results[3].distance ≈ 1.0
+            @test results[3].point ≈ SA[0.3, 0.1, 0.0]
+            
+            # Ray 4: Parallel miss
+            @test results[4].hit == false
+            
+            # Ray 5: Hit from below
+            @test results[5].hit == true
+            @test results[5].face_index == 1
+            @test results[5].distance ≈ 1.0
+            @test results[5].point ≈ SA[0.1, 0.1, 0.0]
+        end
+        
+        @testset "Vector of Rays" begin
+            # Test with vector of Ray objects
+            rays = [
+                Ray(SA[0.25, 0.25, 1.0], SA[0.0, 0.0, -1.0]),  # Hit center
+                Ray(SA[2.0, 2.0, 1.0],   SA[0.0, 0.0, -1.0]),  # Miss
+                Ray(SA[0.1, 0.1, 1.0],   SA[0.0, 0.0, -1.0]),  # Hit
+                Ray(SA[0.4, 0.2, 2.0],   SA[0.0, 0.0, -1.0]),  # Hit from farther
+            ]
+            
+            results = intersect_ray_shape(rays, shape)
+            
+            @test length(results) == 4
+            @test results[1].hit == true
+            @test results[1].point ≈ SA[0.25, 0.25, 0.0]
+            @test results[2].hit == false
+            @test results[3].hit == true
+            @test results[3].point ≈ SA[0.1, 0.1, 0.0]
+            @test results[4].hit == true
+            @test results[4].distance ≈ 2.0
+        end
+        
+        @testset "Matrix of Rays" begin
+            # Test with matrix of Ray objects (preserving shape)
+            rays_mat = [
+                Ray(SA[x, y, 1.0], SA[0.0, 0.0, -1.0]) 
+                for x in [0.1, 0.25, 0.4], y in [0.1, 0.25]
+            ]
+            
+            results_mat = intersect_ray_shape(rays_mat, shape)
+            
+            # Verify output shape matches input shape
+            @test size(results_mat) == size(rays_mat)
+            @test results_mat isa Matrix{RayShapeIntersectionResult}
+            
+            # Check specific results (all points inside triangle)
+            @test results_mat[1, 1].hit == true  # (0.1, 0.1)   - inside
+            @test results_mat[2, 1].hit == true  # (0.25, 0.1)  - inside
+            @test results_mat[3, 1].hit == true  # (0.4, 0.1)   - inside
+            @test results_mat[1, 2].hit == true  # (0.1, 0.25)  - inside
+            @test results_mat[2, 2].hit == true  # (0.25, 0.25) - inside
+            @test results_mat[3, 2].hit == true  # (0.4, 0.25)  - inside (0.4 + 0.25 = 0.65 < 1)
+            
+            # Verify all hit points have z = 0
+            for result in results_mat
+                if result.hit
+                    @test result.point[3] ≈ 0.0
+                end
+            end
+        end
+        
+        @testset "Edge Cases" begin
+            # Empty rays
+            empty_rays = Ray[]
+            results = intersect_ray_shape(empty_rays, shape)
+            @test isempty(results)
+            
+            # Single ray as vector
+            single_ray = [Ray(SA[0.2, 0.2, 1.0], SA[0.0, 0.0, -1.0])]
+            results = intersect_ray_shape(single_ray, shape)
+            @test length(results) == 1
+            @test results[1].hit == true
+            
+            # 1x1 matrix
+            ray_mat_1x1 = reshape([Ray(SA[0.2, 0.2, 1.0], SA[0.0, 0.0, -1.0])], 1, 1)
+            results_mat = intersect_ray_shape(ray_mat_1x1, shape)
+            @test size(results_mat) == (1, 1)
+            @test results_mat[1, 1].hit == true
+        end
+    end
 end
