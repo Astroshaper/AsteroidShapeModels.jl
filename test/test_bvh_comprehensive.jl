@@ -3,7 +3,7 @@
 
 This file tests ray intersection and visibility functionality:
 1. Ray-shape intersection with BVH acceleration
-2. isilluminated function with BVH
+2. isilluminated function performance (full occlusion vs pseudo-convex models)
 3. build_face_visibility_graph! performance
 All tests include correctness verification and performance benchmarks.
 =#
@@ -104,45 +104,55 @@ All tests include correctness verification and performance benchmarks.
     end
     
     # ═══════════════════════════════════════════════════════════════════
-    #   Part 2: isilluminated Function with BVH
+    #   Part 2: isilluminated Function Performance
     # ═══════════════════════════════════════════════════════════════════
     
-    @testset "isilluminated BVH" begin
+    @testset "isilluminated Performance" begin
         println("\n" * "="^70)
-        println("  Part 2: isilluminated Function BVH Tests")
+        println("  Part 2: isilluminated Function Performance Tests")
         println("="^70)
         
         # Define sun position (closer for better test results)
         r☉ = SA[1000.0, 500.0, 300.0]  # Closer sun position in meters
         
-        # Create shape with face visibility graph for baseline
+        # Create shape with face visibility graph
         shape_with_vis = ShapeModel(shape.nodes, shape.faces; with_face_visibility=true)
         
+        # Create shape without visibility graph for pseudo-convex model test
+        shape_no_vis = ShapeModel(shape.nodes, shape.faces; with_face_visibility=false)
+        
         # 2.1 Test all faces
-        println("\n2.1 Testing ALL $n_faces faces:")
+        println("\n2.1 Comparing illumination models ($n_faces faces):")
         
         results_with_vis = Bool[]
-        results_with_bvh = Bool[]
+        results_pseudo_convex = Bool[]
         
-        print("  Computing baseline (with visibility graph)...")
+        print("  Full occlusion model (with visibility graph)...")
         time_with_vis = @elapsed for i in 1:n_faces
             push!(results_with_vis, isilluminated(shape_with_vis, r☉, i))
         end
         println(" done ($(round(time_with_vis, digits=3))s)")
         
-        print("  Computing with BVH...")
-        time_bvh = @elapsed for i in 1:n_faces
-            push!(results_with_bvh, isilluminated(shape, r☉, i))
+        print("  Pseudo-convex model (no visibility graph)...")
+        time_pseudo_convex = @elapsed for i in 1:n_faces
+            push!(results_pseudo_convex, isilluminated(shape_no_vis, r☉, i))
         end
-        println(" done ($(round(time_bvh, digits=3))s)")
+        println(" done ($(round(time_pseudo_convex, digits=3))s)")
         
         count_with_vis = sum(results_with_vis)
-        count_bvh = sum(results_with_bvh)
+        count_pseudo_convex = sum(results_pseudo_convex)
         
-        println("\n  Results:")
-        println("    With visibility graph : $count_with_vis / $n_faces illuminated")
-        println("    With BVH              : $count_bvh / $n_faces illuminated")
-        println("    Difference            : $(abs(count_with_vis - count_bvh)) faces")
+        println("\n  Illumination results:")
+        println("    Full occlusion model : $count_with_vis / $n_faces faces illuminated")
+        println("    Pseudo-convex model  : $count_pseudo_convex / $n_faces faces illuminated")
+        println("    Difference           : $(abs(count_pseudo_convex - count_with_vis)) faces")
+        println("\n  Note: Pseudo-convex model only checks face orientation (no shadow testing)")
+        println("        Differences are expected for non-convex shapes")
+        
+        # Note: Results will differ because:
+        # - With visibility graph: checks actual occlusions
+        # - Without visibility graph: assumes pseudo-convex (no occlusion check)
+        # This is expected behavior, not an error
         
         # 2.2 Performance comparison
         println("\n2.2 Performance comparison:")
@@ -157,18 +167,19 @@ All tests include correctness verification and performance benchmarks.
             end
         end setup=(sample_faces=$sample_faces; shape_with_vis=$shape_with_vis; r☉=$r☉) / length(sample_faces)
         
-        time_per_face_bvh = @belapsed begin
+        time_per_face_pseudo_convex = @belapsed begin
             for i in sample_faces
-                isilluminated(shape, r☉, i)
+                isilluminated(shape_no_vis, r☉, i)
             end
-        end setup=(sample_faces=$sample_faces; shape=$shape; r☉=$r☉) / length(sample_faces)
+        end setup=(sample_faces=$sample_faces; shape_no_vis=$shape_no_vis; r☉=$r☉) / length(sample_faces)
         
         println("  Average time per face:")
-        println("    With visibility graph : $(round(time_per_face_with_vis * 1e6, digits=2)) μs")
-        println("    With BVH             : $(round(time_per_face_bvh * 1e6, digits=2)) μs")
+        println("    Full occlusion model : $(round(time_per_face_with_vis * 1e6, digits=2)) μs")
+        println("    Pseudo-convex model  : $(round(time_per_face_pseudo_convex * 1e6, digits=2)) μs")
+        println("    Speedup              : $(round(time_per_face_pseudo_convex / time_per_face_with_vis, digits=1))x")
         
-        # Note: BVH may be slower for isilluminated because it checks all obstructions
-        # while no-BVH version returns immediately on first obstruction
+        # Note: Visibility graph provides significant speedup by limiting occlusion checks
+        # to only potentially visible faces
     end
     
     # ═══════════════════════════════════════════════════════════════════
@@ -225,14 +236,14 @@ All tests include correctness verification and performance benchmarks.
     end
     
     # ═══════════════════════════════════════════════════════════════════
-    # Summary
+    #   Summary
     # ═══════════════════════════════════════════════════════════════════
     
     println("\n" * "="^70)
-    println("Test Summary")
+    println("  Test Summary")
     println("="^70)
     println("✓ Ray-shape intersection: BVH implementation tested")
-    println("✓ isilluminated: BVH implementation tested")
+    println("✓ isilluminated: Non-BVH implementation tested")
     println("✓ build_face_visibility_graph!: Non-BVH performance evaluated")
     println("✓ All tests completed with $(n_faces)-face model")
 end
