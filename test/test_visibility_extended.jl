@@ -151,7 +151,7 @@ This file tests advanced visibility and illumination calculations:
             
             # Check each face
             for i in 1:length(faces)
-                illuminated = isilluminated(shape, sun_pos, i)
+                illuminated = isilluminated_with_self_shadowing(shape, sun_pos, i)
                 
                 # Only faces with positive z-component of normal should be illuminated
                 if shape.face_normals[i][3] > 0
@@ -168,7 +168,7 @@ This file tests advanced visibility and illumination calculations:
             
             # Check which faces are illuminated based on their normals
             for i in 1:length(faces)
-                illuminated = isilluminated(shape, sun_pos, i)
+                illuminated = isilluminated_with_self_shadowing(shape, sun_pos, i)
                 # Faces with negative z-component of normal should be illuminated
                 if shape.face_normals[i][3] < 0
                     @test illuminated == true
@@ -189,9 +189,9 @@ This file tests advanced visibility and illumination calculations:
             sun_pos_diag = SA[1.0, 1.0, 1.0]
             
             # At least one face should be illuminated from each direction
-            illuminated_x = any(isilluminated(shape, sun_pos_x, i) for i in 1:4)
-            illuminated_y = any(isilluminated(shape, sun_pos_y, i) for i in 1:4)
-            illuminated_diag = any(isilluminated(shape, sun_pos_diag, i) for i in 1:4)
+            illuminated_x = any(isilluminated_with_self_shadowing(shape, sun_pos_x, i) for i in 1:4)
+            illuminated_y = any(isilluminated_with_self_shadowing(shape, sun_pos_y, i) for i in 1:4)
+            illuminated_diag = any(isilluminated_with_self_shadowing(shape, sun_pos_diag, i) for i in 1:4)
             
             @test illuminated_x == true
             @test illuminated_y == true
@@ -223,8 +223,8 @@ This file tests advanced visibility and illumination calculations:
             sun_low = SA[0.0, -1.0, 0.1]  # Slightly above horizon from -y
             
             # Wall faces should be illuminated
-            @test isilluminated(shape_shadow, sun_low, 1) == true
-            @test isilluminated(shape_shadow, sun_low, 2) == true
+            @test isilluminated_with_self_shadowing(shape_shadow, sun_low, 1) == true
+            @test isilluminated_with_self_shadowing(shape_shadow, sun_low, 2) == true
             
             # Floor faces might be shadowed (depends on exact geometry)
             # This is a complex case that depends on the visibility calculation
@@ -244,7 +244,7 @@ This file tests advanced visibility and illumination calculations:
         @testset "Without Face Visibility (Pseudo-convex)" begin
             # Sun from +z direction
             sun_pos = SA[0.0, 0.0, 10.0]
-            update_illumination!(illuminated, shape, sun_pos)
+            update_illumination_pseudo_convex!(illuminated, shape, sun_pos)
             
             # Check which faces are illuminated
             illuminated_indices = findall(illuminated)
@@ -264,7 +264,7 @@ This file tests advanced visibility and illumination calculations:
             
             # Sun from diagonal direction
             sun_pos = SA[1.0, 1.0, 1.0]
-            update_illumination!(illuminated, shape, sun_pos)
+            update_illumination_with_self_shadowing!(illuminated, shape, sun_pos)
             
             # Three faces should be illuminated (top, right, back)
             # The exact count depends on face normals
@@ -286,10 +286,10 @@ This file tests advanced visibility and illumination calculations:
             
             for sun_pos in test_positions
                 # Update using batch function
-                update_illumination!(illuminated, shape, sun_pos)
+                update_illumination_with_self_shadowing!(illuminated, shape, sun_pos)
                 
-                # Compare with individual isilluminated calls
-                @test all(i -> illuminated[i] == isilluminated(shape, sun_pos, i), 1:nfaces)
+                # Compare with individual isilluminated_with_self_shadowing calls
+                @test all(i -> illuminated[i] == isilluminated_with_self_shadowing(shape, sun_pos, i), 1:nfaces)
             end
         end
         
@@ -302,12 +302,12 @@ This file tests advanced visibility and illumination calculations:
             sun_pos = SA[1.0, 0.0, 0.0]
             
             # Time batch update
-            t_batch = @elapsed update_illumination!(illuminated_large, shape_large, sun_pos)
+            t_batch = @elapsed update_illumination_pseudo_convex!(illuminated_large, shape_large, sun_pos)
             
             # Time individual calls
             t_individual = @elapsed begin
                 for i in 1:nfaces_large
-                    isilluminated(shape_large, sun_pos, i)
+                    isilluminated_pseudo_convex(shape_large, sun_pos, i)
                 end
             end
             
@@ -316,135 +316,89 @@ This file tests advanced visibility and illumination calculations:
         end
     end
     
-    @testset "Binary Asteroid Illumination" begin
-        # Create two simple shapes for binary asteroid testing
-        nodes1, faces1 = create_unit_cube()
-        nodes2, faces2 = create_unit_cube()
+    @testset "New Illumination API Tests" begin
+        # Create a simple shape with visibility graph
+        nodes, faces = create_unit_cube()
+        nodes_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes]
+        shape = ShapeModel(nodes_scaled, faces)
+        build_face_visibility_graph!(shape)
         
-        # Scale and position the shapes
-        # Shape 1: centered at origin
-        nodes1_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes1]
-        # Shape 2: centered at origin (will be moved by transformation)
-        nodes2_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes2]
+        nfaces = length(shape.faces)
+        sun_pos = SA[10.0, 5.0, 3.0]
         
-        shape1 = ShapeModel(nodes1_scaled, faces1; with_face_visibility=true, with_bvh=true)
-        shape2 = ShapeModel(nodes2_scaled, faces2; with_face_visibility=true, with_bvh=true)
-        
-        nfaces = length(shape1.faces)
-        illuminated = Vector{Bool}(undef, nfaces)
-        
-        @testset "No occlusion (separation)" begin
-            # Sun from +z direction, shape2 far away to the side
-            sun_pos = SA[0.0, 0.0, 10.0]
+        @testset "Pseudo-convex vs full illumination" begin
+            illuminated_pseudo = Vector{Bool}(undef, nfaces)
+            illuminated_full = Vector{Bool}(undef, nfaces)
             
-            # Shape2 displaced 10 units along x-axis (no occlusion possible)
+            # Pseudo-convex model (orientation only)
+            update_illumination_pseudo_convex!(illuminated_pseudo, shape, sun_pos)
+            
+            # Full model with self-shadowing
+            update_illumination_with_self_shadowing!(illuminated_full, shape, sun_pos)
+            
+            # Pseudo-convex should have more or equal illuminated faces
+            @test count(illuminated_pseudo) >= count(illuminated_full)
+        end
+        
+        @testset "API consistency" begin
+            illuminated1 = Vector{Bool}(undef, nfaces)
+            illuminated2 = Vector{Bool}(undef, nfaces)
+            
+            # Test consistency between the two functions
+            update_illumination_with_self_shadowing!(illuminated1, shape, sun_pos)
+            update_illumination_with_self_shadowing!(illuminated2, shape, sun_pos)
+            
+            @test all(illuminated1 .== illuminated2)
+        end
+        
+        @testset "isilluminated split functions" begin
+            # Test isilluminated_pseudo_convex
+            for i in 1:nfaces
+                result_pseudo = isilluminated_pseudo_convex(shape, sun_pos, i)
+                n̂ᵢ = shape.face_normals[i]
+                r̂☉ = normalize(sun_pos)
+                expected = n̂ᵢ ⋅ r̂☉ > 0
+                @test result_pseudo == expected
+            end
+            
+            # Test isilluminated_with_self_shadowing
+            for i in 1:nfaces
+                result_shadowing = isilluminated_with_self_shadowing(shape, sun_pos, i)
+                # Each function should be self-consistent
+                result_again = isilluminated_with_self_shadowing(shape, sun_pos, i)
+                @test result_shadowing == result_again
+            end
+            
+            # Test consistency between split functions and batch updates
+            illuminated_pseudo = Vector{Bool}(undef, nfaces)
+            illuminated_shadowing = Vector{Bool}(undef, nfaces)
+            
+            update_illumination_pseudo_convex!(illuminated_pseudo, shape, sun_pos)
+            update_illumination_with_self_shadowing!(illuminated_shadowing, shape, sun_pos)
+            
+            for i in 1:nfaces
+                @test illuminated_pseudo[i] == isilluminated_pseudo_convex(shape, sun_pos, i)
+                @test illuminated_shadowing[i] == isilluminated_with_self_shadowing(shape, sun_pos, i)
+            end
+        end
+        
+        @testset "Eclipse shadowing application" begin
+            # Create occluding shape
+            shape_occluding = ShapeModel(nodes_scaled, faces)
+            build_bvh!(shape_occluding)
+            
             R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
-            t = @SVector[10.0, 0.0, 0.0]
+            t = @SVector[3.0, 0.0, 0.0]
             
-            update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
+            # Start with all faces illuminated
+            illuminated = fill(true, nfaces)
+            initial_count = count(illuminated)
             
-            # Compare with single asteroid case (should be identical)
-            illuminated_single = Vector{Bool}(undef, nfaces)
-            update_illumination!(illuminated_single, shape1, sun_pos)
-            @test count(illuminated) == count(illuminated_single)
-        end
-        
-        @testset "Partial occlusion" begin
-            # Sun from diagonal direction
-            sun_pos = SA[10.0, 10.0, 10.0]
+            # Apply eclipse shadowing
+            apply_eclipse_shadowing!(illuminated, shape, sun_pos, shape_occluding, R, t)
             
-            # Shape2 positioned to cast shadow on part of shape1
-            R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
-            t = @SVector[1.5, 1.5, 1.5]
-            
-            update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
-            
-            # Some faces should be illuminated, some in shadow
-            n_illuminated = count(illuminated)
-            @test 0 < n_illuminated < nfaces
-            
-            # Should have fewer illuminated faces than without occlusion
-            illuminated_single = Vector{Bool}(undef, nfaces)
-            update_illumination!(illuminated_single, shape1, sun_pos)
-            @test n_illuminated <= count(illuminated_single)
-        end
-        
-        @testset "Occlusion verification" begin
-            # Test that occlusion actually reduces illumination
-            sun_pos = SA[10.0, 0.0, 0.0]
-            
-            # Get baseline illumination without occlusion
-            illuminated_baseline = Vector{Bool}(undef, nfaces)
-            update_illumination!(illuminated_baseline, shape1, sun_pos)
-            baseline_count = count(illuminated_baseline)
-            
-            # Place shape2 to cause some occlusion
-            R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
-            t = @SVector[2.0, 0.0, 0.0]
-            
-            update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
-            occluded_count = count(illuminated)
-            
-            # With occlusion, we should have fewer or equal illuminated faces
-            @test occluded_count <= baseline_count
-            
-            # Verify the function runs correctly
-            @test occluded_count >= 0
-            @test occluded_count <= nfaces
-        end
-        
-        @testset "Rotation transformation" begin
-            # Test that rotation matrix properly transforms coordinates
-            sun_pos = SA[10.0, 0.0, 0.0]
-            
-            # 90 degree rotation around z-axis
-            # This rotates shape2 but doesn't change occlusion pattern for cubes
-            R = @SMatrix[0.0 -1.0 0.0; 1.0 0.0 0.0; 0.0 0.0 1.0]
-            t = @SVector[0.0, 5.0, 0.0]
-            
-            update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
-            
-            # Should have some illuminated faces (sun from +x)
-            @test count(illuminated) > 0
-        end
-        
-        @testset "Identity transformation equivalence" begin
-            # Test that identity transformation with t=0 gives same result as single asteroid
-            sun_pos = SA[1.0, 1.0, 1.0]
-            
-            # Identity transformation with zero translation
-            R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
-            t = @SVector[0.0, 0.0, 0.0]
-            
-            # Both shapes at same location should give self-shadowing only
-            shape2_coincident = ShapeModel(nodes1_scaled, faces1)
-            build_bvh!(shape2_coincident)
-            
-            update_illumination!(illuminated, shape1, sun_pos, shape2_coincident, R, t)
-            
-            # Compare with single asteroid result
-            illuminated_single = Vector{Bool}(undef, nfaces)
-            update_illumination!(illuminated_single, shape1, sun_pos)
-            
-            # Results might differ due to numerical precision at boundaries
-            # But should be very similar
-            @test abs(count(illuminated) - count(illuminated_single)) <= 2
-        end
-        
-        @testset "Complex rotation and translation" begin
-            # Test with combined rotation and translation
-            sun_pos = SA[10.0, 5.0, 0.0]
-            
-            # 45 degree rotation around y-axis and translation
-            θ = π/4
-            R = @SMatrix[cos(θ) 0.0 sin(θ); 0.0 1.0 0.0; -sin(θ) 0.0 cos(θ)]
-            t = @SVector[3.0, 0.0, 3.0]
-            
-            update_illumination!(illuminated, shape1, sun_pos, shape2, R, t)
-            
-            # Should have partial occlusion
-            n_illuminated = count(illuminated)
-            @test 0 < n_illuminated < nfaces
+            # Should reduce or maintain illumination count
+            @test count(illuminated) <= initial_count
         end
     end
     

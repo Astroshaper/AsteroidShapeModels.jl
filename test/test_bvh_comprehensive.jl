@@ -129,13 +129,13 @@ All tests include correctness verification and performance benchmarks.
         
         print("  Full occlusion model (with visibility graph)...")
         time_with_vis = @elapsed for i in 1:n_faces
-            push!(results_with_vis, isilluminated(shape_with_vis, r☉, i))
+            push!(results_with_vis, isilluminated_with_self_shadowing(shape_with_vis, r☉, i))
         end
         println(" done ($(round(time_with_vis, digits=3))s)")
         
         print("  Pseudo-convex model (no visibility graph)...")
         time_pseudo_convex = @elapsed for i in 1:n_faces
-            push!(results_pseudo_convex, isilluminated(shape_no_vis, r☉, i))
+            push!(results_pseudo_convex, isilluminated_pseudo_convex(shape_no_vis, r☉, i))
         end
         println(" done ($(round(time_pseudo_convex, digits=3))s)")
         
@@ -163,13 +163,13 @@ All tests include correctness verification and performance benchmarks.
         # Use setup parameter to avoid scope issues with @belapsed
         time_per_face_with_vis = @belapsed begin
             for i in sample_faces
-                isilluminated(shape_with_vis, r☉, i)
+                isilluminated_with_self_shadowing(shape_with_vis, r☉, i)
             end
         end setup=(sample_faces=$sample_faces; shape_with_vis=$shape_with_vis; r☉=$r☉) / length(sample_faces)
         
         time_per_face_pseudo_convex = @belapsed begin
             for i in sample_faces
-                isilluminated(shape_no_vis, r☉, i)
+                isilluminated_pseudo_convex(shape_no_vis, r☉, i)
             end
         end setup=(sample_faces=$sample_faces; shape_no_vis=$shape_no_vis; r☉=$r☉) / length(sample_faces)
         

@@ -212,59 +212,77 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool
+    isilluminated_pseudo_convex(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool
 
-Return if the `i`-th face of `ShapeModel` is illuminated by direct sunlight.
+Check if a face is illuminated using pseudo-convex model (face orientation only).
 
 # Arguments
 - `shape` : Shape model of an asteroid
 - `r☉`    : Sun's position in the asteroid-fixed frame (doesn't need to be normalized)
 - `i`     : Index of the face to be checked
 
-# Algorithm
-The function operates in two modes depending on the availability of `face_visibility_graph`:
+# Description
+This function checks only if the face is oriented towards the sun, without any
+occlusion testing. This is equivalent to assuming the asteroid is convex or that
+self-shadowing effects are negligible.
 
-1. **With face_visibility_graph**: Performs full occlusion testing
-   - Checks if the face is oriented towards the sun
-   - Tests occlusion only against faces visible from face `i`
-   - Efficient for complex, non-convex shapes
+This function ignores `face_visibility_graph` even if it exists.
 
-2. **Without face_visibility_graph**: Assumes pseudo-convex model
-   - Only checks if the face is oriented towards the sun
-   - No occlusion testing is performed
-   - Suitable for approximately convex shapes or when performance is critical
+# Returns
+- `true` if the face is oriented towards the sun
+- `false` if the face is facing away from the sun
+"""
+function isilluminated_pseudo_convex(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)::Bool
+    n̂ᵢ = shape.face_normals[i]
+    r̂☉ = normalize(r☉)
+    return n̂ᵢ ⋅ r̂☉ > 0
+end
+
+"""
+    isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool
+
+Check if a face is illuminated with self-shadowing effects.
+
+# Arguments
+- `shape` : Shape model with `face_visibility_graph` (required)
+- `r☉`    : Sun's position in the asteroid-fixed frame (doesn't need to be normalized)
+- `i`     : Index of the face to be checked
+
+# Description
+This function performs full illumination calculation including self-shadowing effects.
+It requires that `shape.face_visibility_graph` has been built using `build_face_visibility_graph!(shape)`.
+
+If `face_visibility_graph` is not available, this function will throw an error.
 
 # Returns
 - `true` if the face is illuminated (facing the sun and not occluded)
 - `false` if the face is facing away from the sun or is in shadow
 """
-function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)::Bool
+function isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)::Bool
+    @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
+    
     cᵢ = shape.face_centers[i]
     n̂ᵢ = shape.face_normals[i]
     r̂☉ = normalize(r☉)
-
+    
     # First check if the face is oriented away from the sun
     n̂ᵢ ⋅ r̂☉ < 0 && return false
-
-    # If no face_visibility_graph, assume pseudo-convex model
-    # (only check face orientation, no occlusion testing)
-    if isnothing(shape.face_visibility_graph)
-        return true
-    else
-        # Use FaceVisibilityGraph to check for occlusions
-        ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
-        visible_face_indices = get_visible_face_indices(shape.face_visibility_graph, i)
-        for j in visible_face_indices
-            intersect_ray_triangle(ray, shape, j).hit && return false
-        end
-        return true  # No obstruction found
+    
+    # Check for occlusions using face visibility graph
+    ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
+    visible_face_indices = get_visible_face_indices(shape.face_visibility_graph, i)
+    for j in visible_face_indices
+        intersect_ray_triangle(ray, shape, j).hit && return false
     end
+    return true  # No obstruction found
 end
 
-"""
-    update_illumination!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
 
-Update the illumination state for all faces of a shape model in-place.
+
+"""
+    update_illumination_pseudo_convex!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+
+Update illumination state using pseudo-convex model (face orientation only, no shadow testing).
 
 # Arguments
 - `illuminated` : Boolean vector to store illumination state (must have length equal to number of faces)
@@ -272,61 +290,115 @@ Update the illumination state for all faces of a shape model in-place.
 - `r☉`          : Sun's position in the asteroid-fixed frame
 
 # Description
-This function efficiently computes the illumination state for all faces at once,
-updating the provided boolean vector in-place to avoid memory allocations.
-This is particularly useful for thermal physics simulations where illumination
-states need to be updated at each time step.
+This function checks only if each face is oriented towards the sun, without any
+occlusion testing. This is equivalent to assuming the asteroid is convex or that
+self-shadowing effects are negligible.
 
-The function operates in two modes:
-1. With face visibility graph: Performs full occlusion testing
-2. Without face visibility graph: Assumes pseudo-convex model (only checks face orientation)
+This function ignores `face_visibility_graph` even if it exists, making it useful
+when you want to explicitly disable self-shadowing effects.
 
 # Example
 ```julia
-shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true)
-nfaces = length(shape.faces)
-illuminated = Vector{Bool}(undef, nfaces)
-sun_position = SA[149597870700.0, 0.0, 0.0]  # 1 au along x-axis
-
-update_illumination!(illuminated, shape, sun_position)
-n_illuminated = count(illuminated)
-println("\$n_illuminated faces are illuminated.")
+# Always use pseudo-convex model regardless of `face_visibility_graph`
+update_illumination_pseudo_convex!(illuminated, shape, sun_position)
 ```
 """
-function update_illumination!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+function update_illumination_pseudo_convex!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
     @assert length(illuminated) == length(shape.faces) "illuminated vector must have same length as number of faces."
     
+    r̂☉ = normalize(r☉)
+    
     @inbounds for i in eachindex(shape.faces)
-        illuminated[i] = isilluminated(shape, r☉, i)
+        n̂ᵢ = shape.face_normals[i]
+        illuminated[i] = n̂ᵢ ⋅ r̂☉ > 0
     end
     
     return nothing
 end
 
 """
-    update_illumination!(
+    update_illumination_with_self_shadowing!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+
+Update illumination state with self-shadowing effects using face visibility graph.
+
+# Arguments
+- `illuminated` : Boolean vector to store illumination state (must have length equal to number of faces)
+- `shape`       : Shape model with face_visibility_graph (required)
+- `r☉`          : Sun's position in the asteroid-fixed frame
+
+# Description
+This function performs full illumination calculation including self-shadowing effects.
+It requires that `shape.face_visibility_graph` has been built using `build_face_visibility_graph!`.
+
+If `face_visibility_graph` is not available, this function will throw an error.
+
+# Example
+```julia
+# Ensure face visibility graph is built
+shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true)
+# Or build it manually:
+# build_face_visibility_graph!(shape)
+
+update_illumination_with_self_shadowing!(illuminated, shape, sun_position)
+```
+"""
+function update_illumination_with_self_shadowing!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+    @assert length(illuminated) == length(shape.faces) "illuminated vector must have same length as number of faces."
+    @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using build_face_visibility_graph!(shape)."
+    
+    r̂☉ = normalize(r☉)
+    
+    @inbounds for i in eachindex(shape.faces)
+        n̂ᵢ = shape.face_normals[i]
+        
+        # First check if the face is oriented away from the sun
+        if n̂ᵢ ⋅ r̂☉ < 0
+            illuminated[i] = false
+        else
+            # Check for occlusions using face visibility graph
+            cᵢ = shape.face_centers[i]
+            ray = Ray(cᵢ, r̂☉)
+            visible_face_indices = get_visible_face_indices(shape.face_visibility_graph, i)
+            
+            occluded = false
+            for j in visible_face_indices
+                if intersect_ray_triangle(ray, shape, j).hit
+                    occluded = true
+                    break
+                end
+            end
+            illuminated[i] = !occluded
+        end
+    end
+    
+    return nothing
+end
+
+"""
+    apply_eclipse_shadowing!(
         illuminated::AbstractVector{Bool}, target_shape::ShapeModel, r☉::StaticVector{3}, 
         occluding_shape::ShapeModel, R::StaticMatrix{3,3}, t::StaticVector{3}
     )
 
-Update illumination state considering occlusion by another shape (for binary asteroids).
+Apply eclipse shadowing effects from another shape onto already illuminated faces.
 
 # Arguments
-- `illuminated`     : Boolean vector to store illumination state (must have length equal to number of faces)
-- `target_shape`    : Target shape model to be determined for solar illumination
+- `illuminated`     : Boolean vector with current illumination state (will be modified)
+- `target_shape`    : Target shape model being shadowed
 - `r☉`              : Sun's position in the target shape's frame
 - `occluding_shape` : Shape model that may cast shadows on the target shape
 - `R`               : 3×3 rotation matrix from `target_shape` frame to `occluding_shape` frame
 - `t`               : 3D translation vector from `target_shape` frame to `occluding_shape` frame
 
 # Description
-This function computes illumination considering both self-shadowing and occlusion
-by another body. It's designed for binary asteroid systems where one component
-can eclipse the other.
+This function ONLY checks for mutual shadowing (eclipse) effects. It assumes that
+the `illuminated` vector already contains the result of face orientation and/or
+self-shadowing checks. Only faces marked as `true` in the input will be tested
+for occlusion by the other body.
 
-The function first checks self-shadowing using the standard algorithm, then checks
-if illuminated faces are occluded by the other body. This is purely geometric -
-physical effects like penumbra should be handled by the thermal modeling code.
+This separation allows flexible control of shadowing effects in thermal modeling:
+- Call `update_illumination!` first for self-shadowing (or face orientation only)
+- Then call this function to add mutual shadowing effects
 
 # Coordinate Systems
 The transformation from `target_shape` frame to `occluding_shape` frame is given by:
@@ -334,34 +406,24 @@ The transformation from `target_shape` frame to `occluding_shape` frame is given
 
 # Example
 ```julia
-# Binary asteroid system
-shape1 = load_shape_obj("path/to/shape1.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
-shape2 = load_shape_obj("path/to/shape2.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
+# Check self-shadowing first (considering self-shadowing effect)
+update_illumination_with_self_shadowing!(illuminated1, shape1, sun_position1)
+update_illumination_with_self_shadowing!(illuminated2, shape2, sun_position2)
 
-# Rotation matrix (identity in this case)
-R = SA[
-    1.0 0.0 0.0;
-    0.0 1.0 0.0;
-    0.0 0.0 1.0;
-]
+# Or if you want to ignore self-shadowing:
+update_illumination_pseudo_convex!(illuminated1, shape1, sun_position1)
+update_illumination_pseudo_convex!(illuminated2, shape2, sun_position2)
 
-# Translation vector: shape2 is 5 km away along x-axis from shape1
-t = SA[5000.0, 0.0, 0.0]
-
-illuminated = Vector{Bool}(undef, length(shape1.faces))
-sun_position = SA[149597870700.0, 0.0, 0.0]  # 1 au along x-axis
-
-update_illumination!(illuminated, shape1, sun_position, shape2, R, t)
+# Then check mutual shadowing
+apply_eclipse_shadowing!(illuminated1, shape1, sun_position1, shape2, R12, t12)
+apply_eclipse_shadowing!(illuminated2, shape2, sun_position2, shape1, R21, t21)
 ```
 """
-function update_illumination!(
+function apply_eclipse_shadowing!(
     illuminated::AbstractVector{Bool}, target_shape::ShapeModel, r☉::StaticVector{3},
     occluding_shape::ShapeModel, R::StaticMatrix{3,3}, t::StaticVector{3}
 )
     @assert length(illuminated) == length(target_shape.faces) "illuminated vector must have same length as number of faces."
-    
-    # First check self-shadowing
-    update_illumination!(illuminated, target_shape, r☉)
     
     # If all faces are already in shadow, no need to check occlusion
     if !any(illuminated)

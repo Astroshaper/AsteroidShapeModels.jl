@@ -69,7 +69,10 @@ export load_shape_obj, load_shape_grid, grid_to_faces
 export polyhedron_volume, equivalent_radius, maximum_radius, minimum_radius
 
 include("visibility.jl")
-export view_factor, build_face_visibility_graph!, isilluminated, update_illumination!
+export view_factor, build_face_visibility_graph!
+export isilluminated_pseudo_convex, isilluminated_with_self_shadowing
+export update_illumination_pseudo_convex!, update_illumination_with_self_shadowing!
+export apply_eclipse_shadowing!
 
 include("geometry_utils.jl")
 export angle_rad, angle_deg, solar_phase_angle, solar_elongation_angle
