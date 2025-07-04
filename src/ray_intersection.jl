@@ -2,15 +2,18 @@
     ray_intersection.jl
 
 This file implements ray-shape intersection algorithms for asteroid shape models.
-It includes the Möller-Trumbore algorithm for ray-triangle intersection,
-bounding box calculations for acceleration, and functions for testing
-intersections between rays and complete shape models.
+It includes the Möller-Trumbore algorithm for ray-triangle intersection with
+BVH (Bounding Volume Hierarchy) acceleration for efficient computation.
+
+Key Features:
+- Ray-triangle intersection using the Möller-Trumbore algorithm
+- BVH-accelerated ray-shape intersection (via `ImplicitBVH.jl`)
+- Batch ray processing for vectors and matrices of rays
+- No backface culling (triangles are hit from both sides)
 
 Exported Functions:
-- `compute_bounding_box`: Compute the axis-aligned bounding box of a shape
-- `intersect_ray_bounding_box`: Test ray-bounding box intersection
 - `intersect_ray_triangle`: Test ray-triangle intersection using Möller-Trumbore algorithm
-- `intersect_ray_shape`: Find the closest intersection between a ray and a shape model
+- `intersect_ray_shape`: Find ray-shape intersections (single ray or batch processing)
 =#
 
 
