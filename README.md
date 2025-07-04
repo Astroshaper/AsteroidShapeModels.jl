@@ -23,6 +23,7 @@ For future development plans, see our [Development Roadmap](ROADMAP.md).
 - **Shape Model Loading**: Load 3D models in OBJ file format
 - **Face Geometric Properties**: Calculate face centers, normal vectors, and areas
 - **Ray Intersection Detection**: High-precision ray-triangle intersection using the Möller–Trumbore algorithm with BVH (Bounding Volume Hierarchy) acceleration for efficient computation
+  - **Batch Ray Processing**: Process multiple rays efficiently in vectors or matrices while preserving input structure
 - **Visibility Analysis**: Calculate visibility and view factors between faces
   - **NEW**: BVH-accelerated visibility calculations (The current BVH implementation is slower than traditional implementations and has room for optimization.)
 - **Shape Characteristics**: Calculate volume, equivalent radius, maximum and minimum radii
@@ -51,12 +52,21 @@ pkg> add AsteroidShapeModels
 
 ```julia
 using AsteroidShapeModels
+using StaticArrays
 
 # Load an asteroid shape model with face-face visibility
 shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true)  # Convert km to m
 
 # Ray intersection automatically uses BVH acceleration when needed
 # (BVH is built on first use if not already present)
+
+# Single ray intersection
+ray = Ray(SA[1000.0, 0.0, 0.0], SA[-1.0, 0.0, 0.0])
+result = intersect_ray_shape(ray, shape)
+
+# Batch ray processing (NEW)
+rays = [Ray(SA[x, 0.0, 1000.0], SA[0.0, 0.0, -1.0]) for x in -500:100:500]
+results = intersect_ray_shape(rays, shape)
 
 # Access to face properties
 shape.face_centers  # Center position of each face
