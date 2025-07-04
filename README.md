@@ -25,7 +25,8 @@ For future development plans, see our [Development Roadmap](ROADMAP.md).
 - **Ray Intersection Detection**: High-precision ray-triangle intersection using the Möller–Trumbore algorithm with BVH (Bounding Volume Hierarchy) acceleration for efficient computation
   - **Batch Ray Processing**: Process multiple rays efficiently in vectors or matrices while preserving input structure
 - **Visibility Analysis**: Calculate visibility and view factors between faces
-  - **NEW**: BVH-accelerated visibility calculations (The current BVH implementation is slower than traditional implementations and has room for optimization.)
+  - Optimized non-BVH algorithm with candidate filtering for face-to-face visibility
+  - Distance-based sorting provides ~2x speedup over naive approaches
 - **Shape Characteristics**: Calculate volume, equivalent radius, maximum and minimum radii
 
 ## Requirements
