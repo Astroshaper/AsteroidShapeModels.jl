@@ -1,17 +1,17 @@
 #=
     test_bvh_comprehensive.jl
 
-This file comprehensively tests BVH (Bounding Volume Hierarchy) functionality:
+This file tests ray intersection and visibility functionality:
 1. Ray-shape intersection with BVH acceleration
 2. isilluminated function with BVH
-3. build_face_visibility_graph! with BVH
+3. build_face_visibility_graph! performance
 All tests include correctness verification and performance benchmarks.
 =#
 
-@testset "Comprehensive BVH Tests" begin
+@testset "Ray Intersection and Visibility Tests" begin
     msg = """\n
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    |            Comprehensive BVH Tests                     |
+    |        Ray Intersection and Visibility Tests           |
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
@@ -172,12 +172,12 @@ All tests include correctness verification and performance benchmarks.
     end
     
     # ═══════════════════════════════════════════════════════════════════
-    #   Part 3: build_face_visibility_graph! with BVH
+    #   Part 3: build_face_visibility_graph!
     # ═══════════════════════════════════════════════════════════════════
     
-    @testset "build_face_visibility_graph! BVH" begin
+    @testset "build_face_visibility_graph! Performance" begin
         println("\n" * "="^70)
-        println("  Part 3: build_face_visibility_graph! BVH Tests")
+        println("  Part 3: build_face_visibility_graph! Performance Tests")
         println("="^70)
         
         # Use smaller subset for reasonable test time
@@ -185,51 +185,41 @@ All tests include correctness verification and performance benchmarks.
         
         println("\n3.1 Testing with subset of $n_test_faces faces:")
         
-        # Create subset shapes
-        shape_subset_no_bvh = ShapeModel(
+        # Create subset shape
+        shape_subset = ShapeModel(
             shape.nodes,
             shape.faces[1:n_test_faces];
         )
         
-        shape_subset_with_bvh = ShapeModel(
-            shape.nodes,
-            shape.faces[1:n_test_faces];
-        )
-        build_bvh!(shape_subset_with_bvh)
-        
-        # Build visibility graphs
-        print("  Building visibility graph without BVH...")
+        # Build visibility graph with optimized non-BVH algorithm
+        print("  Building visibility graph...")
         GC.gc()
-        time_no_bvh = @elapsed build_face_visibility_graph!(shape_subset_no_bvh)
-        nnz_no_bvh = shape_subset_no_bvh.face_visibility_graph.nnz
+        time_elapsed = @elapsed build_face_visibility_graph!(shape_subset)
+        nnz_visible = shape_subset.face_visibility_graph.nnz
         println(" done")
-        println("    Time          : $(round(time_no_bvh, digits=3)) seconds")
-        println("    Visible pairs : $nnz_no_bvh")
+        println("    Time          : $(round(time_elapsed, digits=3)) seconds")
+        println("    Visible pairs : $nnz_visible")
+        println("    Avg pairs/face: $(round(nnz_visible / n_test_faces, digits=1))")
         
-        print("\n  Building visibility graph with BVH...")
-        GC.gc()
-        time_with_bvh = @elapsed build_face_visibility_graph!(shape_subset_with_bvh)
-        nnz_with_bvh = shape_subset_with_bvh.face_visibility_graph.nnz
-        println(" done")
-        println("    Time          : $(round(time_with_bvh, digits=3)) seconds")
-        println("    Visible pairs : $nnz_with_bvh")
+        # Performance metrics
+        println("\n3.2 Performance metrics:")
+        println("  Time per face : $(round(time_elapsed * 1000 / n_test_faces, digits=2)) ms")
+        println("  Pairs per sec : $(round(nnz_visible / time_elapsed))")
         
-        # Compare results
-        println("\n3.2 Comparing results:")
-        println("  Visible pairs difference : $(abs(nnz_no_bvh - nnz_with_bvh))")
-        println("  Performance              : $(round(time_no_bvh / time_with_bvh, digits=2))x speedup with BVH")
+        # Memory usage
+        graph_memory = Base.summarysize(shape_subset.face_visibility_graph)
+        println("\n3.3 Memory usage:")
+        println("  Total memory  : $(round(graph_memory / 1024^2, digits=2)) MB")
+        println("  Per face      : $(round(graph_memory / n_test_faces)) bytes")
+        println("  Per vis pair  : $(round(graph_memory / nnz_visible)) bytes")
         
-        # Note: Results may differ slightly due to numerical precision
-        # The important thing is that both methods produce similar results
-        
-        # Sample comparison
+        # Sample visibility distribution
         sample_faces = [1, 100, 500, 1000, min(n_test_faces, 2000)]
-        println("\n  Sampling face visibility counts:")
+        println("\n3.4 Visibility distribution (sample faces):")
         for i in sample_faces
             if i <= n_test_faces
-                vis_no_bvh = length(get_visible_face_indices(shape_subset_no_bvh.face_visibility_graph, i))
-                vis_with_bvh = length(get_visible_face_indices(shape_subset_with_bvh.face_visibility_graph, i))
-                println("    Face $i: $vis_no_bvh (no BVH) vs $vis_with_bvh (with BVH)")
+                vis_count = num_visible_faces(shape_subset.face_visibility_graph, i)
+                println("    Face $i: $vis_count visible faces")
             end
         end
     end
@@ -239,10 +229,10 @@ All tests include correctness verification and performance benchmarks.
     # ═══════════════════════════════════════════════════════════════════
     
     println("\n" * "="^70)
-    println("BVH Test Summary")
+    println("Test Summary")
     println("="^70)
     println("✓ Ray-shape intersection: BVH implementation tested")
-    println("✓ isilluminated: BVH vs non-BVH comparison completed")
-    println("✓ build_face_visibility_graph!: BVH vs non-BVH comparison completed")
+    println("✓ isilluminated: BVH implementation tested")
+    println("✓ build_face_visibility_graph!: Non-BVH performance evaluated")
     println("✓ All tests completed with $(n_faces)-face model")
 end
