@@ -391,8 +391,9 @@ This separation allows flexible control of shadowing effects in thermal modeling
 - Then call this function to add mutual shadowing effects
 
 # Performance Optimizations
-The function includes three early-out checks to avoid unnecessary ray-shape intersections:
+The function includes early-out checks at two levels:
 
+## Body-level optimizations:
 1. **Behind Check**: If the occluding body is entirely behind the target relative to the sun,
    no eclipse can occur.
 
@@ -402,7 +403,15 @@ The function includes three early-out checks to avoid unnecessary ray-shape inte
 3. **Total Eclipse Check**: If the target is completely within the occluding body's shadow,
    all illuminated faces are set to false without individual ray checks.
 
-These optimizations use `maximum_radius` for accurate bounding sphere calculations.
+## Face-level optimizations:
+4. **Ray-Sphere Intersection Check**: For each face, checks if the ray to the sun can possibly
+   intersect the occluding body's bounding sphere. Skips ray-shape test if the ray clearly
+   misses the sphere.
+
+5. **Inscribed Sphere Check**: If the ray passes through the occluding body's inscribed sphere,
+   the face is guaranteed to be shadowed, avoiding the expensive ray-shape intersection test.
+
+These optimizations use `maximum_radius` and `minimum_radius` for accurate sphere calculations.
 
 # Coordinate Systems
 The transformation from `target_shape` frame to `occluding_shape` frame is given by:
@@ -496,12 +505,13 @@ function apply_eclipse_shadowing!(
                 closest_point = origin_transformed + t_closest * r̂☉
                 distance_to_center = norm(closest_point)
                 
+                # ==== Early Out 4 (Ray-Sphere Intersection Check) ====
                 # Check if the ray passes within the bounding sphere
                 if distance_to_center > occluding_radius
                     continue  # Ray misses the bounding sphere entirely
                 end
                 
-                # ==== Inscribed Sphere Check ====
+                # ==== Early Out 5 (Inscribed Sphere Check) ====
                 # If the ray passes through the inscribed sphere, it's guaranteed to hit
                 # the occluding body (no need for detailed intersection test)
                 if distance_to_center < occluding_inner_radius
