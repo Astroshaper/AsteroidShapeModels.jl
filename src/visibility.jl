@@ -387,8 +387,22 @@ self-shadowing checks. Only faces marked as `true` in the input will be tested
 for occlusion by the other body.
 
 This separation allows flexible control of shadowing effects in thermal modeling:
-- Call `update_illumination!` first for self-shadowing (or face orientation only)
+- Call `update_illumination_*` first for self-shadowing (or face orientation only)
 - Then call this function to add mutual shadowing effects
+
+# Performance Optimizations
+The function includes three early-out checks to avoid unnecessary ray-shape intersections:
+
+1. **Behind Check**: If the occluding body is entirely behind the target relative to the sun,
+   no eclipse can occur.
+
+2. **Lateral Separation Check**: If bodies are too far apart laterally (perpendicular to 
+   sun direction), no eclipse can occur.
+
+3. **Total Eclipse Check**: If the target is completely within the occluding body's shadow,
+   all illuminated faces are set to false without individual ray checks.
+
+These optimizations use `maximum_radius` for accurate bounding sphere calculations.
 
 # Coordinate Systems
 The transformation from `target_shape` frame to `occluding_shape` frame is given by:
@@ -415,14 +429,40 @@ function apply_eclipse_shadowing!(
 )
     @assert length(illuminated) == length(target_shape.faces) "illuminated vector must have same length as number of faces."
     
-    # If all faces are already in shadow, no need to check occlusion
-    if !any(illuminated)
+    r̂☉ = normalize(r☉)  # Normalize sun direction vector
+    
+    # Early out: Check if occluding body can possibly cast shadows on target
+    # This is based on geometric configuration of the two bodies
+    
+    # Get bounding spheres for both shapes
+    target_radius = maximum_radius(target_shape)
+    occluding_radius = maximum_radius(occluding_shape)
+    
+    # ==== Early Out 1 (Behind Check) ====
+    # If occluding body is entirely behind the target relative to sun, no eclipse occur.
+    if dot(t, r̂☉) < -(target_radius + occluding_radius)
+        return nothing  
+    end
+    
+    # ==== Early Out 2 (Lateral Separation Check)  ====
+    # If bodies are too far apart laterally, no eclipse occur.
+    t_perpendicular = t - (dot(t, r̂☉) * r̂☉)  # Component of t perpendicular to sun direction
+    lateral_distance = norm(t_perpendicular)
+    if lateral_distance > target_radius + occluding_radius
+        return nothing
+    end
+    
+    # ==== Early Out 3 (Total Eclipse Check) ====
+    # If target is completely within occluding body's shadow, all faces are shadowed.
+    # This happens when occluding body is between sun and target, and is larger than target.
+    # Check if occluding body is in front of target along sun direction,
+    # and if the lateral distance is small enough.
+    if dot(t, r̂☉) > 0  && lateral_distance + target_radius < occluding_radius
+        illuminated .= false  # All faces are shadowed.
         return nothing
     end
     
     # Check occlusion by the other body for illuminated faces only
-    r̂☉ = normalize(r☉)
-    
     @inbounds for i in eachindex(target_shape.faces)
         if illuminated[i]  # Only check if not already in shadow
             # Ray from face center to sun in target's frame
