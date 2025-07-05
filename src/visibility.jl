@@ -468,12 +468,38 @@ function apply_eclipse_shadowing!(
             # Ray from face center to sun in target's frame
             ray_origin = target_shape.face_centers[i]
             
-            # Transform ray's origin and direction to occluding shape's frame
-            # (Ray directions are not affected by translation)
+            # Transform ray's origin to occluding shape's frame
             origin_transformed = R * ray_origin + t
-            direction_transformed = R * r̂☉
             
-            # Create ray in occluding shape's frame
+            # ==== Face-level Early Out ====
+            # Check if the ray from this face to the sun can possibly intersect
+            # the occluding body's bounding sphere.
+            
+            # Calculate the parameter t where the ray is closest to occluding body's center.
+            # Ray: P(t) = origin_transformed + t * r̂☉, where t > 0 toward sun
+            # The closest point is where d/dt |P(t)|² = 0
+            t_closest = -dot(origin_transformed, r̂☉)
+            
+            if t_closest < 0
+                # The occluding body's center is in the opposite direction from the sun.
+                # (i.e., the ray is moving away from the occluding body)
+                # In this case, check if the face itself is outside bounding sphere.
+                if norm(origin_transformed) > occluding_radius
+                    continue
+                end
+            else
+                # The ray approaches the occluding body's center.
+                # Calculate the closest point on the ray to the center
+                closest_point = origin_transformed + t_closest * r̂☉
+                # Check if the ray passes within the bounding sphere
+                if norm(closest_point) > occluding_radius
+                    continue  # Ray misses the bounding sphere entirely
+                end
+            end
+            
+            # Transform direction and create ray in occluding shape's frame.
+            # (Ray direction is not affected by translation.)
+            direction_transformed = R * r̂☉
             ray_transformed = Ray(origin_transformed, direction_transformed)
             
             # Check intersection with occluding shape
