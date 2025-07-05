@@ -15,6 +15,9 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Tutorial" => "tutorial.md",
+        "Guides" => [
+            "BVH Usage" => "guides/bvh_usage.md",
+        ],
         "API Reference" => [
             "Types" => "api/types.md",
             "I/O Functions" => "api/io.md",

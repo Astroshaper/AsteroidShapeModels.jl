@@ -23,8 +23,7 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
 - [x] Optimize memory allocations in `visibility.jl` (experimental implementation in feature branch)
 
 ### Documentation
-- [ ] Add comprehensive BVH usage documentation
-- [ ] Document performance comparisons between BVH and non-BVH approaches
+- [x] Add comprehensive BVH usage documentation
 - [ ] Update examples for new APIs
 
 ## Version 0.5.0 - Advanced Surface Modeling (Target: August 2025)
