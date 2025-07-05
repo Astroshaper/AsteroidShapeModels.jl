@@ -438,6 +438,9 @@ function apply_eclipse_shadowing!(
     target_radius = maximum_radius(target_shape)
     occluding_radius = maximum_radius(occluding_shape)
     
+    # Get inscribed sphere radius for occluding shape (for guaranteed shadow regions)
+    occluding_inner_radius = minimum_radius(occluding_shape)
+    
     # ==== Early Out 1 (Behind Check) ====
     # If occluding body is entirely behind the target relative to sun, no eclipse occur.
     if dot(t, r̂☉) < -(target_radius + occluding_radius)
@@ -491,9 +494,19 @@ function apply_eclipse_shadowing!(
                 # The ray approaches the occluding body's center.
                 # Calculate the closest point on the ray to the center
                 closest_point = origin_transformed + t_closest * r̂☉
+                distance_to_center = norm(closest_point)
+                
                 # Check if the ray passes within the bounding sphere
-                if norm(closest_point) > occluding_radius
+                if distance_to_center > occluding_radius
                     continue  # Ray misses the bounding sphere entirely
+                end
+                
+                # ==== Inscribed Sphere Check ====
+                # If the ray passes through the inscribed sphere, it's guaranteed to hit
+                # the occluding body (no need for detailed intersection test)
+                if distance_to_center < occluding_inner_radius
+                    illuminated[i] = false
+                    continue  # Skip the expensive ray-shape intersection
                 end
             end
             
