@@ -463,12 +463,15 @@ Apply eclipse shadowing effects from another shape onto already illuminated face
 - `r☉₁`         : Sun's position in shape1's frame
 - `R₁₂`         : 3×3 rotation matrix from `shape1` frame to `shape2` frame
 - `t₁₂`         : 3D translation vector from `shape1` frame to `shape2` frame
-- `shape2`      : Occluding shape model that may cast shadows on `shape1`
+- `shape2`      : Occluding shape model that may cast shadows on `shape1` (must have BVH built via `build_bvh!`)
 
 # Returns
 - `NO_ECLIPSE`: No eclipse occurs (bodies are misaligned).
 - `PARTIAL_ECLIPSE`: Some faces that were illuminated are now in shadow by the occluding body.
 - `TOTAL_ECLIPSE`: All faces that were illuminated are now in shadow.
+
+# Throws
+- `ArgumentError` if `shape2` does not have BVH built. Call `build_bvh!(shape2)` before using this function.
 
 # Description
 This function ONLY checks for mutual shadowing (eclipse) effects. It assumes that
@@ -537,6 +540,7 @@ function apply_eclipse_shadowing!(
     R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}, shape2::ShapeModel
 )::EclipseStatus
     @assert length(illuminated) == length(shape1.faces) "illuminated vector must have same length as number of faces."
+    isnothing(shape2.bvh) && throw(ArgumentError("Occluding shape model (`shape2`) must have BVH built before checking eclipse shadowing. Call `build_bvh!(shape2)` first."))
     
     r̂☉₁ = normalize(r☉₁)        # Normalized sun direction in shape1's frame
     r̂☉₂ = normalize(R₁₂ * r̂☉₁)  # Normalized sun direction in shape2's frame
