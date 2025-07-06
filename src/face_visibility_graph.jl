@@ -168,7 +168,7 @@ function get_visible_face_data(graph::FaceVisibilityGraph, face_idx::Int, idx::I
     
     base_idx = graph.row_ptr[face_idx] + idx - 1
     return (
-        id = graph.col_idx[base_idx],
+        face_idx = graph.col_idx[base_idx],
         f = graph.view_factors[base_idx],
         d = graph.distances[base_idx],
         d̂ = graph.directions[base_idx]

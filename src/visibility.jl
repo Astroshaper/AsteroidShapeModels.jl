@@ -150,7 +150,7 @@ function build_face_visibility_graph!(shape::ShapeModel)
         # Check visibility for each candidate face
         for (j, dᵢⱼ) in zip(candidates, distances)
             # Skip if already processed
-            j in (vf.id for vf in temp_visible[i]) && continue
+            j in (vf.face_idx for vf in temp_visible[i]) && continue
 
             cⱼ = face_centers[j]
             n̂ⱼ = face_normals[j]
@@ -198,7 +198,7 @@ function build_face_visibility_graph!(shape::ShapeModel)
     idx = 1
     for i in 1:nfaces
         for vf in temp_visible[i]
-            col_idx[idx] = vf.id
+            col_idx[idx] = vf.face_idx
             view_factors[idx] = vf.f
             distances[idx] = vf.d
             directions[idx] = vf.d̂

@@ -21,18 +21,18 @@ This type is used temporarily in `build_face_visibility_graph!` before convertin
 to the CSR format `FaceVisibilityGraph`.
 
 # Fields
-- `id` : Index of the interfacing face
-- `f`  : View factor from face i to j
-- `d`  : Distance from face i to j
-- `d̂`  : Normal vector from face i to j
+- `face_idx` : Index of the interfacing face
+- `f`        : View factor from face i to j
+- `d`        : Distance from face i to j
+- `d̂`        : Normal vector from face i to j
 
 Note: This is an internal type and not exported.
 """
 struct VisibleFace
-    id::Int64
-    f ::Float64
-    d ::Float64
-    d̂ ::SVector{3, Float64}
+    face_idx ::Int64
+    f        ::Float64
+    d        ::Float64
+    d̂        ::SVector{3, Float64}
 end
 
 """
