@@ -151,7 +151,7 @@ This file tests advanced visibility and illumination calculations:
             
             # Check each face
             for i in 1:length(faces)
-                illuminated = isilluminated_with_self_shadowing(shape, sun_pos, i)
+                illuminated = isilluminated(shape, sun_pos, i; with_self_shadowing=true)
                 
                 # Only faces with positive z-component of normal should be illuminated
                 if shape.face_normals[i][3] > 0
@@ -168,7 +168,7 @@ This file tests advanced visibility and illumination calculations:
             
             # Check which faces are illuminated based on their normals
             for i in 1:length(faces)
-                illuminated = isilluminated_with_self_shadowing(shape, sun_pos, i)
+                illuminated = isilluminated(shape, sun_pos, i; with_self_shadowing=true)
                 # Faces with negative z-component of normal should be illuminated
                 if shape.face_normals[i][3] < 0
                     @test illuminated == true
@@ -189,9 +189,9 @@ This file tests advanced visibility and illumination calculations:
             sun_pos_diag = SA[1.0, 1.0, 1.0]
             
             # At least one face should be illuminated from each direction
-            illuminated_x = any(isilluminated_with_self_shadowing(shape, sun_pos_x, i) for i in 1:4)
-            illuminated_y = any(isilluminated_with_self_shadowing(shape, sun_pos_y, i) for i in 1:4)
-            illuminated_diag = any(isilluminated_with_self_shadowing(shape, sun_pos_diag, i) for i in 1:4)
+            illuminated_x    = any(isilluminated(shape, sun_pos_x,    i; with_self_shadowing=true) for i in 1:4)
+            illuminated_y    = any(isilluminated(shape, sun_pos_y,    i; with_self_shadowing=true) for i in 1:4)
+            illuminated_diag = any(isilluminated(shape, sun_pos_diag, i; with_self_shadowing=true) for i in 1:4)
             
             @test illuminated_x == true
             @test illuminated_y == true
@@ -223,8 +223,8 @@ This file tests advanced visibility and illumination calculations:
             sun_low = SA[0.0, -1.0, 0.1]  # Slightly above horizon from -y
             
             # Wall faces should be illuminated
-            @test isilluminated_with_self_shadowing(shape_shadow, sun_low, 1) == true
-            @test isilluminated_with_self_shadowing(shape_shadow, sun_low, 2) == true
+            @test isilluminated(shape_shadow, sun_low, 1; with_self_shadowing=true) == true
+            @test isilluminated(shape_shadow, sun_low, 2; with_self_shadowing=true) == true
             
             # Floor faces might be shadowed (depends on exact geometry)
             # This is a complex case that depends on the visibility calculation
@@ -244,7 +244,7 @@ This file tests advanced visibility and illumination calculations:
         @testset "Without Face Visibility (Pseudo-convex)" begin
             # Sun from +z direction
             sun_pos = SA[0.0, 0.0, 10.0]
-            update_illumination_pseudo_convex!(illuminated, shape, sun_pos)
+            update_illumination!(illuminated, shape, sun_pos; with_self_shadowing=false)
             
             # Check which faces are illuminated
             illuminated_indices = findall(illuminated)
@@ -264,7 +264,7 @@ This file tests advanced visibility and illumination calculations:
             
             # Sun from diagonal direction
             sun_pos = SA[1.0, 1.0, 1.0]
-            update_illumination_with_self_shadowing!(illuminated, shape, sun_pos)
+            update_illumination!(illuminated, shape, sun_pos; with_self_shadowing=true)
             
             # Three faces should be illuminated (top, right, back)
             # The exact count depends on face normals
@@ -286,10 +286,10 @@ This file tests advanced visibility and illumination calculations:
             
             for sun_pos in test_positions
                 # Update using batch function
-                update_illumination_with_self_shadowing!(illuminated, shape, sun_pos)
+                update_illumination!(illuminated, shape, sun_pos; with_self_shadowing=true)
                 
-                # Compare with individual isilluminated_with_self_shadowing calls
-                @test all(i -> illuminated[i] == isilluminated_with_self_shadowing(shape, sun_pos, i), 1:nfaces)
+                # Compare with individual isilluminated calls
+                @test all(i -> illuminated[i] == isilluminated(shape, sun_pos, i; with_self_shadowing=true), 1:nfaces)
             end
         end
         
@@ -302,12 +302,12 @@ This file tests advanced visibility and illumination calculations:
             sun_pos = SA[1.0, 0.0, 0.0]
             
             # Time batch update
-            t_batch = @elapsed update_illumination_pseudo_convex!(illuminated_large, shape_large, sun_pos)
+            t_batch = @elapsed update_illumination!(illuminated_large, shape_large, sun_pos; with_self_shadowing=false)
             
             # Time individual calls
             t_individual = @elapsed begin
                 for i in 1:nfaces_large
-                    isilluminated_pseudo_convex(shape_large, sun_pos, i)
+                    isilluminated(shape_large, sun_pos, i; with_self_shadowing=false)
                 end
             end
             
@@ -331,10 +331,10 @@ This file tests advanced visibility and illumination calculations:
             illuminated_full = Vector{Bool}(undef, nfaces)
             
             # Pseudo-convex model (orientation only)
-            update_illumination_pseudo_convex!(illuminated_pseudo, shape, sun_pos)
+            update_illumination!(illuminated_pseudo, shape, sun_pos; with_self_shadowing=false)
             
             # Full model with self-shadowing
-            update_illumination_with_self_shadowing!(illuminated_full, shape, sun_pos)
+            update_illumination!(illuminated_full, shape, sun_pos; with_self_shadowing=true)
             
             # Pseudo-convex should have more or equal illuminated faces
             @test count(illuminated_pseudo) >= count(illuminated_full)
@@ -344,28 +344,28 @@ This file tests advanced visibility and illumination calculations:
             illuminated1 = Vector{Bool}(undef, nfaces)
             illuminated2 = Vector{Bool}(undef, nfaces)
             
-            # Test consistency between the two functions
-            update_illumination_with_self_shadowing!(illuminated1, shape, sun_pos)
-            update_illumination_with_self_shadowing!(illuminated2, shape, sun_pos)
+            # Test consistency between multiple calls
+            update_illumination!(illuminated1, shape, sun_pos; with_self_shadowing=true)
+            update_illumination!(illuminated2, shape, sun_pos; with_self_shadowing=true)
             
             @test all(illuminated1 .== illuminated2)
         end
         
         @testset "isilluminated split functions" begin
-            # Test isilluminated_pseudo_convex
+            # Test isilluminated with pseudo-convex model
             for i in 1:nfaces
-                result_pseudo = isilluminated_pseudo_convex(shape, sun_pos, i)
+                result_pseudo = isilluminated(shape, sun_pos, i; with_self_shadowing=false)
                 n̂ᵢ = shape.face_normals[i]
                 r̂☉ = normalize(sun_pos)
                 expected = n̂ᵢ ⋅ r̂☉ > 0
                 @test result_pseudo == expected
             end
             
-            # Test isilluminated_with_self_shadowing
+            # Test isilluminated with self-shadowing
             for i in 1:nfaces
-                result_shadowing = isilluminated_with_self_shadowing(shape, sun_pos, i)
+                result_shadowing = isilluminated(shape, sun_pos, i; with_self_shadowing=true)
                 # Each function should be self-consistent
-                result_again = isilluminated_with_self_shadowing(shape, sun_pos, i)
+                result_again = isilluminated(shape, sun_pos, i; with_self_shadowing=true)
                 @test result_shadowing == result_again
             end
             
@@ -373,12 +373,12 @@ This file tests advanced visibility and illumination calculations:
             illuminated_pseudo = Vector{Bool}(undef, nfaces)
             illuminated_shadowing = Vector{Bool}(undef, nfaces)
             
-            update_illumination_pseudo_convex!(illuminated_pseudo, shape, sun_pos)
-            update_illumination_with_self_shadowing!(illuminated_shadowing, shape, sun_pos)
+            update_illumination!(illuminated_pseudo, shape, sun_pos; with_self_shadowing=false)
+            update_illumination!(illuminated_shadowing, shape, sun_pos; with_self_shadowing=true)
             
             for i in 1:nfaces
-                @test illuminated_pseudo[i] == isilluminated_pseudo_convex(shape, sun_pos, i)
-                @test illuminated_shadowing[i] == isilluminated_with_self_shadowing(shape, sun_pos, i)
+                @test illuminated_pseudo[i] == isilluminated(shape, sun_pos, i; with_self_shadowing=false)
+                @test illuminated_shadowing[i] == isilluminated(shape, sun_pos, i; with_self_shadowing=true)
             end
         end
         
@@ -399,6 +399,20 @@ This file tests advanced visibility and illumination calculations:
             
             # Should reduce or maintain illumination count
             @test count(illuminated) <= initial_count
+        end
+        
+        @testset "Unified API error cases" begin
+            # Create shape without face visibility graph
+            shape_no_graph = ShapeModel(nodes_scaled, faces)
+            illuminated_error = Vector{Bool}(undef, nfaces)
+            
+            # Test that with_self_shadowing=true requires face_visibility_graph
+            @test_throws AssertionError isilluminated(shape_no_graph, sun_pos, 1; with_self_shadowing=true)
+            @test_throws AssertionError update_illumination!(illuminated_error, shape_no_graph, sun_pos; with_self_shadowing=true)
+            
+            # Test that with_self_shadowing=false works without face_visibility_graph
+            @test_nowarn isilluminated(shape_no_graph, sun_pos, 1; with_self_shadowing=false)
+            @test_nowarn update_illumination!(illuminated_error, shape_no_graph, sun_pos; with_self_shadowing=false)
         end
     end
     
