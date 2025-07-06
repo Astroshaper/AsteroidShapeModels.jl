@@ -21,18 +21,18 @@ This type is used temporarily in `build_face_visibility_graph!` before convertin
 to the CSR format `FaceVisibilityGraph`.
 
 # Fields
-- `id` : Index of the interfacing face
-- `f`  : View factor from face i to j
-- `d`  : Distance from face i to j
-- `d̂`  : Normal vector from face i to j
+- `face_idx`    : Index of the interfacing face
+- `view_factor` : View factor from face i to j
+- `distance`    : Distance from face i to j
+- `direction`   : Unit direction vector from face i to j
 
 Note: This is an internal type and not exported.
 """
 struct VisibleFace
-    id::Int64
-    f ::Float64
-    d ::Float64
-    d̂ ::SVector{3, Float64}
+    face_idx    ::Int64
+    view_factor ::Float64
+    distance    ::Float64
+    direction   ::SVector{3, Float64}
 end
 
 """
@@ -114,16 +114,16 @@ end
 Structure representing the result of ray-shape intersection test.
 
 # Fields
-- `hit`        : true if intersection exists, false otherwise
-- `distance`   : Distance from ray origin to intersection point
-- `point`      : Coordinates of the intersection point
-- `face_index` : Index of the intersected face
+- `hit`      : true if intersection exists, false otherwise
+- `distance` : Distance from ray origin to intersection point
+- `point`    : Coordinates of the intersection point
+- `face_idx` : Index of the intersected face
 """
 struct RayShapeIntersectionResult
     hit::Bool
     distance::Float64
     point::SVector{3, Float64}
-    face_index::Int
+    face_idx::Int
 end
 
 const NO_INTERSECTION_RAY_SHAPE = RayShapeIntersectionResult(false, NaN, SVector(NaN, NaN, NaN), 0)
@@ -138,10 +138,10 @@ Displays hit status and intersection details including face index if hit occurre
 function Base.show(io::IO, result::RayShapeIntersectionResult)
     if result.hit
         print(io, "Ray-Shape Intersection:\n")
-        print(io, "    ∘ hit        = $(result.hit)\n")
-        print(io, "    ∘ distance   = $(result.distance)\n")
-        print(io, "    ∘ point      = $(result.point)\n")
-        print(io, "    ∘ face_index = $(result.face_index)\n")
+        print(io, "    ∘ hit      = $(result.hit)\n")
+        print(io, "    ∘ distance = $(result.distance)\n")
+        print(io, "    ∘ point    = $(result.point)\n")
+        print(io, "    ∘ face_idx = $(result.face_idx)\n")
     else
         print(io, "Ray-Shape Intersection:\n")
         print(io, "    ∘ hit = $(result.hit)\n")

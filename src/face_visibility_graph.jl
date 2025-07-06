@@ -110,77 +110,77 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 # Internal helper function to get the range of indices for a face
-function _get_visible_face_range(graph::FaceVisibilityGraph, face_id::Int)
-    @boundscheck 1 ≤ face_id ≤ graph.nfaces || throw(BoundsError(graph, face_id))
-    start_idx = graph.row_ptr[face_id]
-    end_idx   = graph.row_ptr[face_id + 1] - 1
+function _get_visible_face_range(graph::FaceVisibilityGraph, face_idx::Int)
+    @boundscheck 1 ≤ face_idx ≤ graph.nfaces || throw(BoundsError(graph, face_idx))
+    start_idx = graph.row_ptr[face_idx]
+    end_idx   = graph.row_ptr[face_idx + 1] - 1
     return start_idx:end_idx
 end
 
 """
-    get_visible_face_indices(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
+    get_visible_face_indices(graph::FaceVisibilityGraph, face_idx::Int) -> SubArray
 
 Get indices of faces visible from the specified face.
 """
-function get_visible_face_indices(graph::FaceVisibilityGraph, face_id::Int)
-    range = _get_visible_face_range(graph, face_id)
+function get_visible_face_indices(graph::FaceVisibilityGraph, face_idx::Int)
+    range = _get_visible_face_range(graph, face_idx)
     return @view graph.col_idx[range]
 end
 
 """
-    get_view_factors(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
+    get_view_factors(graph::FaceVisibilityGraph, face_idx::Int) -> SubArray
 
 Get view factors for the specified face.
 """
-function get_view_factors(graph::FaceVisibilityGraph, face_id::Int)
-    range = _get_visible_face_range(graph, face_id)
+function get_view_factors(graph::FaceVisibilityGraph, face_idx::Int)
+    range = _get_visible_face_range(graph, face_idx)
     return @view graph.view_factors[range]
 end
 
 """
-    get_visible_face_distances(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
+    get_visible_face_distances(graph::FaceVisibilityGraph, face_idx::Int) -> SubArray
 
 Get distances to visible faces from the specified face.
 """
-function get_visible_face_distances(graph::FaceVisibilityGraph, face_id::Int)
-    range = _get_visible_face_range(graph, face_id)
+function get_visible_face_distances(graph::FaceVisibilityGraph, face_idx::Int)
+    range = _get_visible_face_range(graph, face_idx)
     return @view graph.distances[range]
 end
 
 """
-    get_visible_face_directions(graph::FaceVisibilityGraph, face_id::Int) -> SubArray
+    get_visible_face_directions(graph::FaceVisibilityGraph, face_idx::Int) -> SubArray
 
 Get direction vectors to visible faces from the specified face.
 """
-function get_visible_face_directions(graph::FaceVisibilityGraph, face_id::Int)
-    range = _get_visible_face_range(graph, face_id)
+function get_visible_face_directions(graph::FaceVisibilityGraph, face_idx::Int)
+    range = _get_visible_face_range(graph, face_idx)
     return @view graph.directions[range]
 end
 
 """
-    get_visible_face_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
+    get_visible_face_data(graph::FaceVisibilityGraph, face_idx::Int, idx::Int)
 
 Get the idx-th visible face data for the specified face.
 """
-function get_visible_face_data(graph::FaceVisibilityGraph, face_id::Int, idx::Int)
-    visible_faces = get_visible_face_indices(graph, face_id)
+function get_visible_face_data(graph::FaceVisibilityGraph, face_idx::Int, idx::Int)
+    visible_faces = get_visible_face_indices(graph, face_idx)
     @boundscheck 1 ≤ idx ≤ length(visible_faces) || throw(BoundsError())
     
-    base_idx = graph.row_ptr[face_id] + idx - 1
+    base_idx = graph.row_ptr[face_idx] + idx - 1
     return (
-        id = graph.col_idx[base_idx],
-        f = graph.view_factors[base_idx],
-        d = graph.distances[base_idx],
-        d̂ = graph.directions[base_idx]
+        face_idx    = graph.col_idx[base_idx],
+        view_factor = graph.view_factors[base_idx],
+        distance    = graph.distances[base_idx],
+        direction   = graph.directions[base_idx]
     )
 end
 
 """
-    num_visible_faces(graph::FaceVisibilityGraph, face_id::Int) -> Int
+    num_visible_faces(graph::FaceVisibilityGraph, face_idx::Int) -> Int
 
 Get the number of visible faces for the specified face.
 """
-function num_visible_faces(graph::FaceVisibilityGraph, face_id::Int)
-    @boundscheck 1 ≤ face_id ≤ graph.nfaces || throw(BoundsError(graph, face_id))
-    return graph.row_ptr[face_id + 1] - graph.row_ptr[face_id]
+function num_visible_faces(graph::FaceVisibilityGraph, face_idx::Int)
+    @boundscheck 1 ≤ face_idx ≤ graph.nfaces || throw(BoundsError(graph, face_idx))
+    return graph.row_ptr[face_idx + 1] - graph.row_ptr[face_idx]
 end

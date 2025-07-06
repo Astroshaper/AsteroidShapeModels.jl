@@ -20,6 +20,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - More consistent with other functions like `intersect_ray_triangle`
   - Update your code: `get_face_nodes(nodes, faces[i])` → `get_face_nodes(nodes, faces, i)`
 
+- **Standardized face index naming to `face_idx`** (pending PR)
+  - All face index parameters renamed from `face_id` or `i` to `face_idx`
+  - `RayShapeIntersectionResult.face_index` field renamed to `face_idx`
+  - `VisibleFace` struct fields renamed for clarity:
+    - `id` → `face_idx`
+    - `f` → `view_factor`
+    - `d` → `distance`
+    - `d̂` → `direction`
+  - `get_visible_face_data` return value fields renamed accordingly
+  - Update your code: 
+    - `result.face_index` → `result.face_idx`
+    - `vf.id` → `vf.face_idx`
+    - `vf.f` → `vf.view_factor`
+    - `vf.d` → `vf.distance`
+    - `vf.d̂` → `vf.direction`
+  - This change improves consistency and readability across the entire API
+
 ### Added
 - **Batch ray processing functionality** (#29)
   - Multiple dispatch for `intersect_ray_shape` to handle various input formats:

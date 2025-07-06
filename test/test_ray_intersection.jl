@@ -151,7 +151,7 @@ This file verifies:
         
         # Verify results
         test_ray_intersection(result, true, 1.0, @SVector([0.25, 0.25, 0.0]))
-        @test result.face_index == 1  # Hit the first (and only) face
+        @test result.face_idx == 1  # Hit the first (and only) face
     end
     
     @testset "BVH Pre-build Requirement" begin
@@ -175,7 +175,7 @@ This file verifies:
         # Now intersection should work
         result = intersect_ray_shape(ray, shape_no_bvh)
         test_ray_intersection(result, true, 1.0, @SVector([0.25, 0.25, 0.0]))
-        @test result.face_index == 1
+        @test result.face_idx == 1
     end
     
     @testset "Batch Ray Intersection" begin
@@ -219,7 +219,7 @@ This file verifies:
             
             # Ray 1: Center hit
             @test results[1].hit == true
-            @test results[1].face_index == 1
+            @test results[1].face_idx == 1
             @test results[1].distance ≈ 1.0
             @test results[1].point ≈ SA[0.25, 0.25, 0.0]
             
@@ -228,7 +228,7 @@ This file verifies:
             
             # Ray 3: Hit
             @test results[3].hit == true
-            @test results[3].face_index == 1
+            @test results[3].face_idx == 1
             @test results[3].distance ≈ 1.0
             @test results[3].point ≈ SA[0.3, 0.1, 0.0]
             
@@ -237,7 +237,7 @@ This file verifies:
             
             # Ray 5: Hit from below
             @test results[5].hit == true
-            @test results[5].face_index == 1
+            @test results[5].face_idx == 1
             @test results[5].distance ≈ 1.0
             @test results[5].point ≈ SA[0.1, 0.1, 0.0]
         end

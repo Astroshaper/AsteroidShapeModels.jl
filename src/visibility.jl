@@ -150,7 +150,7 @@ function build_face_visibility_graph!(shape::ShapeModel)
         # Check visibility for each candidate face
         for (j, dᵢⱼ) in zip(candidates, distances)
             # Skip if already processed
-            j in (vf.id for vf in temp_visible[i]) && continue
+            j in (vf.face_idx for vf in temp_visible[i]) && continue
 
             cⱼ = face_centers[j]
             n̂ⱼ = face_normals[j]
@@ -198,10 +198,10 @@ function build_face_visibility_graph!(shape::ShapeModel)
     idx = 1
     for i in 1:nfaces
         for vf in temp_visible[i]
-            col_idx[idx] = vf.id
-            view_factors[idx] = vf.f
-            distances[idx] = vf.d
-            directions[idx] = vf.d̂
+            col_idx[idx]      = vf.face_idx
+            view_factors[idx] = vf.view_factor
+            distances[idx]    = vf.distance
+            directions[idx]   = vf.direction
             idx += 1
         end
     end
@@ -230,14 +230,14 @@ Enum representing the eclipse status between binary pairs.
 end
 
 """
-    isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer; with_self_shadowing::Bool) -> Bool
+    isilluminated(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer; with_self_shadowing::Bool) -> Bool
 
 Check if a face is illuminated by the sun.
 
 # Arguments
-- `shape` : Shape model of an asteroid
-- `r☉`    : Sun's position in the asteroid-fixed frame
-- `i`     : Index of the face to be checked
+- `shape`    : Shape model of an asteroid
+- `r☉`       : Sun's position in the asteroid-fixed frame
+- `face_idx` : Index of the face to be checked
 
 # Keyword Arguments
 - `with_self_shadowing::Bool` : Whether to include self-shadowing effects.
@@ -251,30 +251,30 @@ Check if a face is illuminated by the sun.
 # Examples
 ```julia
 # Without self-shadowing (pseudo-convex model)
-illuminated = isilluminated(shape, sun_position, face_id; with_self_shadowing=false)
+illuminated = isilluminated(shape, sun_position, face_idx; with_self_shadowing=false)
 
 # With self-shadowing
-illuminated = isilluminated(shape, sun_position, face_id; with_self_shadowing=true)
+illuminated = isilluminated(shape, sun_position, face_idx; with_self_shadowing=true)
 ```
 """
-function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer; with_self_shadowing::Bool)
+function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer; with_self_shadowing::Bool)
     if with_self_shadowing
         @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
-        return isilluminated_with_self_shadowing(shape, r☉, i)
+        return isilluminated_with_self_shadowing(shape, r☉, face_idx)
     else
-        return isilluminated_pseudo_convex(shape, r☉, i)
+        return isilluminated_pseudo_convex(shape, r☉, face_idx)
     end
 end
 
 """
-    isilluminated_pseudo_convex(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool
+    isilluminated_pseudo_convex(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer) -> Bool
 
 Check if a face is illuminated using pseudo-convex model (face orientation only).
 
 # Arguments
-- `shape` : Shape model of an asteroid
-- `r☉`    : Sun's position in the asteroid-fixed frame (doesn't need to be normalized)
-- `i`     : Index of the face to be checked
+- `shape`    : Shape model of an asteroid
+- `r☉`       : Sun's position in the asteroid-fixed frame (doesn't need to be normalized)
+- `face_idx` : Index of the face to be checked
 
 # Description
 This function checks only if the face is oriented towards the sun, without any
@@ -287,21 +287,21 @@ This function ignores `face_visibility_graph` even if it exists.
 - `true` if the face is oriented towards the sun
 - `false` if the face is facing away from the sun
 """
-function isilluminated_pseudo_convex(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)::Bool
-    n̂ᵢ = shape.face_normals[i]
+function isilluminated_pseudo_convex(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer)::Bool
+    n̂ᵢ = shape.face_normals[face_idx]
     r̂☉ = normalize(r☉)
     return n̂ᵢ ⋅ r̂☉ > 0
 end
 
 """
-    isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool
+    isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer) -> Bool
 
 Check if a face is illuminated with self-shadowing effects.
 
 # Arguments
-- `shape` : Shape model with `face_visibility_graph` (required)
-- `r☉`    : Sun's position in the asteroid-fixed frame (doesn't need to be normalized)
-- `i`     : Index of the face to be checked
+- `shape`    : Shape model with `face_visibility_graph` (required)
+- `r☉`       : Sun's position in the asteroid-fixed frame (doesn't need to be normalized)
+- `face_idx` : Index of the face to be checked
 
 # Description
 This function performs full illumination calculation including self-shadowing effects.
@@ -313,11 +313,11 @@ If `face_visibility_graph` is not available, this function will throw an error.
 - `true` if the face is illuminated (facing the sun and not occluded)
 - `false` if the face is facing away from the sun or is in shadow
 """
-function isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)::Bool
+function isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer)::Bool
     @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
     
-    cᵢ = shape.face_centers[i]
-    n̂ᵢ = shape.face_normals[i]
+    cᵢ = shape.face_centers[face_idx]
+    n̂ᵢ = shape.face_normals[face_idx]
     r̂☉ = normalize(r☉)
     
     # First check if the face is oriented away from the sun
@@ -325,7 +325,7 @@ function isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector
     
     # Check for occlusions using face visibility graph
     ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
-    visible_face_indices = get_visible_face_indices(shape.face_visibility_graph, i)
+    visible_face_indices = get_visible_face_indices(shape.face_visibility_graph, face_idx)
     for j in visible_face_indices
         intersect_ray_triangle(ray, shape, j).hit && return false
     end
