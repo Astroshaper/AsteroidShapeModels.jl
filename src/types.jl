@@ -138,9 +138,9 @@ Displays hit status and intersection details including face index if hit occurre
 function Base.show(io::IO, result::RayShapeIntersectionResult)
     if result.hit
         print(io, "Ray-Shape Intersection:\n")
-        print(io, "    ∘ hit        = $(result.hit)\n")
-        print(io, "    ∘ distance   = $(result.distance)\n")
-        print(io, "    ∘ point      = $(result.point)\n")
+        print(io, "    ∘ hit      = $(result.hit)\n")
+        print(io, "    ∘ distance = $(result.distance)\n")
+        print(io, "    ∘ point    = $(result.point)\n")
         print(io, "    ∘ face_idx = $(result.face_idx)\n")
     else
         print(io, "Ray-Shape Intersection:\n")
