@@ -67,8 +67,74 @@ println("Total view factor: ", sum(view_factors))
 
 # Check if a face is illuminated by the sun
 sun_position = SA[1.5e11, 0.0, 0.0]  # Sun 1 au away along x-axis
-illuminated = isilluminated(shape, sun_position, face_id)
+
+# Without self-shadowing (pseudo-convex model)
+illuminated = isilluminated(shape, sun_position, face_id; with_self_shadowing=false)
 println("Face $face_id is ", illuminated ? "illuminated" : "in shadow")
+
+# With self-shadowing (requires `face_visibility_graph` to be built)
+illuminated = isilluminated(shape_vis, sun_position, face_id; with_self_shadowing=true)
+println("Face $face_id is ", illuminated ? "illuminated" : "in shadow")
+```
+
+## Batch Illumination Updates
+
+```julia
+# Efficiently update illumination state for all faces
+illuminated = Vector{Bool}(undef, length(shape.faces))
+
+# Without self-shadowing (fast, pseudo-convex model)
+update_illumination!(illuminated, shape, sun_position; with_self_shadowing=false)
+n_illuminated = count(illuminated)
+println("$n_illuminated faces are illuminated (pseudo-convex model).")
+
+# With self-shadowing (requires `face_visibility_graph` to be built)
+update_illumination!(illuminated, shape_vis, sun_position; with_self_shadowing=true)
+n_illuminated = count(illuminated)
+println("$n_illuminated faces are illuminated (with self-shadowing).")
+```
+
+## Binary Asteroid Shadowing
+
+```julia
+# For binary asteroid systems, check mutual shadowing effects
+# Assume we have two shape models: shape1 (primary) and shape2 (secondary)
+shape1 = load_shape_obj("primary_shape.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
+shape2 = load_shape_obj("secondary_shape.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
+
+# Define relative position and orientation
+# R12: rotation from shape1 frame to shape2 frame
+# R21: rotation from shape2 frame to shape1 frame
+# t12: translation from shape1 origin to shape2 origin
+# t21: translation from shape2 origin to shape1 origin
+R12 = SA[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]  # Identity (no rotation)
+t12 = SA[2000.0, 0.0, 0.0]  # 2 km separation
+
+R21 = R12'         # Inverse rotation
+t21 = -R12' * t12  # Inverse translation
+
+# Sun position in each body's frame
+sun_position1 = SA[1.5e11, 0.0, 0.0]
+sun_position2 = sun_position1 - t12  # Transform to shape2's frame
+
+# First, check self-shadowing for each body
+illuminated1 = Vector{Bool}(undef, length(shape1.faces))
+illuminated2 = Vector{Bool}(undef, length(shape2.faces))
+update_illumination!(illuminated1, shape1, sun_position1; with_self_shadowing=true)
+update_illumination!(illuminated2, shape2, sun_position2; with_self_shadowing=true)
+
+# Then apply mutual shadowing
+status1 = apply_eclipse_shadowing!(illuminated1, shape1, sun_position1, R12, t12, shape2)
+status2 = apply_eclipse_shadowing!(illuminated2, shape2, sun_position2, R21, t21, shape1)
+
+# Check eclipse status
+if status1 == NO_ECLIPSE
+    println("Primary is not eclipsed by secondary.")
+elseif status1 == PARTIAL_ECLIPSE
+    println("Primary is partially eclipsed by secondary.")
+elseif status1 == TOTAL_ECLIPSE
+    println("Primary is totally eclipsed by secondary.")
+end
 ```
 
 ## Ray-Shape Intersection

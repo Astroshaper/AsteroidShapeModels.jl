@@ -185,7 +185,7 @@ end
         
         # Verify illumination for each face
         for i in 1:length(faces)
-            illuminated = isilluminated(shape, r_sun, i)
+            illuminated = isilluminated(shape, r_sun, i; with_self_shadowing=true)
             
             # Check if face normal points toward the sun
             face_normal = shape.face_normals[i]

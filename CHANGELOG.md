@@ -16,12 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Efficient batch processing using single BVH traversal
   - Results maintain input shape for vector/matrix inputs
 
+- **Unified illumination API with batch processing** (#31, feature/batch-illumination)
+  - New `isilluminated` function with `with_self_shadowing` keyword argument
+  - New `update_illumination!` function for efficient batch illumination updates
+  - New `apply_eclipse_shadowing!` function for binary asteroid mutual shadowing
+  - `EclipseStatus` enum for eclipse detection (NO_ECLIPSE, PARTIAL_ECLIPSE, TOTAL_ECLIPSE)
+  - Specialized implementations for pseudo-convex and self-shadowing models
+  - Performance optimizations including early-out checks and sphere-based culling
+
 ### Changed
 - **Face visibility graph unified to non-BVH implementation** (#30)
   - Removed BVH-based visibility graph construction in `build_face_visibility_graph!`
   - Non-BVH algorithm with candidate filtering provides better performance (~2x faster than BVH)
   - BVH was found to be ~0.5x slower for face-to-face visibility queries
-- **Illumination check unified to non-BVH implementation**
+- **Illumination check unified to non-BVH implementation** (#31)
   - Removed BVH-based implementation from `isilluminated` function
   - Uses FaceVisibilityGraph for efficient occlusion testing when available
   - Falls back to checking all faces when visibility graph is not precomputed
@@ -31,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added batch ray processing examples to tutorial
 - Updated performance tips with batch operation recommendations
 - Documented performance characteristics of BVH vs non-BVH for visibility graphs
+- Updated file-level documentation in `visibility.jl` with new exported functions
 
 ## [0.3.1] - 2025-07-02
 

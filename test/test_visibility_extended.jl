@@ -151,7 +151,7 @@ This file tests advanced visibility and illumination calculations:
             
             # Check each face
             for i in 1:length(faces)
-                illuminated = isilluminated(shape, sun_pos, i)
+                illuminated = isilluminated(shape, sun_pos, i; with_self_shadowing=true)
                 
                 # Only faces with positive z-component of normal should be illuminated
                 if shape.face_normals[i][3] > 0
@@ -168,7 +168,7 @@ This file tests advanced visibility and illumination calculations:
             
             # Check which faces are illuminated based on their normals
             for i in 1:length(faces)
-                illuminated = isilluminated(shape, sun_pos, i)
+                illuminated = isilluminated(shape, sun_pos, i; with_self_shadowing=true)
                 # Faces with negative z-component of normal should be illuminated
                 if shape.face_normals[i][3] < 0
                     @test illuminated == true
@@ -189,9 +189,9 @@ This file tests advanced visibility and illumination calculations:
             sun_pos_diag = SA[1.0, 1.0, 1.0]
             
             # At least one face should be illuminated from each direction
-            illuminated_x = any(isilluminated(shape, sun_pos_x, i) for i in 1:4)
-            illuminated_y = any(isilluminated(shape, sun_pos_y, i) for i in 1:4)
-            illuminated_diag = any(isilluminated(shape, sun_pos_diag, i) for i in 1:4)
+            illuminated_x    = any(isilluminated(shape, sun_pos_x,    i; with_self_shadowing=true) for i in 1:4)
+            illuminated_y    = any(isilluminated(shape, sun_pos_y,    i; with_self_shadowing=true) for i in 1:4)
+            illuminated_diag = any(isilluminated(shape, sun_pos_diag, i; with_self_shadowing=true) for i in 1:4)
             
             @test illuminated_x == true
             @test illuminated_y == true
@@ -223,11 +223,306 @@ This file tests advanced visibility and illumination calculations:
             sun_low = SA[0.0, -1.0, 0.1]  # Slightly above horizon from -y
             
             # Wall faces should be illuminated
-            @test isilluminated(shape_shadow, sun_low, 1) == true
-            @test isilluminated(shape_shadow, sun_low, 2) == true
+            @test isilluminated(shape_shadow, sun_low, 1; with_self_shadowing=true) == true
+            @test isilluminated(shape_shadow, sun_low, 2; with_self_shadowing=true) == true
             
             # Floor faces might be shadowed (depends on exact geometry)
             # This is a complex case that depends on the visibility calculation
+        end
+    end
+    
+    @testset "Batch Illumination Update" begin
+        # Create a simple cube shape using helper function
+        nodes_unit, faces_unit = create_unit_cube()
+        # Scale and center the cube
+        nodes = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes_unit]
+        
+        shape = ShapeModel(nodes, faces_unit)
+        nfaces = length(shape.faces)
+        illuminated = Vector{Bool}(undef, nfaces)
+        
+        @testset "Without Face Visibility (Pseudo-convex)" begin
+            # Sun from +z direction
+            sun_pos = SA[0.0, 0.0, 10.0]
+            update_illumination!(illuminated, shape, sun_pos; with_self_shadowing=false)
+            
+            # Check which faces are illuminated
+            illuminated_indices = findall(illuminated)
+            
+            # For a cube centered at origin, faces with positive z-component normals should be illuminated
+            # The exact number depends on the face ordering from create_unit_cube
+            @test count(illuminated) > 0    # At least some faces should be illuminated
+            @test count(illuminated) ≤ 12  # At most all faces could be illuminated
+            
+            # Verify that illuminated faces have normals pointing towards the sun
+            @test all(i -> shape.face_normals[i][3] > -1e-10, illuminated_indices)
+        end
+        
+        @testset "With Face Visibility (Full occlusion)" begin
+            # Build visibility graph
+            build_face_visibility_graph!(shape)
+            
+            # Sun from diagonal direction
+            sun_pos = SA[1.0, 1.0, 1.0]
+            update_illumination!(illuminated, shape, sun_pos; with_self_shadowing=true)
+            
+            # Three faces should be illuminated (top, right, back)
+            # The exact count depends on face normals
+            @test count(illuminated) > 0
+            @test count(illuminated) ≤ 6  # At most 3 sides visible = 6 triangles
+        end
+        
+        @testset "Compare with isilluminated" begin
+            # Sun from various directions
+            test_positions = [
+                SA[10.0, 0.0, 0.0],   # +x
+                SA[0.0, 10.0, 0.0],   # +y
+                SA[0.0, 0.0, 10.0],   # +z
+                SA[-10.0, 0.0, 0.0],  # -x
+                SA[0.0, -10.0, 0.0],  # -y
+                SA[0.0, 0.0, -10.0],  # -z
+                SA[1.0, 1.0, 1.0]     # diagonal
+            ]
+            
+            for sun_pos in test_positions
+                # Update using batch function
+                update_illumination!(illuminated, shape, sun_pos; with_self_shadowing=true)
+                
+                # Compare with individual isilluminated calls
+                @test all(i -> illuminated[i] == isilluminated(shape, sun_pos, i; with_self_shadowing=true), 1:nfaces)
+            end
+        end
+        
+        @testset "Performance comparison" begin
+            # Create a larger shape for performance testing (regular tetrahedron)
+            nodes_tet, faces_tet = create_regular_tetrahedron()
+            shape_large = ShapeModel(nodes_tet, faces_tet)
+            nfaces_large = length(shape_large.faces)
+            illuminated_large = Vector{Bool}(undef, nfaces_large)
+            sun_pos = SA[1.0, 0.0, 0.0]
+            
+            # Time batch update
+            t_batch = @elapsed update_illumination!(illuminated_large, shape_large, sun_pos; with_self_shadowing=false)
+            
+            # Time individual calls
+            t_individual = @elapsed begin
+                for i in 1:nfaces_large
+                    isilluminated(shape_large, sun_pos, i; with_self_shadowing=false)
+                end
+            end
+            
+            # Batch should be comparable or faster (avoiding repeated normalization)
+            @test t_batch < 2.0 * t_individual  # Should not be much slower
+        end
+    end
+    
+    @testset "New Illumination API Tests" begin
+        # Create a simple shape with visibility graph
+        nodes, faces = create_unit_cube()
+        nodes_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes]
+        shape = ShapeModel(nodes_scaled, faces)
+        build_face_visibility_graph!(shape)
+        
+        nfaces = length(shape.faces)
+        sun_pos = SA[10.0, 5.0, 3.0]
+        
+        @testset "Pseudo-convex vs full illumination" begin
+            illuminated_pseudo = Vector{Bool}(undef, nfaces)
+            illuminated_full = Vector{Bool}(undef, nfaces)
+            
+            # Pseudo-convex model (orientation only)
+            update_illumination!(illuminated_pseudo, shape, sun_pos; with_self_shadowing=false)
+            
+            # Full model with self-shadowing
+            update_illumination!(illuminated_full, shape, sun_pos; with_self_shadowing=true)
+            
+            # Pseudo-convex should have more or equal illuminated faces
+            @test count(illuminated_pseudo) >= count(illuminated_full)
+        end
+        
+        @testset "API consistency" begin
+            illuminated1 = Vector{Bool}(undef, nfaces)
+            illuminated2 = Vector{Bool}(undef, nfaces)
+            
+            # Test consistency between multiple calls
+            update_illumination!(illuminated1, shape, sun_pos; with_self_shadowing=true)
+            update_illumination!(illuminated2, shape, sun_pos; with_self_shadowing=true)
+            
+            @test all(illuminated1 .== illuminated2)
+        end
+        
+        @testset "isilluminated split functions" begin
+            # Test isilluminated with pseudo-convex model
+            for i in 1:nfaces
+                result_pseudo = isilluminated(shape, sun_pos, i; with_self_shadowing=false)
+                n̂ᵢ = shape.face_normals[i]
+                r̂☉ = normalize(sun_pos)
+                expected = n̂ᵢ ⋅ r̂☉ > 0
+                @test result_pseudo == expected
+            end
+            
+            # Test isilluminated with self-shadowing
+            for i in 1:nfaces
+                result_shadowing = isilluminated(shape, sun_pos, i; with_self_shadowing=true)
+                # Each function should be self-consistent
+                result_again = isilluminated(shape, sun_pos, i; with_self_shadowing=true)
+                @test result_shadowing == result_again
+            end
+            
+            # Test consistency between split functions and batch updates
+            illuminated_pseudo = Vector{Bool}(undef, nfaces)
+            illuminated_shadowing = Vector{Bool}(undef, nfaces)
+            
+            update_illumination!(illuminated_pseudo, shape, sun_pos; with_self_shadowing=false)
+            update_illumination!(illuminated_shadowing, shape, sun_pos; with_self_shadowing=true)
+            
+            for i in 1:nfaces
+                @test illuminated_pseudo[i] == isilluminated(shape, sun_pos, i; with_self_shadowing=false)
+                @test illuminated_shadowing[i] == isilluminated(shape, sun_pos, i; with_self_shadowing=true)
+            end
+        end
+        
+        @testset "Eclipse shadowing application" begin
+            # Create occluding shape
+            shape_occluding = ShapeModel(nodes_scaled, faces)
+            build_bvh!(shape_occluding)
+            
+            R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+            t = @SVector[3.0, 0.0, 0.0]
+            
+            # Start with all faces illuminated
+            illuminated = fill(true, nfaces)
+            initial_count = count(illuminated)
+            
+            # Apply eclipse shadowing
+            status = apply_eclipse_shadowing!(illuminated, shape, sun_pos, R, t, shape_occluding)
+            
+            # Should reduce or maintain illumination count
+            @test count(illuminated) <= initial_count
+            
+            # Test that status is returned
+            @test status isa EclipseStatus
+        end
+        
+        @testset "Unified API error cases" begin
+            # Create shape without face visibility graph
+            shape_no_graph = ShapeModel(nodes_scaled, faces)
+            illuminated_error = Vector{Bool}(undef, nfaces)
+            
+            # Test that with_self_shadowing=true requires face_visibility_graph
+            @test_throws AssertionError isilluminated(shape_no_graph, sun_pos, 1; with_self_shadowing=true)
+            @test_throws AssertionError update_illumination!(illuminated_error, shape_no_graph, sun_pos; with_self_shadowing=true)
+            
+            # Test that with_self_shadowing=false works without face_visibility_graph
+            @test_nowarn isilluminated(shape_no_graph, sun_pos, 1; with_self_shadowing=false)
+            @test_nowarn update_illumination!(illuminated_error, shape_no_graph, sun_pos; with_self_shadowing=false)
+        end
+    end
+    
+    @testset "Eclipse Status Tests" begin
+        # Create two simple shapes for testing
+        nodes1, faces1 = create_unit_cube()
+        nodes1_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes1]
+        shape1 = ShapeModel(nodes1_scaled, faces1)
+        build_bvh!(shape1)
+        
+        nodes2, faces2 = create_unit_cube()
+        nodes2_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes2]
+        shape2 = ShapeModel(nodes2_scaled, faces2)
+        build_bvh!(shape2)
+        
+        sun_pos = SA[10.0, 0.0, 0.0]  # Sun along +x direction
+        R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]  # Identity rotation
+        
+        @testset "NO_ECLIPSE - Bodies far apart" begin
+            t = @SVector[0.0, 10.0, 0.0]  # Lateral separation
+            illuminated = fill(true, length(shape1.faces))
+            status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R, t, shape2)
+            @test status == NO_ECLIPSE
+            @test all(illuminated)  # No faces should be shadowed
+        end
+        
+        @testset "NO_ECLIPSE - Occluder behind target" begin
+            t = @SVector[-10.0, 0.0, 0.0]  # shape2 is behind shape1 relative to sun
+            illuminated = fill(true, length(shape1.faces))
+            status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R, t, shape2)
+            @test status == NO_ECLIPSE
+            @test all(illuminated)  # No faces should be shadowed
+        end
+        
+        @testset "PARTIAL_ECLIPSE - Partial shadowing" begin
+            t = @SVector[3.0, 0.5, 0.0]  # Partial overlap
+            illuminated = fill(true, length(shape1.faces))
+            status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R, t, shape2)
+            @test status == PARTIAL_ECLIPSE || status == NO_ECLIPSE  # Depends on exact geometry
+            # At least some faces should remain illuminated if partial
+            if status == PARTIAL_ECLIPSE
+                @test count(illuminated) < length(shape1.faces)
+                @test count(illuminated) > 0
+            end
+        end
+        
+        @testset "TOTAL_ECLIPSE - Complete shadowing" begin
+            # Create a small target and large occluder
+            nodes_small = [0.1 * node for node in nodes1_scaled]
+            shape_small = ShapeModel(nodes_small, faces1)
+            build_bvh!(shape_small)
+            
+            nodes_large = [5.0 * node for node in nodes2_scaled]
+            shape_large = ShapeModel(nodes_large, faces2)
+            build_bvh!(shape_large)
+            
+            t = @SVector[5.0, 0.0, 0.0]  # Large occluder between sun and small target
+            illuminated = fill(true, length(shape_small.faces))
+            status = apply_eclipse_shadowing!(illuminated, shape_small, sun_pos, R, t, shape_large)
+            @test status == TOTAL_ECLIPSE
+            @test !any(illuminated)  # All faces should be shadowed
+        end
+        
+        @testset "Face-level early-out tests" begin
+            # Test case where t_min < 0 (ray moves away from shape2)
+            @testset "Ray moving away from occluder" begin
+                # Place shape2 behind shape1's face but offset laterally
+                sun_pos_diagonal = SA[1.0, 1.0, 0.0]  # Sun at 45 degrees
+                t = @SVector[-2.0, 2.0, 0.0]  # shape2 behind and to the side
+                
+                illuminated = fill(true, length(shape1.faces))
+                status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos_diagonal, R, t, shape2)
+                
+                # Some faces might be shadowed depending on exact geometry
+                @test status == NO_ECLIPSE || status == PARTIAL_ECLIPSE
+            end
+            
+            @testset "Ray-sphere intersection miss" begin
+                # Create shapes with specific positioning to test d_center > ρ₂
+                # Shape2 is offset such that rays from shape1 miss its bounding sphere
+                t = @SVector[5.0, 5.0, 0.0]  # Diagonal offset
+                
+                illuminated = fill(true, length(shape1.faces))
+                status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R, t, shape2)
+                
+                # Should have no eclipse or minimal shadowing
+                @test status == NO_ECLIPSE || (status == PARTIAL_ECLIPSE && count(illuminated) > length(shape1.faces) * 0.8)
+            end
+            
+            @testset "Inscribed sphere hit" begin
+                # Test the inscribed sphere optimization
+                # Create a large spherical occluder to ensure inscribed sphere is well-defined
+                nodes_sphere, faces_sphere = create_regular_tetrahedron()  # Approximate sphere
+                nodes_sphere_scaled = [10.0 * node for node in nodes_sphere]
+                shape_sphere = ShapeModel(nodes_sphere_scaled, faces_sphere)
+                build_bvh!(shape_sphere)
+                
+                # Position sphere to guarantee some rays pass through its center
+                t = @SVector[5.0, 0.0, 0.0]
+                
+                illuminated = fill(true, length(shape1.faces))
+                status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R, t, shape_sphere)
+                
+                # Should have some shadowing
+                @test status == PARTIAL_ECLIPSE || status == TOTAL_ECLIPSE
+                @test count(illuminated) < length(shape1.faces)
+            end
         end
     end
     

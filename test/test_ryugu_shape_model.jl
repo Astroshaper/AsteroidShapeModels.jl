@@ -47,7 +47,7 @@ This file benchmarks performance with a realistic asteroid shape model:
     view_dir = SA[1.0, 0.0, 0.0]
     bench_vis = @benchmark begin
         for idx in 1:100
-            isilluminated($shape_vis, $view_dir, idx)
+            isilluminated($shape_vis, $view_dir, idx; with_self_shadowing=true)
         end
     end
     display(bench_vis)

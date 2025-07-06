@@ -8,8 +8,16 @@ CurrentModule = AsteroidShapeModels
 
 ```@docs
 build_face_visibility_graph!
-isilluminated
 view_factor
+```
+
+## Illumination Analysis
+
+```@docs
+isilluminated
+update_illumination!
+apply_eclipse_shadowing!
+EclipseStatus
 ```
 
 ## FaceVisibilityGraph Functions
