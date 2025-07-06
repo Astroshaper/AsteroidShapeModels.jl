@@ -109,27 +109,27 @@ face_area(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) = norm(
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    get_face_vertices(nodes, face) -> (v1, v2, v3)
+    get_face_nodes(nodes, face) -> (v1, v2, v3)
 
-Extract three vertices of a triangular face from a node array.
+Extract three nodes of a triangular face from a node array.
 
 # Arguments
 - `nodes`: Array of node positions
 - `face`: Array of three node indices defining the triangular face
 
 # Returns
-- Tuple of three vertices (v1, v2, v3)
+- Tuple of three nodes (v1, v2, v3)
 
 # Examples
 ```julia
 nodes = [SA[0.0, 0.0, 0.0], SA[1.0, 0.0, 0.0], SA[0.0, 1.0, 0.0]]
 face = [1, 2, 3]
-v1, v2, v3 = get_face_vertices(nodes, face)
+v1, v2, v3 = get_face_nodes(nodes, face)
 ```
 """
-@inline function get_face_vertices(nodes::AbstractVector, face::AbstractVector{<:Integer})
+@inline function get_face_nodes(nodes::AbstractVector, face::AbstractVector{<:Integer})
     return nodes[face[1]], nodes[face[2]], nodes[face[3]]
 end
 
 # Forward declaration for ShapeModel version - implementation in shape_operations.jl
-function get_face_vertices end
+function get_face_nodes end

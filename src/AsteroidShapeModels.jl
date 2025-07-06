@@ -45,7 +45,7 @@ import ImplicitBVH
 import MeshIO
 
 include("face_properties.jl")
-export face_center, face_normal, face_area, get_face_vertices
+export face_center, face_normal, face_area, get_face_nodes
 
 include("types.jl")
 export Ray, RayTriangleIntersectionResult, RayShapeIntersectionResult

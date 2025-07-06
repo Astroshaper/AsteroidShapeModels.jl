@@ -133,7 +133,7 @@ function build_bvh!(shape::ShapeModel)
     bboxes = ImplicitBVH.BBox{Float64}[]
     
     for i in eachindex(shape.faces)
-        vs = get_face_vertices(shape, i)  # (v1, v2, v3)
+        vs = get_face_nodes(shape, i)  # (v1, v2, v3)
         push!(bboxes, ImplicitBVH.BBox(vs))
     end
     
