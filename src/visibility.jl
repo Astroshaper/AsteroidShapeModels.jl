@@ -198,10 +198,10 @@ function build_face_visibility_graph!(shape::ShapeModel)
     idx = 1
     for i in 1:nfaces
         for vf in temp_visible[i]
-            col_idx[idx] = vf.face_idx
-            view_factors[idx] = vf.f
-            distances[idx] = vf.d
-            directions[idx] = vf.d̂
+            col_idx[idx]      = vf.face_idx
+            view_factors[idx] = vf.view_factor
+            distances[idx]    = vf.distance
+            directions[idx]   = vf.direction
             idx += 1
         end
     end
