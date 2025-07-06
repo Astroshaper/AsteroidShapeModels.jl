@@ -12,11 +12,11 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
     - [x] Remove custom `BoundingBox` type in favor of `ImplicitBVH`'s BBox (#28)
     - [x] Add batch ray processing capability (#29)
   - [x] Unify face visibility graph to non-BVH implementation (cf. `build_face_visibility_graph` function) (#30)
-  - [x] Unify illumination check to non-BVH implementation (cf. `isilluminated` function) (current PR)
+  - [x] Unify illumination check to non-BVH implementation (cf. `isilluminated` function) (#31)
   
 - **Illumination API Redesign**
-  - [ ] Clarify self-shadowing and mutual-shadowing APIs
-  - [ ] Add binary asteroid eclipse detection capability
+  - [x] Clarify self-shadowing and mutual-shadowing APIs (feature/batch-illumination)
+  - [x] Add binary asteroid eclipse detection capability (feature/batch-illumination)
 
 ### Infrastructure Improvements
 - [x] Move BenchmarkTools to extras section

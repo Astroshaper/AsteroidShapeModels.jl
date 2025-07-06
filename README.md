@@ -27,6 +27,10 @@ For future development plans, see our [Development Roadmap](ROADMAP.md).
 - **Visibility Analysis**: Calculate visibility and view factors between faces
   - Optimized non-BVH algorithm with candidate filtering for face-to-face visibility
   - Distance-based sorting provides ~2x speedup over naive approaches
+- **Illumination Analysis**: Determine face illumination states with flexible shadowing models
+  - **Unified API**: Single interface with configurable self-shadowing effects
+  - **Batch Updates**: Efficient illumination state updates for all faces
+  - **Binary Asteroid Support**: Mutual shadowing and eclipse detection for binary systems
 - **Shape Characteristics**: Calculate volume, equivalent radius, maximum and minimum radii
 
 ## Requirements

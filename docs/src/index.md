@@ -66,7 +66,9 @@ shape.face_areas    # Area of of each face
 ### Visibility Analysis
 - Face-to-face visibility computation with optimized non-BVH algorithm
 - View factor calculations for thermal modeling
-- Illumination determination with optional occlusion testing
+- Illumination determination with configurable self-shadowing
+- Batch illumination updates for all faces
+- Binary asteroid mutual shadowing and eclipse detection
 
 ### Surface Roughness
 - Crater modeling
