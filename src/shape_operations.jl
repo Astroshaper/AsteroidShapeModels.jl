@@ -288,28 +288,27 @@ minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
 # ║                    Face Vertex Extraction (ShapeModel)            ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
-# Implementation of get_face_vertices for ShapeModel (declared in face_properties.jl)
+# Implementation of get_face_nodes for ShapeModel (declared in face_properties.jl)
 """
-    get_face_vertices(shape::ShapeModel, face_id::Integer) -> (v1, v2, v3)
+    get_face_nodes(shape::ShapeModel, face_id::Integer) -> (v1, v2, v3)
 
-Extract three vertices of a triangular face from a shape model.
+Extract three nodes of a triangular face from a shape model.
 
 # Arguments
 - `shape`: Shape model containing nodes and faces
 - `face_id`: Index of the face in the shape model
 
 # Returns
-- Tuple of three vertices (v1, v2, v3)
+- Tuple of three nodes (v1, v2, v3)
 
 # Examples
 ```julia
 # Assuming shape is a loaded ShapeModel
-v1, v2, v3 = get_face_vertices(shape, 1)  # Get vertices of the first face
+v1, v2, v3 = get_face_nodes(shape, 1)  # Get nodes of the first face
 ```
 
-See also: [`get_face_vertices(nodes, face)`](@ref)
+See also: [`get_face_nodes(nodes, faces, face_idx)`](@ref)
 """
-@inline function AsteroidShapeModels.get_face_vertices(shape::ShapeModel, face_id::Integer)
-    face = shape.faces[face_id]
-    return get_face_vertices(shape.nodes, face)
+@inline function AsteroidShapeModels.get_face_nodes(shape::ShapeModel, face_id::Integer)
+    return get_face_nodes(shape.nodes, shape.faces, face_id)
 end
