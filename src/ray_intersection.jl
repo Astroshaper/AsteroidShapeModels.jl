@@ -288,10 +288,13 @@ Perform batch ray-shape intersection tests for multiple rays.
 
 # Arguments
 - `rays`  : Vector of Ray objects
-- `shape` : Shape model
+- `shape` : Shape model (must have BVH built via `build_bvh!`)
 
 # Returns
 - Vector of `RayShapeIntersectionResult` objects, one for each input ray
+
+# Throws
+- `ArgumentError` if BVH is not built. Call `build_bvh!(shape)` before using this function.
 
 # Example
 ```julia
@@ -328,10 +331,13 @@ The output shape matches the input shape, preserving spatial arrangement.
 
 # Arguments
 - `rays`  : Matrix of Ray objects
-- `shape` : Shape model
+- `shape` : Shape model (must have BVH built via `build_bvh!`)
 
 # Returns
 - Matrix of `RayShapeIntersectionResult` objects with the same size as input
+
+# Throws
+- `ArgumentError` if BVH is not built. Call `build_bvh!(shape)` before using this function.
 
 # Example
 ```julia
