@@ -463,12 +463,15 @@ Apply eclipse shadowing effects from another shape onto already illuminated face
 - `r☉₁`         : Sun's position in shape1's frame
 - `R₁₂`         : 3×3 rotation matrix from `shape1` frame to `shape2` frame
 - `t₁₂`         : 3D translation vector from `shape1` frame to `shape2` frame
-- `shape2`      : Occluding shape model that may cast shadows on `shape1`
+- `shape2`      : Occluding shape model that may cast shadows on `shape1` (must have BVH built via `build_bvh!`)
 
 # Returns
 - `NO_ECLIPSE`: No eclipse occurs (bodies are misaligned).
 - `PARTIAL_ECLIPSE`: Some faces that were illuminated are now in shadow by the occluding body.
 - `TOTAL_ECLIPSE`: All faces that were illuminated are now in shadow.
+
+# Throws
+- `ArgumentError` if `shape2` does not have BVH built. Call `build_bvh!(shape2)` before using this function.
 
 # Description
 This function ONLY checks for mutual shadowing (eclipse) effects. It assumes that
