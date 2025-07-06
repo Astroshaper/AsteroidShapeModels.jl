@@ -171,16 +171,19 @@ Perform batch ray-shape intersection tests using the same interface as `Implicit
 This is the core implementation that all other `intersect_ray_shape` methods delegate to.
 
 # Arguments
-- `shape`      : Shape model with BVH
+- `shape`      : Shape model (must have BVH built via `build_bvh!`)
 - `origins`    : 3×N matrix where each column is a ray origin
 - `directions` : 3×N matrix where each column is a ray direction
 
 # Returns
 - Vector of `RayShapeIntersectionResult` objects, one for each input ray
 
+# Throws
+- `ArgumentError` if BVH is not built. Call `build_bvh!(shape)` before using this function.
+
 # Notes
 - This function provides a convenient interface that matches `ImplicitBVH.traverse_rays` parameters
-- The BVH is automatically built if not already present
+- BVH must be pre-built using `build_bvh!(shape)` or by creating the shape with `with_bvh=true`
 - All rays are processed in a single batch for efficiency
 
 # Example
@@ -198,8 +201,8 @@ results = intersect_ray_shape(shape, origins, directions)
 ```
 """
 function intersect_ray_shape(shape::ShapeModel, origins::AbstractMatrix{<:Real}, directions::AbstractMatrix{<:Real})::Vector{RayShapeIntersectionResult}
-    # Build BVH if not already built
-    isnothing(shape.bvh) && build_bvh!(shape)
+    # Require BVH to be built before ray intersection
+    isnothing(shape.bvh) && throw(ArgumentError("BVH must be built before ray intersection. Call build_bvh!(shape) first."))
     
     # Validate input dimensions
     size(origins, 1) == 3 || throw(ArgumentError("`origins` must have 3 rows."))
@@ -243,13 +246,16 @@ Uses the Möller–Trumbore algorithm for ray-triangle mesh intersection.
 
 # Arguments
 - `ray`   : Ray with origin and direction
-- `shape` : Shape model
+- `shape` : Shape model (must have BVH built via `build_bvh!`)
 
 # Returns
 - `RayShapeIntersectionResult` object containing the intersection test result
 
+# Throws
+- `ArgumentError` if BVH is not built. Call `build_bvh!(shape)` before using this function.
+
 # Notes
-- This function automatically builds BVH if not already present for better performance
+- BVH must be pre-built using `build_bvh!(shape)` or by creating the shape with `with_bvh=true`
 - To pre-build BVH, use `load_shape_obj("path/to/shape.obj"; with_bvh=true)`
 - Or for an existing `ShapeModel`: `build_bvh!(shape)`
 
@@ -264,34 +270,15 @@ end
 ```
 """
 function intersect_ray_shape(ray::Ray, shape::ShapeModel)::RayShapeIntersectionResult
-    # Build BVH if not already built
-    isnothing(shape.bvh) && build_bvh!(shape)
-    
-    # Use reshape to avoid allocation - ImplicitBVH expects matrices
-    origins    = reshape(ray.origin, 3, 1)
+    # Convert single ray to matrix format and delegate to batch function
+    origins = reshape(ray.origin, 3, 1)
     directions = reshape(ray.direction, 3, 1)
     
-    # Perform traversal
-    traversal = ImplicitBVH.traverse_rays(shape.bvh, origins, directions)
+    # Call the batch function
+    results = intersect_ray_shape(shape, origins, directions)
     
-    # Track closest hit
-    min_distance = Inf
-    closest_result = NO_INTERSECTION_RAY_SHAPE
-    
-    # Process contacts
-    for contact in traversal.contacts
-        face_idx = Int(contact[1])
-        
-        # Test intersection with this face
-        result = intersect_ray_triangle(ray, shape, face_idx)
-        
-        if result.hit && result.distance < min_distance
-            min_distance = result.distance
-            closest_result = RayShapeIntersectionResult(true, result.distance, result.point, face_idx)
-        end
-    end
-    
-    return closest_result
+    # Return the single result
+    return results[1]
 end
 
 """

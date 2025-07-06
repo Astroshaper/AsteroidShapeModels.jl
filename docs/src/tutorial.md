@@ -142,6 +142,11 @@ end
 ### Single Ray
 
 ```julia
+# Ensure BVH is built for ray intersection
+if isnothing(shape.bvh)
+    build_bvh!(shape)
+end
+
 # Define a ray
 origin = SA[1000.0, 0.0, 0.0]  # Start 1 km away
 direction = normalize(SA[-1.0, 0.0, 0.0])  # Point toward origin
@@ -193,7 +198,7 @@ results = intersect_ray_shape(shape, origins, directions)
    - `intersect_ray_shape(rays::Vector{Ray}, shape)` for ray collections
    - `intersect_ray_shape(rays::Matrix{Ray}, shape)` preserves grid structure
    - `intersect_ray_shape(shape, origins, directions)` for maximum performance
-3. **BVH acceleration**: Automatically built for ray-shape intersection on first use
+3. **BVH acceleration**: Must be pre-built using `build_bvh!(shape)` or `with_bvh=true` when loading a shape model
 4. **Scale appropriately**: Use consistent units (typically meters)
 5. **Precompute visibility**: Use `with_face_visibility=true` when loading if you need visibility analysis
 6. **Access patterns**: The face visibility graph uses CSR format - sequential access is faster than random

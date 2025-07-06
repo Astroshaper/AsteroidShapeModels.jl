@@ -21,8 +21,8 @@ This file benchmarks performance with a realistic asteroid shape model:
     path_shape = joinpath("shape", "ryugu_test.obj")
     
     # Load shape models
-    shape     = load_shape_obj(path_shape; with_face_visibility=false)
-    shape_vis = load_shape_obj(path_shape; with_face_visibility=true)
+    shape     = load_shape_obj(path_shape; with_face_visibility=false, with_bvh=true)
+    shape_vis = load_shape_obj(path_shape; with_face_visibility=true,  with_bvh=true)
     n_nodes = length(shape.nodes)
     n_faces = length(shape.faces)
     

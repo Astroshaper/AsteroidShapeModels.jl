@@ -154,8 +154,8 @@ This file verifies:
         @test result.face_index == 1  # Hit the first (and only) face
     end
     
-    @testset "BVH Auto-build Test" begin
-        # Test that BVH is automatically built when needed
+    @testset "BVH Pre-build Requirement" begin
+        # Test that BVH must be pre-built for ray intersection
         
         # Create shape model WITHOUT BVH
         nodes, faces = create_xy_triangle()
@@ -164,14 +164,16 @@ This file verifies:
         # Verify BVH is not built initially
         @test isnothing(shape_no_bvh.bvh)
         
-        # Perform ray intersection - this should trigger BVH build
+        # Ray intersection should throw error when BVH is not built
         ray = Ray(@SVector([0.25, 0.25, 1.0]), @SVector([0.0, 0.0, -1.0]))
-        result = intersect_ray_shape(ray, shape_no_bvh)
+        @test_throws ArgumentError intersect_ray_shape(ray, shape_no_bvh)
         
-        # Verify BVH was built automatically
+        # Build BVH manually
+        build_bvh!(shape_no_bvh)
         @test !isnothing(shape_no_bvh.bvh)
         
-        # Verify intersection result is correct
+        # Now intersection should work
+        result = intersect_ray_shape(ray, shape_no_bvh)
         test_ray_intersection(result, true, 1.0, @SVector([0.25, 0.25, 0.0]))
         @test result.face_index == 1
     end

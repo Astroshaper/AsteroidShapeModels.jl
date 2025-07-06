@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking Changes
+- **BVH must be pre-built for ray intersection** (#XX)
+  - `intersect_ray_shape` now requires BVH to be built before use
+  - Throws `ArgumentError` if BVH is not present (previously built automatically)
+  - Use `build_bvh!(shape)` or `with_bvh=true` when loading shapes
+  - This change provides explicit control over memory usage and performance
+
 ### Added
 - **Batch ray processing functionality** (#29)
   - Multiple dispatch for `intersect_ray_shape` to handle various input formats:

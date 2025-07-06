@@ -59,13 +59,13 @@ pkg> add AsteroidShapeModels
 using AsteroidShapeModels
 using StaticArrays
 
-# Load an asteroid shape model with face-face visibility
-shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true)  # Convert km to m
+# Load an asteroid shape model with face-face visibility and BVH
+shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true, with_bvh=true)  # Convert km to m
 
-# Ray intersection automatically uses BVH acceleration when needed
-# (BVH is built on first use if not already present)
+# Or build BVH separately for existing shape
+# build_bvh!(shape)
 
-# Single ray intersection
+# Single ray intersection (requires BVH to be built)
 ray = Ray(SA[1000.0, 0.0, 0.0], SA[-1.0, 0.0, 0.0])
 result = intersect_ray_shape(ray, shape)
 
