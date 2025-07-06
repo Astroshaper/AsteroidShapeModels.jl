@@ -154,8 +154,7 @@ This is a lower-level interface useful when working directly with node and face 
 without a full `ShapeModel` structure.
 """
 @inline function intersect_ray_triangle(ray::Ray, nodes::AbstractVector, faces::AbstractVector, face_id::Integer)
-    face = faces[face_id]
-    v1, v2, v3 = get_face_nodes(nodes, face)
+    v1, v2, v3 = get_face_nodes(nodes, faces, face_id)
     return intersect_ray_triangle(ray, v1, v2, v3)
 end
 

@@ -307,9 +307,8 @@ Extract three nodes of a triangular face from a shape model.
 v1, v2, v3 = get_face_nodes(shape, 1)  # Get nodes of the first face
 ```
 
-See also: [`get_face_nodes(nodes, face)`](@ref)
+See also: [`get_face_nodes(nodes, faces, face_idx)`](@ref)
 """
 @inline function AsteroidShapeModels.get_face_nodes(shape::ShapeModel, face_id::Integer)
-    face = shape.faces[face_id]
-    return get_face_nodes(shape.nodes, face)
+    return get_face_nodes(shape.nodes, shape.faces, face_id)
 end
