@@ -290,13 +290,13 @@ minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
 
 # Implementation of get_face_nodes for ShapeModel (declared in face_properties.jl)
 """
-    get_face_nodes(shape::ShapeModel, face_id::Integer) -> (v1, v2, v3)
+    get_face_nodes(shape::ShapeModel, face_idx::Integer) -> (v1, v2, v3)
 
 Extract three nodes of a triangular face from a shape model.
 
 # Arguments
-- `shape`: Shape model containing nodes and faces
-- `face_id`: Index of the face in the shape model
+- `shape`    : Shape model containing nodes and faces
+- `face_idx` : Index of the face in the shape model
 
 # Returns
 - Tuple of three nodes (v1, v2, v3)
@@ -309,6 +309,6 @@ v1, v2, v3 = get_face_nodes(shape, 1)  # Get nodes of the first face
 
 See also: [`get_face_nodes(nodes, faces, face_idx)`](@ref)
 """
-@inline function AsteroidShapeModels.get_face_nodes(shape::ShapeModel, face_id::Integer)
-    return get_face_nodes(shape.nodes, shape.faces, face_id)
+@inline function AsteroidShapeModels.get_face_nodes(shape::ShapeModel, face_idx::Integer)
+    return get_face_nodes(shape.nodes, shape.faces, face_idx)
 end

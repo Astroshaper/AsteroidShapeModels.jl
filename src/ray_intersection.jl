@@ -100,14 +100,14 @@ function intersect_ray_triangle(ray::Ray, v1::AbstractVector{<:Real}, v2::Abstra
 end
 
 """
-    intersect_ray_triangle(ray::Ray, shape::ShapeModel, face_id::Integer) -> RayTriangleIntersectionResult
+    intersect_ray_triangle(ray::Ray, shape::ShapeModel, face_idx::Integer) -> RayTriangleIntersectionResult
 
 Perform ray-triangle intersection test for a specific face in a shape model.
 
 # Arguments
-- `ray`: Ray with origin and direction
-- `shape`: Shape model containing the triangle
-- `face_id`: Index of the face to test (1-based)
+- `ray`      : Ray with origin and direction
+- `shape`    : Shape model containing the triangle
+- `face_idx` : Index of the face to test (1-based)
 
 # Returns
 - `RayTriangleIntersectionResult` object containing the intersection test result
@@ -125,20 +125,20 @@ ray = Ray(SA[0.0, 0.0, 100.0], SA[0.0, 0.0, -1.0])
 result = intersect_ray_triangle(ray, shape, 1)  # Test first face
 ```
 """
-@inline function intersect_ray_triangle(ray::Ray, shape::ShapeModel, face_id::Integer)
-    return intersect_ray_triangle(ray, shape.nodes, shape.faces, face_id)
+@inline function intersect_ray_triangle(ray::Ray, shape::ShapeModel, face_idx::Integer)
+    return intersect_ray_triangle(ray, shape.nodes, shape.faces, face_idx)
 end
 
 """
-    intersect_ray_triangle(ray::Ray, nodes::AbstractVector, faces::AbstractVector, face_id::Integer) -> RayTriangleIntersectionResult
+    intersect_ray_triangle(ray::Ray, nodes::AbstractVector, faces::AbstractVector, face_idx::Integer) -> RayTriangleIntersectionResult
 
 Perform ray-triangle intersection test for a specific face given nodes and faces arrays.
 
 # Arguments
-- `ray`: Ray with origin and direction
-- `nodes`: Array of node positions (3D vectors)
-- `faces`: Array of face definitions (each face is an array of 3 node indices)
-- `face_id`: Index of the face to test (1-based)
+- `ray`      : Ray with origin and direction
+- `nodes`    : Array of node positions (3D vectors)
+- `faces`    : Array of face definitions (each face is an array of 3 node indices)
+- `face_idx` : Index of the face to test (1-based)
 
 # Returns
 - `RayTriangleIntersectionResult` object containing the intersection test result
@@ -153,8 +153,8 @@ This function uses the same Möller-Trumbore algorithm as the base implementatio
 This is a lower-level interface useful when working directly with node and face arrays
 without a full `ShapeModel` structure.
 """
-@inline function intersect_ray_triangle(ray::Ray, nodes::AbstractVector, faces::AbstractVector, face_id::Integer)
-    v1, v2, v3 = get_face_nodes(nodes, faces, face_id)
+@inline function intersect_ray_triangle(ray::Ray, nodes::AbstractVector, faces::AbstractVector, face_idx::Integer)
+    v1, v2, v3 = get_face_nodes(nodes, faces, face_idx)
     return intersect_ray_triangle(ray, v1, v2, v3)
 end
 
