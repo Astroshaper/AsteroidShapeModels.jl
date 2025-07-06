@@ -478,6 +478,52 @@ This file tests advanced visibility and illumination calculations:
             @test status == TOTAL_ECLIPSE
             @test !any(illuminated)  # All faces should be shadowed
         end
+        
+        @testset "Face-level early-out tests" begin
+            # Test case where t_min < 0 (ray moves away from shape2)
+            @testset "Ray moving away from occluder" begin
+                # Place shape2 behind shape1's face but offset laterally
+                sun_pos_diagonal = SA[1.0, 1.0, 0.0]  # Sun at 45 degrees
+                t = @SVector[-2.0, 2.0, 0.0]  # shape2 behind and to the side
+                
+                illuminated = fill(true, length(shape1.faces))
+                status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos_diagonal, R, t, shape2)
+                
+                # Some faces might be shadowed depending on exact geometry
+                @test status == NO_ECLIPSE || status == PARTIAL_ECLIPSE
+            end
+            
+            @testset "Ray-sphere intersection miss" begin
+                # Create shapes with specific positioning to test d_center > ρ₂
+                # Shape2 is offset such that rays from shape1 miss its bounding sphere
+                t = @SVector[5.0, 5.0, 0.0]  # Diagonal offset
+                
+                illuminated = fill(true, length(shape1.faces))
+                status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R, t, shape2)
+                
+                # Should have no eclipse or minimal shadowing
+                @test status == NO_ECLIPSE || (status == PARTIAL_ECLIPSE && count(illuminated) > length(shape1.faces) * 0.8)
+            end
+            
+            @testset "Inscribed sphere hit" begin
+                # Test the inscribed sphere optimization
+                # Create a large spherical occluder to ensure inscribed sphere is well-defined
+                nodes_sphere, faces_sphere = create_regular_tetrahedron()  # Approximate sphere
+                nodes_sphere_scaled = [10.0 * node for node in nodes_sphere]
+                shape_sphere = ShapeModel(nodes_sphere_scaled, faces_sphere)
+                build_bvh!(shape_sphere)
+                
+                # Position sphere to guarantee some rays pass through its center
+                t = @SVector[5.0, 0.0, 0.0]
+                
+                illuminated = fill(true, length(shape1.faces))
+                status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R, t, shape_sphere)
+                
+                # Should have some shadowing
+                @test status == PARTIAL_ECLIPSE || status == TOTAL_ECLIPSE
+                @test count(illuminated) < length(shape1.faces)
+            end
+        end
     end
     
     @testset "Edge Cases for View Factor" begin
