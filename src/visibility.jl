@@ -540,6 +540,7 @@ function apply_eclipse_shadowing!(
     R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}, shape2::ShapeModel
 )::EclipseStatus
     @assert length(illuminated) == length(shape1.faces) "illuminated vector must have same length as number of faces."
+    isnothing(shape2.bvh) && throw(ArgumentError("Occluding shape model (`shape2`) must have BVH built before checking eclipse shadowing. Call `build_bvh!(shape2)` first."))
     
     r̂☉₁ = normalize(r☉₁)        # Normalized sun direction in shape1's frame
     r̂☉₂ = normalize(R₁₂ * r̂☉₁)  # Normalized sun direction in shape2's frame
