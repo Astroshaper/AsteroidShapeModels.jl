@@ -214,6 +214,22 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
+    EclipseStatus
+
+Enum representing the eclipse status between bianry pairs.
+
+# Values
+- `NO_ECLIPSE`      : No eclipse occurs (bodies are misaligned).
+- `PARTIAL_ECLIPSE` : Some faces are eclipsed by the occluding body.
+- `TOTAL_ECLIPSE`   : All illuminated faces are eclipsed (complete shadow).
+"""
+@enum EclipseStatus begin
+    NO_ECLIPSE      = 0
+    PARTIAL_ECLIPSE = 1
+    TOTAL_ECLIPSE   = 2
+end
+
+"""
     isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer; with_self_shadowing::Bool) -> Bool
 
 Check if a face is illuminated by the sun.
@@ -437,7 +453,7 @@ end
     apply_eclipse_shadowing!(
         illuminated::AbstractVector{Bool}, shape1::ShapeModel, r☉₁::StaticVector{3}, 
         R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}, shape2::ShapeModel
-    )
+    ) -> EclipseStatus
 
 Apply eclipse shadowing effects from another shape onto already illuminated faces.
 
@@ -448,6 +464,11 @@ Apply eclipse shadowing effects from another shape onto already illuminated face
 - `R₁₂`         : 3×3 rotation matrix from `shape1` frame to `shape2` frame
 - `t₁₂`         : 3D translation vector from `shape1` frame to `shape2` frame
 - `shape2`      : Occluding shape model that may cast shadows on `shape1`
+
+# Returns
+- `NO_ECLIPSE`: No eclipse occurs (bodies are misaligned).
+- `PARTIAL_ECLIPSE`: Some faces that were illuminated are now in shadow by the occluding body.
+- `TOTAL_ECLIPSE`: All faces that were illuminated are now in shadow.
 
 # Description
 This function ONLY checks for mutual shadowing (eclipse) effects. It assumes that
@@ -498,14 +519,23 @@ update_illumination_pseudo_convex!(illuminated2, shape2, sun_position2)
 
 # Then check eclipse shadowing
 # For checking mutual shadowing, apply to both shape1 and shape2:
-apply_eclipse_shadowing!(illuminated1, shape1, sun_position1, R12, t12, shape2)
-apply_eclipse_shadowing!(illuminated2, shape2, sun_position2, R21, t21, shape1)
+status1 = apply_eclipse_shadowing!(illuminated1, shape1, sun_position1, R12, t12, shape2)
+status2 = apply_eclipse_shadowing!(illuminated2, shape2, sun_position2, R21, t21, shape1)
+
+# Handle eclipse status
+if status1 == NO_ECLIPSE
+    println("Shape1 is not eclipsed by shape2.")
+elseif status1 == PARTIAL_ECLIPSE
+    println("Shape1 is partially eclipsed by shape2.")
+elseif status1 == TOTAL_ECLIPSE
+    println("Shape1 is totally eclipsed by shape2.")
+end
 ```
 """
 function apply_eclipse_shadowing!(
     illuminated::AbstractVector{Bool}, shape1::ShapeModel, r☉₁::StaticVector{3},
     R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}, shape2::ShapeModel
-)
+)::EclipseStatus
     @assert length(illuminated) == length(shape1.faces) "illuminated vector must have same length as number of faces."
     
     r̂☉₁ = normalize(r☉₁)        # Normalized sun direction in shape1's frame
@@ -521,7 +551,7 @@ function apply_eclipse_shadowing!(
     # ==== Early Out 1 (Behind Check) ====
     # If shape2 is entirely behind shape1 relative to sun, no eclipse occur.
     if dot(t₁₂, r̂☉₁) < -(ρ₁ + ρ₂)
-        return nothing  
+        return NO_ECLIPSE  
     end
     
     # ==== Early Out 2 (Lateral Separation Check)  ====
@@ -529,7 +559,7 @@ function apply_eclipse_shadowing!(
     t₁₂⊥ = t₁₂ - (dot(t₁₂, r̂☉₁) * r̂☉₁)  # Component of t₁₂ perpendicular to sun direction
     d⊥ = norm(t₁₂⊥)                     # Lateral distance between bodies
     if d⊥ > ρ₁ + ρ₂
-        return nothing
+        return NO_ECLIPSE
     end
     
     # ==== Early Out 3 (Total Eclipse Check) ====
@@ -539,8 +569,11 @@ function apply_eclipse_shadowing!(
     # and if the lateral distance is small enough.
     if dot(t₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂
         illuminated .= false  # All faces are shadowed.
-        return nothing
+        return TOTAL_ECLIPSE
     end
+    
+    # Track whether any eclipse occurred
+    eclipse_occurred = false
     
     # Check occlusion by the other body for illuminated faces only
     @inbounds for i in eachindex(shape1.faces)
@@ -574,17 +607,19 @@ function apply_eclipse_shadowing!(
                 d_center = norm(p_closest)
                 
                 # ==== Early Out 4 (Ray-Sphere Intersection Check) ====
-                # Check if the ray passes within the bounding sphere
+                # If the ray passes within the bounding sphere,
+                # ray misses the bounding sphere entirely.
                 if d_center > ρ₂
-                    continue  # Ray misses the bounding sphere entirely
+                    continue
                 end
                 
                 # ==== Early Out 5 (Inscribed Sphere Check) ====
-                # If the ray passes through the inscribed sphere, it's guaranteed to hit
-                # shape2 (no need for detailed intersection test)
+                # If the ray passes through the inscribed sphere, it's guaranteed to hit shape2
+                # (no need for detailed intersection test)
                 if d_center < ρ₂_inner
                     illuminated[i] = false
-                    continue  # Skip the expensive ray-shape intersection
+                    eclipse_occurred = true
+                    continue
                 end
             end
             
@@ -595,9 +630,17 @@ function apply_eclipse_shadowing!(
             # Check intersection with shape2
             if intersect_ray_shape(ray2, shape2).hit
                 illuminated[i] = false
+                eclipse_occurred = true
             end
         end
     end
     
-    return nothing
+    # Determine eclipse status based on results
+    if !eclipse_occurred
+        return NO_ECLIPSE
+    elseif count(illuminated) == 0  # if all faces are now in shadow
+        return TOTAL_ECLIPSE
+    else
+        return PARTIAL_ECLIPSE
+    end
 end

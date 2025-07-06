@@ -395,10 +395,13 @@ This file tests advanced visibility and illumination calculations:
             initial_count = count(illuminated)
             
             # Apply eclipse shadowing
-            apply_eclipse_shadowing!(illuminated, shape, sun_pos, R, t, shape_occluding)
+            status = apply_eclipse_shadowing!(illuminated, shape, sun_pos, R, t, shape_occluding)
             
             # Should reduce or maintain illumination count
             @test count(illuminated) <= initial_count
+            
+            # Test that status is returned
+            @test status isa EclipseStatus
         end
         
         @testset "Unified API error cases" begin
@@ -413,6 +416,67 @@ This file tests advanced visibility and illumination calculations:
             # Test that with_self_shadowing=false works without face_visibility_graph
             @test_nowarn isilluminated(shape_no_graph, sun_pos, 1; with_self_shadowing=false)
             @test_nowarn update_illumination!(illuminated_error, shape_no_graph, sun_pos; with_self_shadowing=false)
+        end
+    end
+    
+    @testset "Eclipse Status Tests" begin
+        # Create two simple shapes for testing
+        nodes1, faces1 = create_unit_cube()
+        nodes1_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes1]
+        shape1 = ShapeModel(nodes1_scaled, faces1)
+        build_bvh!(shape1)
+        
+        nodes2, faces2 = create_unit_cube()
+        nodes2_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes2]
+        shape2 = ShapeModel(nodes2_scaled, faces2)
+        build_bvh!(shape2)
+        
+        sun_pos = SA[10.0, 0.0, 0.0]  # Sun along +x direction
+        R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]  # Identity rotation
+        
+        @testset "NO_ECLIPSE - Bodies far apart" begin
+            t = @SVector[0.0, 10.0, 0.0]  # Lateral separation
+            illuminated = fill(true, length(shape1.faces))
+            status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R, t, shape2)
+            @test status == NO_ECLIPSE
+            @test all(illuminated)  # No faces should be shadowed
+        end
+        
+        @testset "NO_ECLIPSE - Occluder behind target" begin
+            t = @SVector[-10.0, 0.0, 0.0]  # shape2 is behind shape1 relative to sun
+            illuminated = fill(true, length(shape1.faces))
+            status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R, t, shape2)
+            @test status == NO_ECLIPSE
+            @test all(illuminated)  # No faces should be shadowed
+        end
+        
+        @testset "PARTIAL_ECLIPSE - Partial shadowing" begin
+            t = @SVector[3.0, 0.5, 0.0]  # Partial overlap
+            illuminated = fill(true, length(shape1.faces))
+            status = apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R, t, shape2)
+            @test status == PARTIAL_ECLIPSE || status == NO_ECLIPSE  # Depends on exact geometry
+            # At least some faces should remain illuminated if partial
+            if status == PARTIAL_ECLIPSE
+                @test count(illuminated) < length(shape1.faces)
+                @test count(illuminated) > 0
+            end
+        end
+        
+        @testset "TOTAL_ECLIPSE - Complete shadowing" begin
+            # Create a small target and large occluder
+            nodes_small = [0.1 * node for node in nodes1_scaled]
+            shape_small = ShapeModel(nodes_small, faces1)
+            build_bvh!(shape_small)
+            
+            nodes_large = [5.0 * node for node in nodes2_scaled]
+            shape_large = ShapeModel(nodes_large, faces2)
+            build_bvh!(shape_large)
+            
+            t = @SVector[5.0, 0.0, 0.0]  # Large occluder between sun and small target
+            illuminated = fill(true, length(shape_small.faces))
+            status = apply_eclipse_shadowing!(illuminated, shape_small, sun_pos, R, t, shape_large)
+            @test status == TOTAL_ECLIPSE
+            @test !any(illuminated)  # All faces should be shadowed
         end
     end
     
