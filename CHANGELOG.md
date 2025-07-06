@@ -8,11 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Breaking Changes
-- **BVH must be pre-built for ray intersection** (#XX)
+- **BVH must be pre-built for ray intersection** (04d2937, 5355dbc)
   - `intersect_ray_shape` now requires BVH to be built before use
   - Throws `ArgumentError` if BVH is not present (previously built automatically)
   - Use `build_bvh!(shape)` or `with_bvh=true` when loading shapes
   - This change provides explicit control over memory usage and performance
+
+- **Renamed `get_face_vertices` to `get_face_nodes`** (#35)
+  - Function renamed to better reflect that it returns nodes, not vertices
+  - Signature changed from `get_face_nodes(nodes, face)` to `get_face_nodes(nodes, faces, face_idx)`
+  - More consistent with other functions like `intersect_ray_triangle`
+  - Update your code: `get_face_nodes(nodes, faces[i])` → `get_face_nodes(nodes, faces, i)`
 
 ### Added
 - **Batch ray processing functionality** (#29)
