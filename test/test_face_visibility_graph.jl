@@ -89,10 +89,10 @@
         
         # get_visible_face_data
         data = get_visible_face_data(graph, 1, 1)
-        @test data.id == 2
-        @test data.f ≈ 0.1
-        @test data.d ≈ 1.0
-        @test data.d̂ ≈ SA[1.0, 0.0, 0.0]
+        @test data.face_idx == 2
+        @test data.view_factor ≈ 0.1
+        @test data.distance ≈ 1.0
+        @test data.direction ≈ SA[1.0, 0.0, 0.0]
     end
     
     # ╔═══════════════════════════════════════════════════════════════════╗
