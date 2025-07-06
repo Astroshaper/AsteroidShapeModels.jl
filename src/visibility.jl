@@ -216,7 +216,7 @@ end
 """
     EclipseStatus
 
-Enum representing the eclipse status between bianry pairs.
+Enum representing the eclipse status between binary pairs.
 
 # Values
 - `NO_ECLIPSE`      : No eclipse occurs (bodies are misaligned).
