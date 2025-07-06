@@ -70,8 +70,7 @@ export polyhedron_volume, equivalent_radius, maximum_radius, minimum_radius
 
 include("visibility.jl")
 export view_factor, build_face_visibility_graph!
-export isilluminated_pseudo_convex, isilluminated_with_self_shadowing
-export update_illumination_pseudo_convex!, update_illumination_with_self_shadowing!
+export isilluminated, update_illumination!
 export apply_eclipse_shadowing!
 
 include("geometry_utils.jl")

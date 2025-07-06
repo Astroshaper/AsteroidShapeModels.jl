@@ -10,10 +10,8 @@ surface energy balance of asteroids.
 Exported Functions:
 - `view_factor`: Calculate the view factor between two triangular faces
 - `build_face_visibility_graph!`: Build the face-to-face visibility graph
-- `isilluminated_pseudo_convex`: Check face illumination using pseudo-convex model
-- `isilluminated_with_self_shadowing`: Check face illumination with self-shadowing
-- `update_illumination_pseudo_convex!`: Batch update illumination (pseudo-convex)
-- `update_illumination_with_self_shadowing!`: Batch update with self-shadowing
+- `isilluminated`: Check face illumination (unified API)
+- `update_illumination!`: Batch update illumination (unified API)
 - `apply_eclipse_shadowing!`: Apply mutual shadowing from another shape
 =#
 
@@ -216,6 +214,43 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
+    isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer; with_self_shadowing::Bool) -> Bool
+
+Check if a face is illuminated by the sun.
+
+# Arguments
+- `shape` : Shape model of an asteroid
+- `r☉`    : Sun's position in the asteroid-fixed frame
+- `i`     : Index of the face to be checked
+
+# Keyword Arguments
+- `with_self_shadowing::Bool` : Whether to include self-shadowing effects.
+  - `false`: Use pseudo-convex model (face orientation only)
+  - `true`: Include self-shadowing (requires `face_visibility_graph` to be built)
+
+# Returns
+- `true` if the face is illuminated
+- `false` if the face is in shadow or facing away from the sun
+
+# Examples
+```julia
+# Without self-shadowing (pseudo-convex model)
+illuminated = isilluminated(shape, sun_position, face_id; with_self_shadowing=false)
+
+# With self-shadowing
+illuminated = isilluminated(shape, sun_position, face_id; with_self_shadowing=true)
+```
+"""
+function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer; with_self_shadowing::Bool)
+    if with_self_shadowing
+        @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
+        return isilluminated_with_self_shadowing(shape, r☉, i)
+    else
+        return isilluminated_pseudo_convex(shape, r☉, i)
+    end
+end
+
+"""
     isilluminated_pseudo_convex(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool
 
 Check if a face is illuminated using pseudo-convex model (face orientation only).
@@ -281,7 +316,41 @@ function isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector
     return true  # No obstruction found
 end
 
+"""
+    update_illumination!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool)
 
+Update illumination state for all faces of a shape model.
+
+# Arguments
+- `illuminated` : Boolean vector to store illumination state (must have length equal to number of faces)
+- `shape`       : Shape model of an asteroid
+- `r☉`          : Sun's position in the asteroid-fixed frame
+
+# Keyword Arguments
+- `with_self_shadowing::Bool` : Whether to include self-shadowing effects.
+  - `false`: Use pseudo-convex model (face orientation only)
+  - `true`: Include self-shadowing (requires `face_visibility_graph` to be built)
+
+# Examples
+```julia
+# Prepare illumination vector
+illuminated = Vector{Bool}(undef, length(shape.faces))
+
+# Without self-shadowing (pseudo-convex model)
+update_illumination!(illuminated, shape, sun_position; with_self_shadowing=false)
+
+# With self-shadowing
+update_illumination!(illuminated, shape, sun_position; with_self_shadowing=true)
+```
+"""
+function update_illumination!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool)
+    if with_self_shadowing
+        @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
+        update_illumination_with_self_shadowing!(illuminated, shape, r☉)
+    else
+        update_illumination_pseudo_convex!(illuminated, shape, r☉)
+    end
+end
 
 """
     update_illumination_pseudo_convex!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
@@ -366,19 +435,19 @@ end
 
 """
     apply_eclipse_shadowing!(
-        illuminated::AbstractVector{Bool}, target_shape::ShapeModel, r☉::StaticVector{3}, 
-        occluding_shape::ShapeModel, R::StaticMatrix{3,3}, t::StaticVector{3}
+        illuminated::AbstractVector{Bool}, shape1::ShapeModel, r☉₁::StaticVector{3}, 
+        R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}, shape2::ShapeModel
     )
 
 Apply eclipse shadowing effects from another shape onto already illuminated faces.
 
 # Arguments
-- `illuminated`     : Boolean vector with current illumination state (will be modified)
-- `target_shape`    : Target shape model being shadowed
-- `r☉`              : Sun's position in the target shape's frame
-- `occluding_shape` : Shape model that may cast shadows on the target shape
-- `R`               : 3×3 rotation matrix from `target_shape` frame to `occluding_shape` frame
-- `t`               : 3D translation vector from `target_shape` frame to `occluding_shape` frame
+- `illuminated` : Boolean vector with current illumination state (will be modified)
+- `shape1`      : Target shape model being shadowed (the shape receiving shadows)
+- `r☉₁`         : Sun's position in shape1's frame
+- `R₁₂`         : 3×3 rotation matrix from `shape1` frame to `shape2` frame
+- `t₁₂`         : 3D translation vector from `shape1` frame to `shape2` frame
+- `shape2`      : Occluding shape model that may cast shadows on `shape1`
 
 # Description
 This function ONLY checks for mutual shadowing (eclipse) effects. It assumes that
@@ -414,8 +483,8 @@ The function includes early-out checks at two levels:
 These optimizations use `maximum_radius` and `minimum_radius` for accurate sphere calculations.
 
 # Coordinate Systems
-The transformation from `target_shape` frame to `occluding_shape` frame is given by:
-`p_occluding = R * p_target + t`
+The transformation from `shape1` frame to `shape2` frame is given by:
+`p_shape2 = R₁₂ * p_shape1 + t₁₂`
 
 # Example
 ```julia
@@ -427,106 +496,104 @@ update_illumination_with_self_shadowing!(illuminated2, shape2, sun_position2)
 update_illumination_pseudo_convex!(illuminated1, shape1, sun_position1)
 update_illumination_pseudo_convex!(illuminated2, shape2, sun_position2)
 
-# Then check mutual shadowing
-apply_eclipse_shadowing!(illuminated1, shape1, sun_position1, shape2, R12, t12)
-apply_eclipse_shadowing!(illuminated2, shape2, sun_position2, shape1, R21, t21)
+# Then check eclipse shadowing
+# For checking mutual shadowing, apply to both shape1 and shape2:
+apply_eclipse_shadowing!(illuminated1, shape1, sun_position1, R12, t12, shape2)
+apply_eclipse_shadowing!(illuminated2, shape2, sun_position2, R21, t21, shape1)
 ```
 """
 function apply_eclipse_shadowing!(
-    illuminated::AbstractVector{Bool}, target_shape::ShapeModel, r☉::StaticVector{3},
-    occluding_shape::ShapeModel, R::StaticMatrix{3,3}, t::StaticVector{3}
+    illuminated::AbstractVector{Bool}, shape1::ShapeModel, r☉₁::StaticVector{3},
+    R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}, shape2::ShapeModel
 )
-    @assert length(illuminated) == length(target_shape.faces) "illuminated vector must have same length as number of faces."
+    @assert length(illuminated) == length(shape1.faces) "illuminated vector must have same length as number of faces."
     
-    r̂☉ = normalize(r☉)  # Normalize sun direction vector
+    r̂☉₁ = normalize(r☉₁)        # Normalized sun direction in shape1's frame
+    r̂☉₂ = normalize(R₁₂ * r̂☉₁)  # Normalized sun direction in shape2's frame
     
-    # Early out: Check if occluding body can possibly cast shadows on target
-    # This is based on geometric configuration of the two bodies
+    # Get bounding sphere radii for both shapes
+    ρ₁ = maximum_radius(shape1)
+    ρ₂ = maximum_radius(shape2)
     
-    # Get bounding spheres for both shapes
-    target_radius = maximum_radius(target_shape)
-    occluding_radius = maximum_radius(occluding_shape)
-    
-    # Get inscribed sphere radius for occluding shape (for guaranteed shadow regions)
-    occluding_inner_radius = minimum_radius(occluding_shape)
+    # Get inscribed sphere radius for shape2 (for guaranteed shadow regions)
+    ρ₂_inner = minimum_radius(shape2)
     
     # ==== Early Out 1 (Behind Check) ====
-    # If occluding body is entirely behind the target relative to sun, no eclipse occur.
-    if dot(t, r̂☉) < -(target_radius + occluding_radius)
+    # If shape2 is entirely behind shape1 relative to sun, no eclipse occur.
+    if dot(t₁₂, r̂☉₁) < -(ρ₁ + ρ₂)
         return nothing  
     end
     
     # ==== Early Out 2 (Lateral Separation Check)  ====
     # If bodies are too far apart laterally, no eclipse occur.
-    t_perpendicular = t - (dot(t, r̂☉) * r̂☉)  # Component of t perpendicular to sun direction
-    lateral_distance = norm(t_perpendicular)
-    if lateral_distance > target_radius + occluding_radius
+    t₁₂⊥ = t₁₂ - (dot(t₁₂, r̂☉₁) * r̂☉₁)  # Component of t₁₂ perpendicular to sun direction
+    d⊥ = norm(t₁₂⊥)                     # Lateral distance between bodies
+    if d⊥ > ρ₁ + ρ₂
         return nothing
     end
     
     # ==== Early Out 3 (Total Eclipse Check) ====
-    # If target is completely within occluding body's shadow, all faces are shadowed.
-    # This happens when occluding body is between sun and target, and is larger than target.
-    # Check if occluding body is in front of target along sun direction,
+    # If shape1 is completely within shape2's shadow, all faces are shadowed.
+    # This happens when shape2 is between sun and shape1, and is larger than shape1.
+    # Check if shape2 is in front of shape1 along sun direction,
     # and if the lateral distance is small enough.
-    if dot(t, r̂☉) > 0  && lateral_distance + target_radius < occluding_radius
+    if dot(t₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂
         illuminated .= false  # All faces are shadowed.
         return nothing
     end
     
     # Check occlusion by the other body for illuminated faces only
-    @inbounds for i in eachindex(target_shape.faces)
+    @inbounds for i in eachindex(shape1.faces)
         if illuminated[i]  # Only check if not already in shadow
-            # Ray from face center to sun in target's frame
-            ray_origin = target_shape.face_centers[i]
+            # Ray from face center to sun in shape1's frame
+            ray_origin1 = shape1.face_centers[i]
             
-            # Transform ray's origin to occluding shape's frame
-            origin_transformed = R * ray_origin + t
+            # Transform ray's origin to shape2's frame
+            ray_origin2 = R₁₂ * ray_origin1 + t₁₂
             
             # ==== Face-level Early Out ====
             # Check if the ray from this face to the sun can possibly intersect
-            # the occluding body's bounding sphere.
+            # shape2's bounding sphere.
             
-            # Calculate the parameter t where the ray is closest to occluding body's center.
-            # Ray: P(t) = origin_transformed + t * r̂☉, where t > 0 toward sun
+            # Calculate the parameter t where the ray is closest to shape2's center.
+            # Ray: P(t) = ray_origin2 + t * r̂☉₂, where t > 0 toward sun
             # The closest point is where d/dt |P(t)|² = 0
-            t_closest = -dot(origin_transformed, r̂☉)
+            t_min = -dot(ray_origin2, r̂☉₂)
             
-            if t_closest < 0
-                # The occluding body's center is in the opposite direction from the sun.
-                # (i.e., the ray is moving away from the occluding body)
+            if t_min < 0
+                # Shape2's center is in the opposite direction from the sun.
+                # (i.e., the ray is moving away from shape2)
                 # In this case, check if the face itself is outside bounding sphere.
-                if norm(origin_transformed) > occluding_radius
+                if norm(ray_origin2) > ρ₂
                     continue
                 end
             else
-                # The ray approaches the occluding body's center.
+                # The ray approaches shape2's center.
                 # Calculate the closest point on the ray to the center
-                closest_point = origin_transformed + t_closest * r̂☉
-                distance_to_center = norm(closest_point)
+                p_closest = ray_origin2 + t_min * r̂☉₂
+                d_center = norm(p_closest)
                 
                 # ==== Early Out 4 (Ray-Sphere Intersection Check) ====
                 # Check if the ray passes within the bounding sphere
-                if distance_to_center > occluding_radius
+                if d_center > ρ₂
                     continue  # Ray misses the bounding sphere entirely
                 end
                 
                 # ==== Early Out 5 (Inscribed Sphere Check) ====
                 # If the ray passes through the inscribed sphere, it's guaranteed to hit
-                # the occluding body (no need for detailed intersection test)
-                if distance_to_center < occluding_inner_radius
+                # shape2 (no need for detailed intersection test)
+                if d_center < ρ₂_inner
                     illuminated[i] = false
                     continue  # Skip the expensive ray-shape intersection
                 end
             end
             
-            # Transform direction and create ray in occluding shape's frame.
-            # (Ray direction is not affected by translation.)
-            direction_transformed = R * r̂☉
-            ray_transformed = Ray(origin_transformed, direction_transformed)
+            # Create ray in shape2's frame
+            # (Direction was already transformed at the beginning of the function)
+            ray2 = Ray(ray_origin2, r̂☉₂)
             
-            # Check intersection with occluding shape
-            if intersect_ray_shape(ray_transformed, occluding_shape).hit
+            # Check intersection with shape2
+            if intersect_ray_shape(ray2, shape2).hit
                 illuminated[i] = false
             end
         end

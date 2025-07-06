@@ -395,7 +395,7 @@ This file tests advanced visibility and illumination calculations:
             initial_count = count(illuminated)
             
             # Apply eclipse shadowing
-            apply_eclipse_shadowing!(illuminated, shape, sun_pos, shape_occluding, R, t)
+            apply_eclipse_shadowing!(illuminated, shape, sun_pos, R, t, shape_occluding)
             
             # Should reduce or maintain illumination count
             @test count(illuminated) <= initial_count
