@@ -114,16 +114,16 @@ end
 Structure representing the result of ray-shape intersection test.
 
 # Fields
-- `hit`        : true if intersection exists, false otherwise
-- `distance`   : Distance from ray origin to intersection point
-- `point`      : Coordinates of the intersection point
-- `face_index` : Index of the intersected face
+- `hit`      : true if intersection exists, false otherwise
+- `distance` : Distance from ray origin to intersection point
+- `point`    : Coordinates of the intersection point
+- `face_idx` : Index of the intersected face
 """
 struct RayShapeIntersectionResult
     hit::Bool
     distance::Float64
     point::SVector{3, Float64}
-    face_index::Int
+    face_idx::Int
 end
 
 const NO_INTERSECTION_RAY_SHAPE = RayShapeIntersectionResult(false, NaN, SVector(NaN, NaN, NaN), 0)
@@ -141,7 +141,7 @@ function Base.show(io::IO, result::RayShapeIntersectionResult)
         print(io, "    ∘ hit        = $(result.hit)\n")
         print(io, "    ∘ distance   = $(result.distance)\n")
         print(io, "    ∘ point      = $(result.point)\n")
-        print(io, "    ∘ face_index = $(result.face_index)\n")
+        print(io, "    ∘ face_idx = $(result.face_idx)\n")
     else
         print(io, "Ray-Shape Intersection:\n")
         print(io, "    ∘ hit = $(result.hit)\n")

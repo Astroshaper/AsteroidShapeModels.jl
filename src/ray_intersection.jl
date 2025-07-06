@@ -264,7 +264,7 @@ ray = Ray(SA[0.0, 0.0, 1000.0], SA[0.0, 0.0, -1.0])
 result = intersect_ray_shape(ray, shape)
 
 if result.hit
-    println("Hit face \$(result.face_index) at distance \$(result.distance)")
+    println("Hit face \$(result.face_idx) at distance \$(result.distance)")
 end
 ```
 """

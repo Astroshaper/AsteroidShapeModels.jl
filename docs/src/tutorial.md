@@ -156,7 +156,7 @@ ray = Ray(origin, direction)
 result = intersect_ray_shape(ray, shape)
 
 if result.hit
-    println("Ray hit face $(result.face_index) at distance $(result.distance).")
+    println("Ray hit face $(result.face_idx) at distance $(result.distance).")
     println("Hit point: ", result.point)
 else
     println("Ray missed the shape.")

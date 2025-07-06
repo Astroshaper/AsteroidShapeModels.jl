@@ -71,7 +71,7 @@ All tests include correctness verification and performance benchmarks.
             
             if result.hit
                 hits += 1
-                println("  Ray $i: Hit face $(result.face_index) at distance $(round(result.distance, digits=2))")
+                println("  Ray $i: Hit face $(result.face_idx) at distance $(round(result.distance, digits=2))")
             end
         end
         
