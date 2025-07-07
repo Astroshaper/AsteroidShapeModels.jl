@@ -64,12 +64,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses FaceVisibilityGraph for efficient occlusion testing when available
   - Falls back to checking all faces when visibility graph is not precomputed
 
+### Improved
+- **Code organization** (pending PR)
+  - Split large `visibility.jl` (650 lines) into focused modules:
+    - `face_visibility_graph.jl`: Face visibility graph and view factor calculations
+    - `illumination.jl`: Illumination analysis and shadow testing
+    - `eclipse_shadowing.jl`: Eclipse shadowing for binary asteroid systems
+  - Moved `FaceVisibilityGraph` type definition to `types.jl` to resolve circular dependencies
+  - Added section dividers throughout files for better code navigation
+  - Better separation of concerns and improved maintainability
+
 ### Documentation
 - Enhanced `intersect_ray_triangle` docstrings with backface culling behavior details
 - Added batch ray processing examples to tutorial
 - Updated performance tips with batch operation recommendations
 - Documented performance characteristics of BVH vs non-BVH for visibility graphs
 - Updated file-level documentation in `visibility.jl` with new exported functions
+- Updated package structure documentation to reflect new file organization
 
 ## [0.3.1] - 2025-07-02
 

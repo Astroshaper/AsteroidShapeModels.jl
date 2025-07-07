@@ -81,7 +81,9 @@ shape.face_areas    # Area of of each face
 - `face_properties.jl` - Face geometric computations (center, normal, area)
 - `shape_operations.jl` - Shape-level operations (volume, radius calculations)
 - `ray_intersection.jl` - Ray casting and intersection algorithms
-- `visibility.jl` - Face-to-face visibility and illumination analysis
+- `face_visibility_graph.jl` - Face-to-face visibility graph and view factor calculations
+- `illumination.jl` - Illumination analysis and shadow testing
+- `eclipse_shadowing.jl` - Eclipse shadowing for binary asteroid systems
 - `geometry_utils.jl` - Geometric helper functions and angle calculations
 - `roughness.jl` - Surface roughness and crater modeling
 
