@@ -59,19 +59,35 @@ pkg> add AsteroidShapeModels
 using AsteroidShapeModels
 using StaticArrays
 
-# Load an asteroid shape model with face-face visibility and BVH
-shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true, with_bvh=true)  # Convert km to m
+# Load an asteroid shape model
+# - `path/to/shape.obj` is the path to your OBJ file (mandatory)
+# - `scale` : scale factor for the shape model (e.g., 1000 for km to m conversion)
+# - `with_face_visibility` : whether to build face-to-face visibility graph for illumination checking and thermophysical modeling
+# - `with_bvh` : whether to build BVH for ray tracing
+shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
 
-# Or build BVH separately for existing shape
+# Or you can build face-face visibility graph and/or BVH for an existing shape
+# build_face_visibility_graph!(shape)
 # build_bvh!(shape)
 
 # Single ray intersection (requires BVH to be built)
 ray = Ray(SA[1000.0, 0.0, 0.0], SA[-1.0, 0.0, 0.0])
 result = intersect_ray_shape(ray, shape)
 
-# Batch ray processing (NEW)
+# Batch ray processing (NEW in v0.4.0)
 rays = [Ray(SA[x, 0.0, 1000.0], SA[0.0, 0.0, -1.0]) for x in -500:100:500]
 results = intersect_ray_shape(rays, shape)
+
+# Illumination analysis (NEW in v0.4.0)
+sun_position = SA[149597870700, 0.0, 0.0]  # Sun 1 au away
+face_idx = 100
+
+# Check single face illumination
+illuminated = isilluminated(shape, sun_position, face_idx; with_self_shadowing=true)
+
+# Batch update all faces
+illuminated_faces = Vector{Bool}(undef, length(shape.faces))
+update_illumination!(illuminated_faces, shape, sun_position; with_self_shadowing=true)
 
 # Access to face properties
 shape.face_centers  # Center position of each face
