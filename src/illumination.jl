@@ -10,6 +10,10 @@ Exported Functions:
 - `update_illumination!`: Batch update illumination (unified API)
 =#
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                   Single Face Illumination Check                  ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     isilluminated(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer; with_self_shadowing::Bool) -> Bool
 
@@ -112,6 +116,10 @@ function isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector
     end
     return true  # No obstruction found
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                    Batch Illumination Update                      ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     update_illumination!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool)
