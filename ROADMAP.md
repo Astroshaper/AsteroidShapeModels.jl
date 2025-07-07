@@ -24,7 +24,7 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
 
 ### Documentation
 - [x] Add comprehensive BVH usage documentation
-- [ ] Update examples for new APIs
+- [x] Update examples for new APIs
 
 ## Version 0.5.0 - Advanced Surface Modeling (Target: August 2025)
 
