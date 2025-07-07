@@ -169,6 +169,10 @@ Perform batch ray-shape intersection tests using the same interface as `Implicit
 
 This is the core implementation that all other `intersect_ray_shape` methods delegate to.
 
+!!! note
+    As of v0.4.0, BVH must be pre-built before calling this function.
+    Use either `with_bvh=true` when loading or call `build_bvh!(shape)` explicitly.
+
 # Arguments
 - `shape`      : Shape model (must have BVH built via `build_bvh!`)
 - `origins`    : 3×N matrix where each column is a ray origin
@@ -243,6 +247,10 @@ end
 Perform ray-shape intersection test using BVH acceleration.
 Uses the Möller–Trumbore algorithm for ray-triangle mesh intersection.
 
+!!! note
+    As of v0.4.0, BVH must be pre-built before calling this function.
+    Use either `with_bvh=true` when loading or call `build_bvh!(shape)` explicitly.
+
 # Arguments
 - `ray`   : Ray with origin and direction
 - `shape` : Shape model (must have BVH built via `build_bvh!`)
@@ -284,6 +292,10 @@ end
     intersect_ray_shape(rays::AbstractVector{Ray}, shape::ShapeModel) -> Vector{RayShapeIntersectionResult}
 
 Perform batch ray-shape intersection tests for multiple rays.
+
+!!! note
+    As of v0.4.0, BVH must be pre-built before calling this function.
+    Use either `with_bvh=true` when loading or call `build_bvh!(shape)` explicitly.
 
 # Arguments
 - `rays`  : Vector of Ray objects
@@ -327,6 +339,10 @@ end
 
 Perform batch ray-shape intersection tests for a matrix of rays.
 The output shape matches the input shape, preserving spatial arrangement.
+
+!!! note
+    As of v0.4.0, BVH must be pre-built before calling this function.
+    Use either `with_bvh=true` when loading or call `build_bvh!(shape)` explicitly.
 
 # Arguments
 - `rays`  : Matrix of Ray objects

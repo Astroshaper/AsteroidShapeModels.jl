@@ -44,6 +44,10 @@ end
 
 Apply eclipse shadowing effects from another shape onto already illuminated faces.
 
+!!! note
+    As of v0.4.0, `shape2` must have BVH pre-built before calling this function.
+    Use either `with_bvh=true` when loading or call `build_bvh!(shape2)` explicitly.
+
 # Arguments
 - `illuminated` : Boolean vector with current illumination state (will be modified)
 - `shape1`      : Target shape model being shadowed (the shape receiving shadows)

@@ -46,11 +46,11 @@ Display FaceVisibilityGraph.
 """
 function Base.show(io::IO, graph::FaceVisibilityGraph)
     print(io, "FaceVisibilityGraph:\n")
-    print(io, "  Number of faces: $(graph.nfaces)\n")
-    print(io, "  Number of visible pairs: $(graph.nnz)\n")
+    print(io, "  Number of faces                : $(graph.nfaces)\n")
+    print(io, "  Number of visible pairs        : $(graph.nnz)\n")
     if graph.nnz > 0
         avg_visible = graph.nnz / graph.nfaces
-        print(io, "  Average visible faces per face: $(round(avg_visible, digits=2))\n")
+        print(io, "  Average visible faces per face : $(round(avg_visible, digits=2))\n")
     end
 end
 
@@ -126,6 +126,27 @@ end
     get_visible_face_indices(graph::FaceVisibilityGraph, face_idx::Int) -> SubArray
 
 Get indices of faces visible from the specified face.
+
+# Arguments
+- `graph`   : Face visibility graph
+- `face_idx`: Source face index (1-based)
+
+# Returns
+- `SubArray{Int}`: View of face indices that are visible from the source face
+
+# Example
+```julia
+# Get all faces visible from face 100
+visible_face_indices = get_visible_face_indices(graph, 100)
+println("Face 100 can see $(length(visible_indices)) faces")
+
+# Iterate over visible faces
+for j in visible_face_indices
+    println("Face 100 can see face $j")
+end
+```
+
+See also: [`get_view_factors`](@ref), [`get_visible_face_data`](@ref)
 """
 function get_visible_face_indices(graph::FaceVisibilityGraph, face_idx::Int)
     range = _get_visible_face_range(graph, face_idx)
@@ -135,7 +156,38 @@ end
 """
     get_view_factors(graph::FaceVisibilityGraph, face_idx::Int) -> SubArray
 
-Get view factors for the specified face.
+Get view factors from the specified face to all its visible faces.
+
+# Arguments
+- `graph`    : Face visibility graph
+- `face_idx` : Source face index (1-based)
+
+# Returns
+- `SubArray{Float64}`: View of view factors corresponding to visible faces
+
+# Notes
+The returned array has the same length and ordering as `get_visible_face_indices`.
+View factors represent the fraction of radiation leaving face `face_idx` that
+directly reaches each visible face.
+
+# Example
+```julia
+visible_face_indices = get_visible_face_indices(graph, 100)
+view_factors = get_view_factors(graph, 100)
+
+# Sum of view factors (always between 0 and 1)
+# - Near 0 for convex shapes (most radiation escapes to space)  
+# - Larger for concave regions (more reabsorption due to facing surfaces)
+total_vf = sum(view_factors)
+println("Total view factor from face 100: $total_vf")
+
+# Pair indices with view factors
+for (j, vf) in zip(visible_face_indices, view_factors)
+    println("Face 100 -> Face $j: view factor = $vf")
+end
+```
+
+See also: [`get_visible_face_indices`](@ref), [`view_factor`](@ref)
 """
 function get_view_factors(graph::FaceVisibilityGraph, face_idx::Int)
     range = _get_visible_face_range(graph, face_idx)
@@ -146,6 +198,30 @@ end
     get_visible_face_distances(graph::FaceVisibilityGraph, face_idx::Int) -> SubArray
 
 Get distances to visible faces from the specified face.
+
+# Arguments
+- `graph`    : Face visibility graph
+- `face_idx` : Source face index (1-based)
+
+# Returns
+- `SubArray{Float64}`: View of distances (in meters) from face center to visible face centers
+
+# Notes
+The returned array has the same length and ordering as `get_visible_face_indices`.
+Distances are computed between face centers during visibility graph construction.
+
+# Example
+```julia
+visible_face_indices = get_visible_face_indices(graph, 100)
+distances = get_visible_face_distances(graph, 100)
+
+# Find the closest visible face
+min_dist, idx = findmin(distances)
+closest_face_idx = visible_face_indices[idx]
+println("Closest visible face to face 100 is face $closest_face_idx at distance $min_dist m")
+```
+
+See also: [`get_visible_face_indices`](@ref), [`get_visible_face_directions`](@ref)
 """
 function get_visible_face_distances(graph::FaceVisibilityGraph, face_idx::Int)
     range = _get_visible_face_range(graph, face_idx)
@@ -155,7 +231,33 @@ end
 """
     get_visible_face_directions(graph::FaceVisibilityGraph, face_idx::Int) -> SubArray
 
-Get direction vectors to visible faces from the specified face.
+Get unit direction vectors to visible faces from the specified face.
+
+# Arguments
+- `graph`    : Face visibility graph
+- `face_idx` : Source face index (1-based)
+
+# Returns
+- `SubArray{SVector{3,Float64}}`: View of unit direction vectors from source face center to visible face centers
+
+# Notes
+The returned array has the same length and ordering as `get_visible_face_indices`.
+Each vector points from the source face center to a visible face center and has unit length.
+
+# Example
+```julia
+visible_face_indices = get_visible_face_indices(graph, 100)
+directions = get_visible_face_directions(graph, 100)
+
+# Calculate angle to each visible face
+face_normal = shape.face_normals[100]
+for (j, dir) in zip(visible_face_indices, directions)
+    angle = acosd(face_normal ⋅ dir)  # Angle in degrees
+    println("Face 100 -> Face $j: angle = $(round(angle, digits=1))°")
+end
+```
+
+See also: [`get_visible_face_indices`](@ref), [`get_visible_face_distances`](@ref)
 """
 function get_visible_face_directions(graph::FaceVisibilityGraph, face_idx::Int)
     range = _get_visible_face_range(graph, face_idx)
@@ -166,6 +268,27 @@ end
     get_visible_face_data(graph::FaceVisibilityGraph, face_idx::Int, idx::Int)
 
 Get the idx-th visible face data for the specified face.
+
+# Arguments
+- `graph`    : Face visibility graph
+- `face_idx` : Source face index (1-based)
+- `idx`      : Index within the visible faces list (1-based)
+
+# Returns
+Named tuple with fields:
+- `face_idx`    : Index of the visible face
+- `view_factor` : View factor between the faces
+- `distance`    : Distance between face centers
+- `direction`   : Unit direction vector from source to visible face
+
+# Example
+```julia
+# Get the third visible face from face 100
+data = get_visible_face_data(graph, 100, 3)
+println("Face 100 can see face $(data.face_idx) with view factor $(data.view_factor)")
+```
+
+See also: [`get_visible_face_indices`](@ref), [`get_view_factors`](@ref)
 """
 function get_visible_face_data(graph::FaceVisibilityGraph, face_idx::Int, idx::Int)
     visible_faces = get_visible_face_indices(graph, face_idx)
@@ -184,6 +307,38 @@ end
     num_visible_faces(graph::FaceVisibilityGraph, face_idx::Int) -> Int
 
 Get the number of visible faces for the specified face.
+
+# Arguments
+- `graph`    : Face visibility graph
+- `face_idx` : Source face index (1-based)
+
+# Returns
+- `Int`: Number of faces visible from the source face
+
+# Example
+```julia
+# Count visible faces for each face
+for i in 1:graph.nfaces
+    n = num_visible_faces(graph, i)
+    if n > 100
+        println("Face $i can see $n other faces.")
+    end
+end
+
+# Find the face with most visible faces
+max_visible = 0
+max_face = 0
+for i in 1:graph.nfaces
+    n = num_visible_faces(graph, i)
+    if n > max_visible
+        max_visible = n
+        max_face = i
+    end
+end
+println("Face $max_face has the most visible faces: $max_visible")
+```
+
+See also: [`get_visible_face_indices`](@ref), [`FaceVisibilityGraph`](@ref)
 """
 function num_visible_faces(graph::FaceVisibilityGraph, face_idx::Int)
     @boundscheck 1 ≤ face_idx ≤ graph.nfaces || throw(BoundsError(graph, face_idx))

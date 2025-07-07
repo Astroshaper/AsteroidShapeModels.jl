@@ -28,9 +28,9 @@ Load a shape model from a Wavefront OBJ file.
 - `shapepath::String`: Path to a Wavefront OBJ file
 
 # Keyword Arguments
-- `scale::Real=1.0`: Scale factor of the shape model
-- `with_face_visibility::Bool=false`: Whether to compute face-to-face visibility
-- `with_bvh::Bool=false`: Whether to build BVH for accelerated ray tracing (experimental)
+- `scale::Real=1.0`                  : Scale factor for node coordinates (e.g., 1000 to convert km to m)
+- `with_face_visibility::Bool=false` : Whether to build face-to-face visibility graph for illumination and thermophysical modeling
+- `with_bvh::Bool=false`             : Whether to build BVH for ray tracing (required for `intersect_ray_shape` and `apply_eclipse_shadowing!`)
 
 # Returns
 - `ShapeModel`: Loaded shape model with computed geometric properties
@@ -41,10 +41,10 @@ Load a shape model from a Wavefront OBJ file.
 shape = load_shape_obj("asteroid.obj")
 
 # Load with scaling and visibility computation
-shape = load_shape_obj("asteroid_km.obj", scale=1000, with_face_visibility=true)
+shape = load_shape_obj("asteroid_km.obj"; scale=1000, with_face_visibility=true)
 
-# Load with BVH acceleration (experimental)
-shape = load_shape_obj("asteroid.obj"; with_bvh=true)
+# Load with all features for comprehensive analysis
+shape = load_shape_obj("asteroid.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
 ```
 
 See also: [`load_shape_grid`](@ref), [`load_obj`](@ref)
@@ -128,9 +128,9 @@ Convert a regular grid (x, y) with z-values to a shape model.
 - `zs::AbstractMatrix`: z-coordinates of grid points where `zs[i,j]` corresponds to `(xs[i], ys[j])`
 
 # Keyword Arguments
-- `scale::Real=1.0`: Scale factor to apply to all coordinates
-- `with_face_visibility::Bool=false`: Whether to compute face-to-face visibility
-- `with_bvh::Bool=false`: Whether to build BVH for accelerated ray tracing (experimental)
+- `scale::Real=1.0`                  : Scale factor to apply to all coordinates
+- `with_face_visibility::Bool=false` : Whether to build face-to-face visibility graph for illumination and thermophysical modeling
+- `with_bvh::Bool=false`             : Whether to build BVH for ray tracing (required for `intersect_ray_shape` and `apply_eclipse_shadowing!`)
 
 # Returns
 - `ShapeModel`: Shape model with computed geometric properties

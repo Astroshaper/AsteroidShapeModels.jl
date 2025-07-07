@@ -33,14 +33,22 @@ Check if a face is illuminated by the sun.
 - `true` if the face is illuminated
 - `false` if the face is in shadow or facing away from the sun
 
+# Performance
+- Pseudo-convex model: O(1) - single dot product
+- With self-shadowing: O(n) worst case, but typically much faster due to:
+  - Early-out optimization using face orientation check
+  - Visibility graph limits checks to potentially occluding faces only
+
 # Examples
 ```julia
 # Without self-shadowing (pseudo-convex model)
 illuminated = isilluminated(shape, sun_position, face_idx; with_self_shadowing=false)
 
-# With self-shadowing
+# With self-shadowing (requires face_visibility_graph)
 illuminated = isilluminated(shape, sun_position, face_idx; with_self_shadowing=true)
 ```
+
+See also: [`update_illumination!`](@ref) for batch processing
 """
 function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer; with_self_shadowing::Bool)
     if with_self_shadowing
@@ -136,6 +144,10 @@ Update illumination state for all faces of a shape model.
   - `false`: Use pseudo-convex model (face orientation only)
   - `true`: Include self-shadowing (requires `face_visibility_graph` to be built)
 
+# Performance
+- Pseudo-convex model: O(n) where n is number of faces
+- With self-shadowing: O(n²) worst case, but typically O(n·k) where k is average visible faces per face
+
 # Examples
 ```julia
 # Prepare illumination vector
@@ -147,6 +159,8 @@ update_illumination!(illuminated, shape, sun_position; with_self_shadowing=false
 # With self-shadowing
 update_illumination!(illuminated, shape, sun_position; with_self_shadowing=true)
 ```
+
+See also: [`isilluminated`](@ref) for single face checks, [`apply_eclipse_shadowing!`](@ref) for binary asteroid shadowing
 """
 function update_illumination!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool)
     if with_self_shadowing

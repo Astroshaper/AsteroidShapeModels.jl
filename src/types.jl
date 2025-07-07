@@ -160,7 +160,7 @@ end
     FaceVisibilityGraph
 
 Efficient visible face graph structure using CSR (Compressed Sparse Row) format.
-Provides better memory efficiency and cache locality compared to adjacency list format.
+Stores face-to-face visibility relationships with associated view factors and geometric data.
 
 # Fields
 - `row_ptr`: Start index of visible face data for each face (length: nfaces + 1)
@@ -171,10 +171,35 @@ Provides better memory efficiency and cache locality compared to adjacency list 
 - `nfaces`: Total number of faces
 - `nnz`: Number of non-zero elements (total number of visible face pairs)
 
+# CSR Format
+The CSR (Compressed Sparse Row) format provides:
+- Memory efficiency: ~50% reduction compared to adjacency lists
+- Cache locality: Sequential access pattern for better performance
+- Fast iteration: Direct access to all visible faces from a given face
+
+# Data Access
+For face `i`, its visible faces are stored at indices `row_ptr[i]` to `row_ptr[i+1]-1`:
+- Visible face indices : `col_idx[row_ptr[i]:row_ptr[i+1]-1]`
+- View factors         : `view_factors[row_ptr[i]:row_ptr[i+1]-1]`
+- Distances            : `distances[row_ptr[i]:row_ptr[i+1]-1]`
+- Directions           : `directions[row_ptr[i]:row_ptr[i+1]-1]`
+
+Use the provided API functions instead of direct field access:
+- `get_visible_face_indices(graph, face_idx)` - Get indices of visible faces
+- `get_view_factors(graph, face_idx)` - Get view factors to visible faces
+- `get_visible_face_distances(graph, face_idx)` - Get distances to visible faces
+- `get_visible_face_directions(graph, face_idx)` - Get direction vectors to visible faces
+- `get_visible_face_data(graph, face_idx, idx)` - Get all data for a specific visible face
+- `num_visible_faces(graph, face_idx)` - Get number of visible faces
+
 # Example
-If face 1 is visible to faces 2,3 and face 2 is visible to faces 1,3,4:
-- row_ptr = [1, 3, 6, 7]
-- col_idx = [2, 3, 1, 3, 4, ...]
+If face 1 sees faces [2,3] and face 2 sees faces [1,3,4]:
+```
+row_ptr = [1, 3, 6, 7]          # Face 1 data at [1:2], Face 2 at [3:5], Face 3 at [6:6]
+col_idx = [2, 3, 1, 3, 4, ...]  # Visible face indices
+```
+
+See also: [`build_face_visibility_graph!`](@ref), [`get_visible_face_indices`](@ref)
 """
 struct FaceVisibilityGraph
     row_ptr::Vector{Int}
