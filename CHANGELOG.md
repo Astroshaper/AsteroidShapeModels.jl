@@ -181,7 +181,7 @@ directions = get_directions(shape.visibility_graph, i)
 data = get_visible_facet_data(shape.visibility_graph, i, j)
 
 # After (v0.3.0)
-visible_indices = get_visible_face_indices(shape.face_visibility_graph, i)
+visible_face_indices = get_visible_face_indices(shape.face_visibility_graph, i)
 distances = get_visible_face_distances(shape.face_visibility_graph, i)
 directions = get_visible_face_directions(shape.face_visibility_graph, i)
 data = get_visible_face_data(shape.face_visibility_graph, i, j)

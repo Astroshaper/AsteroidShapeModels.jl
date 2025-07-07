@@ -138,7 +138,7 @@ Get indices of faces visible from the specified face.
 ```julia
 # Get all faces visible from face 100
 visible_face_indices = get_visible_face_indices(graph, 100)
-println("Face 100 can see $(length(visible_indices)) faces")
+println("Face 100 can see $(length(visible_face_indices)) faces")
 
 # Iterate over visible faces
 for j in visible_face_indices
