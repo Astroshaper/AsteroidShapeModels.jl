@@ -50,13 +50,13 @@ export face_center, face_normal, face_area, get_face_nodes
 include("types.jl")
 export Ray, RayTriangleIntersectionResult, RayShapeIntersectionResult
 
-include("face_visibility_graph.jl")
-export FaceVisibilityGraph
-export get_visible_face_indices, get_view_factors, get_visible_face_distances, get_visible_face_directions
-export get_visible_face_data, num_visible_faces
-
 include("shape_model.jl")
 export ShapeModel, build_bvh!
+
+include("face_visibility_graph.jl")
+export FaceVisibilityGraph, build_face_visibility_graph!, view_factor
+export get_visible_face_indices, get_view_factors, get_visible_face_distances, get_visible_face_directions
+export get_visible_face_data, num_visible_faces
 
 include("obj_io.jl")
 export load_obj, isobj
@@ -68,9 +68,10 @@ include("shape_operations.jl")
 export load_shape_obj, load_shape_grid, grid_to_faces
 export polyhedron_volume, equivalent_radius, maximum_radius, minimum_radius
 
-include("visibility.jl")
-export view_factor, build_face_visibility_graph!
+include("illumination.jl")
 export isilluminated, update_illumination!
+
+include("eclipse_shadowing.jl")
 export apply_eclipse_shadowing!, EclipseStatus, NO_ECLIPSE, PARTIAL_ECLIPSE, TOTAL_ECLIPSE
 
 include("geometry_utils.jl")
