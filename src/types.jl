@@ -147,3 +147,65 @@ function Base.show(io::IO, result::RayShapeIntersectionResult)
         print(io, "    ∘ hit = $(result.hit)\n")
     end
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                     Visibility Graph Type                         ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    FaceVisibilityGraph
+
+Efficient visible face graph structure using CSR (Compressed Sparse Row) format.
+Provides better memory efficiency and cache locality compared to adjacency list format.
+
+# Fields
+- `row_ptr`: Start index of visible face data for each face (length: nfaces + 1)
+- `col_idx`: Indices of visible faces (column indices in CSR format)
+- `view_factors`: View factors for each visible face pair
+- `distances`: Distances between each visible face pair
+- `directions`: Unit direction vectors between each visible face pair
+- `nfaces`: Total number of faces
+- `nnz`: Number of non-zero elements (total number of visible face pairs)
+
+# Example
+If face 1 is visible to faces 2,3 and face 2 is visible to faces 1,3,4:
+- row_ptr = [1, 3, 6, 7]
+- col_idx = [2, 3, 1, 3, 4, ...]
+"""
+struct FaceVisibilityGraph
+    row_ptr::Vector{Int}
+    col_idx::Vector{Int}
+    view_factors::Vector{Float64}
+    distances::Vector{Float64}
+    directions::Vector{SVector{3, Float64}}
+    nfaces::Int
+    nnz::Int
+    
+    function FaceVisibilityGraph(
+        row_ptr::Vector{Int}, 
+        col_idx::Vector{Int},
+        view_factors::Vector{Float64},
+        distances::Vector{Float64},
+        directions::Vector{SVector{3, Float64}}
+    )
+        nfaces = length(row_ptr) - 1
+        nnz = length(col_idx)
+        
+        # Validity checks
+        @assert row_ptr[1] == 1 "row_ptr must start with 1"
+        @assert row_ptr[end] == nnz + 1 "row_ptr[end] must equal nnz + 1"
+        @assert length(view_factors) == nnz "view_factors length must equal nnz"
+        @assert length(distances) == nnz "distances length must equal nnz"
+        @assert length(directions) == nnz "directions length must equal nnz"
+        @assert all(1 .<= col_idx .<= nfaces) "col_idx must be in range [1, nfaces]"
+        
+        new(row_ptr, col_idx, view_factors, distances, directions, nfaces, nnz)
+    end
+end
+
+"""
+    FaceVisibilityGraph() -> FaceVisibilityGraph
+
+Create an empty FaceVisibilityGraph.
+"""
+FaceVisibilityGraph() = FaceVisibilityGraph(Int[1], Int[], Float64[], Float64[], SVector{3, Float64}[])
