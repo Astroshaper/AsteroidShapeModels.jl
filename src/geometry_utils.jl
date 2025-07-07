@@ -150,12 +150,12 @@ sun = [1.0, 0.0, 0.0] * 1.496e11       # 1 au from origin
 observer = [1.0, 0.0, 0.0] * 1.495e11  # Slightly closer
 target = [0.0, 0.0, 0.0]               # At origin
 α = solar_phase_angle(sun, target, observer)
-println("Phase angle: $(rad2deg(α))°")  # ≈ 0°
+println("Phase angle: \$(rad2deg(α))°")  # ≈ 0°
 
 # Quadrature geometry (phase angle = 90°)
 observer = [0.0, 1.0, 0.0] * 1.496e11
 α = solar_phase_angle(sun, target, observer)
-println("Phase angle: $(rad2deg(α))°")  # = 90°
+println("Phase angle: \$(rad2deg(α))°")  # = 90°
 ```
 
 See also: [`solar_elongation_angle`](@ref), [`angle_rad`](@ref)
@@ -191,12 +191,12 @@ sun = [1.0, 0.0, 0.0] * 1.496e11  # 1 au
 observer = [0.0, 0.0, 0.0]  # Earth at origin
 target = [1.1, 0.0, 0.0] * 1.496e11  # Just beyond Sun
 ε = solar_elongation_angle(sun, observer, target)
-println("Elongation: $(rad2deg(ε))°")  # Small angle
+println("Elongation: \$(rad2deg(ε))°")  # Small angle
 
 # Opposition (maximum elongation)
 target = [-1.0, 0.0, 0.0] * 1.496e11  # Opposite side from Sun
 ε = solar_elongation_angle(sun, observer, target)
-println("Elongation: $(rad2deg(ε))°")  # ≈ 180°
+println("Elongation: \$(rad2deg(ε))°")  # ≈ 180°
 ```
 
 See also: [`solar_phase_angle`](@ref), [`angle_rad`](@ref)

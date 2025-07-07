@@ -138,11 +138,11 @@ Get indices of faces visible from the specified face.
 ```julia
 # Get all faces visible from face 100
 visible_face_indices = get_visible_face_indices(graph, 100)
-println("Face 100 can see $(length(visible_face_indices)) faces")
+println("Face 100 can see \$(length(visible_face_indices)) faces")
 
 # Iterate over visible faces
 for j in visible_face_indices
-    println("Face 100 can see face $j")
+    println("Face 100 can see face \$j")
 end
 ```
 
@@ -179,11 +179,11 @@ view_factors = get_view_factors(graph, 100)
 # - Near 0 for convex shapes (most radiation escapes to space)  
 # - Larger for concave regions (more reabsorption due to facing surfaces)
 total_vf = sum(view_factors)
-println("Total view factor from face 100: $total_vf")
+println("Total view factor from face 100: \$total_vf")
 
 # Pair indices with view factors
 for (j, vf) in zip(visible_face_indices, view_factors)
-    println("Face 100 -> Face $j: view factor = $vf")
+    println("Face 100 -> Face \$j: view factor = \$vf")
 end
 ```
 
@@ -218,7 +218,7 @@ distances = get_visible_face_distances(graph, 100)
 # Find the closest visible face
 min_dist, idx = findmin(distances)
 closest_face_idx = visible_face_indices[idx]
-println("Closest visible face to face 100 is face $closest_face_idx at distance $min_dist m")
+println("Closest visible face to face 100 is face \$closest_face_idx at distance \$min_dist m")
 ```
 
 See also: [`get_visible_face_indices`](@ref), [`get_visible_face_directions`](@ref)
@@ -253,7 +253,7 @@ directions = get_visible_face_directions(graph, 100)
 face_normal = shape.face_normals[100]
 for (j, dir) in zip(visible_face_indices, directions)
     angle = acosd(face_normal ⋅ dir)  # Angle in degrees
-    println("Face 100 -> Face $j: angle = $(round(angle, digits=1))°")
+    println("Face 100 -> Face \$j: angle = \$(round(angle, digits=1))°")
 end
 ```
 
@@ -285,7 +285,7 @@ Named tuple with fields:
 ```julia
 # Get the third visible face from face 100
 data = get_visible_face_data(graph, 100, 3)
-println("Face 100 can see face $(data.face_idx) with view factor $(data.view_factor)")
+println("Face 100 can see face \$(data.face_idx) with view factor \$(data.view_factor)")
 ```
 
 See also: [`get_visible_face_indices`](@ref), [`get_view_factors`](@ref)
@@ -321,7 +321,7 @@ Get the number of visible faces for the specified face.
 for i in 1:graph.nfaces
     n = num_visible_faces(graph, i)
     if n > 100
-        println("Face $i can see $n other faces.")
+        println("Face \$i can see \$n other faces.")
     end
 end
 
@@ -335,7 +335,7 @@ for i in 1:graph.nfaces
         max_face = i
     end
 end
-println("Face $max_face has the most visible faces: $max_visible")
+println("Face \$max_face has the most visible faces: \$max_visible")
 ```
 
 See also: [`get_visible_face_indices`](@ref), [`FaceVisibilityGraph`](@ref)
