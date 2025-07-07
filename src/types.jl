@@ -10,7 +10,7 @@ This file contains fundamental data structures used throughout the package:
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
-# ║                          Core Types                               ║
+# ║                     Internal Data Structures                      ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
@@ -34,6 +34,10 @@ struct VisibleFace
     distance    ::Float64
     direction   ::SVector{3, Float64}
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                      Ray and Intersection Types                   ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     Ray

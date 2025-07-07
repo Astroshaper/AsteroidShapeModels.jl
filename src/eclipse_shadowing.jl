@@ -12,6 +12,10 @@ Exported Functions:
 - `apply_eclipse_shadowing!`: Apply mutual shadowing from another shape
 =#
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                        Eclipse Status Types                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     EclipseStatus
 
@@ -27,6 +31,10 @@ Enum representing the eclipse status between binary pairs.
     PARTIAL_ECLIPSE = 1
     TOTAL_ECLIPSE   = 2
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                    Eclipse Shadowing Functions                    ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     apply_eclipse_shadowing!(
