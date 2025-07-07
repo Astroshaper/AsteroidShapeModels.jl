@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-07-07
+
 ### Breaking Changes
 - **BVH must be pre-built for ray intersection** (04d2937, 5355dbc)
   - `intersect_ray_shape` now requires BVH to be built before use
@@ -20,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - More consistent with other functions like `intersect_ray_triangle`
   - Update your code: `get_face_nodes(nodes, faces[i])` → `get_face_nodes(nodes, faces, i)`
 
-- **Standardized face index naming to `face_idx`** (pending PR)
+- **Standardized face index naming to `face_idx`** (#36)
   - All face index parameters renamed from `face_id` or `i` to `face_idx`
   - `RayShapeIntersectionResult.face_index` field renamed to `face_idx`
   - `VisibleFace` struct fields renamed for clarity:
@@ -65,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Falls back to checking all faces when visibility graph is not precomputed
 
 ### Improved
-- **Code organization** (pending PR)
+- **Code organization** (#37)
   - Split large `visibility.jl` (650 lines) into focused modules:
     - `face_visibility_graph.jl`: Face visibility graph and view factor calculations
     - `illumination.jl`: Illumination analysis and shadow testing

@@ -30,15 +30,23 @@ Pkg.add("AsteroidShapeModels")
 
 ```julia
 using AsteroidShapeModels
+using StaticArrays
 
-# Load an asteroid shape model with face-face visibility
-shape = load_shape_obj("path/to/shape.obj", scale=1000, with_face_visibility=true)  # Convert km to m
+# Load an asteroid shape model
+# - `path/to/shape.obj` is the path to your OBJ file (mandatory)
+# - `scale` : scale factor for the shape model (e.g., 1000 for km to m conversion)
+# - `with_face_visibility` : whether to build face-to-face visibility graph for illumination checking and thermophysical modeling
+# - `with_bvh` : whether to build BVH for ray tracing
+shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
 
-# NEW: Load with BVH acceleration for ray tracing
-shape_bvh = load_shape_obj("path/to/shape.obj", scale=1000, with_bvh=true)
+# Or you can build face-face visibility graph and/or BVH for an existing shape
+# build_face_visibility_graph!(shape)
+# build_bvh!(shape)
 
-# Or build BVH for an existing shape
-build_bvh!(shape)
+# NEW in v0.4.0: Unified illumination API
+sun_position = SA[149597870700, 0.0, 0.0]  # Sun 1 au away
+illuminated = Vector{Bool}(undef, length(shape.faces))
+update_illumination!(illuminated, shape, sun_position; with_self_shadowing=false)
 
 # Access to face properties
 shape.face_centers  # Center position of each face
