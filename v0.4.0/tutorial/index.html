@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorial · AsteroidShapeModels.jl</title><meta name="title" content="Tutorial · AsteroidShapeModels.jl"/><meta property="og:title" content="Tutorial · AsteroidShapeModels.jl"/><meta property="twitter:title" content="Tutorial · AsteroidShapeModels.jl"/><meta name="description" content="Documentation for AsteroidShapeModels.jl."/><meta property="og:description" content="Documentation for AsteroidShapeModels.jl."/><meta property="twitter:description" content="Documentation for AsteroidShapeModels.jl."/><meta property="og:url" content="https://astroshaper.github.io/AsteroidShapeModels.jl/tutorial/"/><meta property="twitter:url" content="https://astroshaper.github.io/AsteroidShapeModels.jl/tutorial/"/><link rel="canonical" href="https://astroshaper.github.io/AsteroidShapeModels.jl/tutorial/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">AsteroidShapeModels.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Tutorial</a><ul class="internal"><li><a class="tocitem" href="#Loading-a-Shape-Model"><span>Loading a Shape Model</span></a></li><li><a class="tocitem" href="#Working-with-Face-Properties"><span>Working with Face Properties</span></a></li><li><a class="tocitem" href="#Shape-Analysis"><span>Shape Analysis</span></a></li><li><a class="tocitem" href="#Face-Visibility-Analysis"><span>Face Visibility Analysis</span></a></li><li><a class="tocitem" href="#Batch-Illumination-Updates"><span>Batch Illumination Updates</span></a></li><li><a class="tocitem" href="#Binary-Asteroid-Shadowing"><span>Binary Asteroid Shadowing</span></a></li><li><a class="tocitem" href="#Ray-Shape-Intersection"><span>Ray-Shape Intersection</span></a></li><li><a class="tocitem" href="#Performance-Tips"><span>Performance Tips</span></a></li><li><a class="tocitem" href="#Next-Steps"><span>Next Steps</span></a></li></ul></li><li><span class="tocitem">Guides</span><ul><li><a class="tocitem" href="../guides/bvh_usage/">BVH Usage</a></li></ul></li><li><span class="tocitem">API Reference</span><ul><li><a class="tocitem" href="../api/types/">Types</a></li><li><a class="tocitem" href="../api/io/">I/O Functions</a></li><li><a class="tocitem" href="../api/geometry/">Geometric Operations</a></li><li><a class="tocitem" href="../api/raycast/">Ray Intersection</a></li><li><a class="tocitem" href="../api/visibility/">Visibility Analysis</a></li><li><a class="tocitem" href="../api/roughness/">Surface Roughness</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Tutorial</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Tutorial</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/Astroshaper/AsteroidShapeModels.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/Astroshaper/AsteroidShapeModels.jl/blob/main/docs/src/tutorial.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Tutorial"><a class="docs-heading-anchor" href="#Tutorial">Tutorial</a><a id="Tutorial-1"></a><a class="docs-heading-anchor-permalink" href="#Tutorial" title="Permalink"></a></h1><p>This tutorial demonstrates the main features of AsteroidShapeModels.jl through practical examples.</p><h2 id="Loading-a-Shape-Model"><a class="docs-heading-anchor" href="#Loading-a-Shape-Model">Loading a Shape Model</a><a id="Loading-a-Shape-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Loading-a-Shape-Model" title="Permalink"></a></h2><pre><code class="language-julia hljs">using AsteroidShapeModels
+using StaticArrays
+
+# Load from OBJ file
+shape = load_shape_obj(&quot;path/to/shape.obj&quot;)
+
+# Load with scaling (e.g., converting km to m)
+shape_m = load_shape_obj(&quot;path/to/shape.obj&quot;; scale=1000)
+
+# Access shape properties
+println(&quot;Number of nodes : $(length(shape.nodes))&quot;)
+println(&quot;Number of faces : $(length(shape.faces))&quot;)</code></pre><h2 id="Working-with-Face-Properties"><a class="docs-heading-anchor" href="#Working-with-Face-Properties">Working with Face Properties</a><a id="Working-with-Face-Properties-1"></a><a class="docs-heading-anchor-permalink" href="#Working-with-Face-Properties" title="Permalink"></a></h2><pre><code class="language-julia hljs">shape.face_centers  # Center position of each face
+shape.face_normals  # Normal vector of each face
+shape.face_areas    # Area of of each face
+
+# Get properties of face 1
+shape.face_centers[1]  # Center position of each face
+shape.face_normals[1]  # Normal vector of each face
+shape.face_areas[1]    # Area of of each face</code></pre><h2 id="Shape-Analysis"><a class="docs-heading-anchor" href="#Shape-Analysis">Shape Analysis</a><a id="Shape-Analysis-1"></a><a class="docs-heading-anchor-permalink" href="#Shape-Analysis" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Compute shape properties
+volume = polyhedron_volume(shape)
+eq_radius = equivalent_radius(shape)
+max_radius = maximum_radius(shape)
+min_radius = minimum_radius(shape)
+
+println(&quot;Volume            : $volume m³&quot;)
+println(&quot;Equivalent radius : $eq_radius m&quot;)
+println(&quot;Maximum radius    : $max_radius m&quot;)
+println(&quot;Minimum radius    : $min_radius m&quot;)</code></pre><h2 id="Face-Visibility-Analysis"><a class="docs-heading-anchor" href="#Face-Visibility-Analysis">Face Visibility Analysis</a><a id="Face-Visibility-Analysis-1"></a><a class="docs-heading-anchor-permalink" href="#Face-Visibility-Analysis" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Load shape with face visibility computation
+shape_vis = load_shape_obj(&quot;path/to/shape.obj&quot;; scale=1000, with_face_visibility=true)
+
+# Or build visibility graph for existing shape
+build_face_visibility_graph!(shape)
+
+# Access visibility data for a specific face
+face_id = 100
+visible_faces = get_visible_face_indices(shape.face_visibility_graph, face_id)
+view_factors = get_view_factors(shape.face_visibility_graph, face_id)
+num_visible = num_visible_faces(shape.face_visibility_graph, face_id)
+
+println(&quot;Face $face_id can see $num_visible other faces.&quot;)
+println(&quot;Total view factor: &quot;, sum(view_factors))
+
+# Check if a face is illuminated by the sun
+sun_position = SA[1.5e11, 0.0, 0.0]  # Sun 1 au away along x-axis
+
+# Without self-shadowing (pseudo-convex model)
+illuminated = isilluminated(shape, sun_position, face_id; with_self_shadowing=false)
+println(&quot;Face $face_id is &quot;, illuminated ? &quot;illuminated&quot; : &quot;in shadow&quot;)
+
+# With self-shadowing (requires `face_visibility_graph` to be built)
+illuminated = isilluminated(shape_vis, sun_position, face_id; with_self_shadowing=true)
+println(&quot;Face $face_id is &quot;, illuminated ? &quot;illuminated&quot; : &quot;in shadow&quot;)</code></pre><h2 id="Batch-Illumination-Updates"><a class="docs-heading-anchor" href="#Batch-Illumination-Updates">Batch Illumination Updates</a><a id="Batch-Illumination-Updates-1"></a><a class="docs-heading-anchor-permalink" href="#Batch-Illumination-Updates" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Efficiently update illumination state for all faces
+illuminated = Vector{Bool}(undef, length(shape.faces))
+
+# Without self-shadowing (fast, pseudo-convex model)
+update_illumination!(illuminated, shape, sun_position; with_self_shadowing=false)
+n_illuminated = count(illuminated)
+println(&quot;$n_illuminated faces are illuminated (pseudo-convex model).&quot;)
+
+# With self-shadowing (requires `face_visibility_graph` to be built)
+update_illumination!(illuminated, shape_vis, sun_position; with_self_shadowing=true)
+n_illuminated = count(illuminated)
+println(&quot;$n_illuminated faces are illuminated (with self-shadowing).&quot;)</code></pre><h2 id="Binary-Asteroid-Shadowing"><a class="docs-heading-anchor" href="#Binary-Asteroid-Shadowing">Binary Asteroid Shadowing</a><a id="Binary-Asteroid-Shadowing-1"></a><a class="docs-heading-anchor-permalink" href="#Binary-Asteroid-Shadowing" title="Permalink"></a></h2><pre><code class="language-julia hljs"># For binary asteroid systems, check mutual shadowing effects
+# Assume we have two shape models: shape1 (primary) and shape2 (secondary)
+shape1 = load_shape_obj(&quot;primary_shape.obj&quot;; scale=1000, with_face_visibility=true, with_bvh=true)
+shape2 = load_shape_obj(&quot;secondary_shape.obj&quot;; scale=1000, with_face_visibility=true, with_bvh=true)
+
+# Define relative position and orientation
+# R12: rotation from shape1 frame to shape2 frame
+# R21: rotation from shape2 frame to shape1 frame
+# t12: translation from shape1 origin to shape2 origin
+# t21: translation from shape2 origin to shape1 origin
+R12 = SA[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]  # Identity (no rotation)
+t12 = SA[2000.0, 0.0, 0.0]  # 2 km separation
+
+R21 = R12&#39;         # Inverse rotation
+t21 = -R12&#39; * t12  # Inverse translation
+
+# Sun position in each body&#39;s frame
+sun_position1 = SA[1.5e11, 0.0, 0.0]
+sun_position2 = sun_position1 - t12  # Transform to shape2&#39;s frame
+
+# First, check self-shadowing for each body
+illuminated1 = Vector{Bool}(undef, length(shape1.faces))
+illuminated2 = Vector{Bool}(undef, length(shape2.faces))
+update_illumination!(illuminated1, shape1, sun_position1; with_self_shadowing=true)
+update_illumination!(illuminated2, shape2, sun_position2; with_self_shadowing=true)
+
+# Then apply mutual shadowing
+status1 = apply_eclipse_shadowing!(illuminated1, shape1, sun_position1, R12, t12, shape2)
+status2 = apply_eclipse_shadowing!(illuminated2, shape2, sun_position2, R21, t21, shape1)
+
+# Check eclipse status
+if status1 == NO_ECLIPSE
+    println(&quot;Primary is not eclipsed by secondary.&quot;)
+elseif status1 == PARTIAL_ECLIPSE
+    println(&quot;Primary is partially eclipsed by secondary.&quot;)
+elseif status1 == TOTAL_ECLIPSE
+    println(&quot;Primary is totally eclipsed by secondary.&quot;)
+end</code></pre><h2 id="Ray-Shape-Intersection"><a class="docs-heading-anchor" href="#Ray-Shape-Intersection">Ray-Shape Intersection</a><a id="Ray-Shape-Intersection-1"></a><a class="docs-heading-anchor-permalink" href="#Ray-Shape-Intersection" title="Permalink"></a></h2><h3 id="Single-Ray"><a class="docs-heading-anchor" href="#Single-Ray">Single Ray</a><a id="Single-Ray-1"></a><a class="docs-heading-anchor-permalink" href="#Single-Ray" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Ensure BVH is built for ray intersection
+if isnothing(shape.bvh)
+    build_bvh!(shape)
+end
+
+# Define a ray
+origin = SA[1000.0, 0.0, 0.0]  # Start 1 km away
+direction = normalize(SA[-1.0, 0.0, 0.0])  # Point toward origin
+ray = Ray(origin, direction)
+
+# Find intersection with shape
+result = intersect_ray_shape(ray, shape)
+
+if result.hit
+    println(&quot;Ray hit face $(result.face_idx) at distance $(result.distance).&quot;)
+    println(&quot;Hit point: &quot;, result.point)
+else
+    println(&quot;Ray missed the shape.&quot;)
+end</code></pre><h3 id="Batch-Ray-Processing"><a class="docs-heading-anchor" href="#Batch-Ray-Processing">Batch Ray Processing</a><a id="Batch-Ray-Processing-1"></a><a class="docs-heading-anchor-permalink" href="#Batch-Ray-Processing" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Process multiple rays efficiently
+rays = [Ray(SA[x, 0.0, 1000.0], SA[0.0, 0.0, -1.0]) for x in -500:100:500]
+results = intersect_ray_shape(rays, shape)
+
+# Count hits
+n_hits = count(r -&gt; r.hit, results)
+println(&quot;$n_hits out of $(length(rays)) rays hit the shape.&quot;)
+
+# Process rays in a grid pattern
+ray_grid = [Ray(SA[x, y, 1000.0], SA[0.0, 0.0, -1.0]) 
+            for x in -500:100:500, y in -500:100:500]
+result_grid = intersect_ray_shape(ray_grid, shape)
+
+# Results maintain the same shape as input
+@assert size(result_grid) == size(ray_grid)
+
+# Alternative: Use matrix interface for maximum performance
+n_rays = 100
+origins = rand(3, n_rays) .* 2000 .- 1000  # Random origins
+directions = normalize.(eachcol(rand(3, n_rays) .- 0.5))
+directions = hcat(directions...)  # Convert back to matrix
+
+results = intersect_ray_shape(shape, origins, directions)</code></pre><h2 id="Performance-Tips"><a class="docs-heading-anchor" href="#Performance-Tips">Performance Tips</a><a id="Performance-Tips-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-Tips" title="Permalink"></a></h2><ol><li><strong>Use StaticArrays</strong>: All vector operations use <code>SVector</code> for performance</li><li><strong>Batch operations</strong>: Process multiple rays together using vector/matrix interfaces:<ul><li><code>intersect_ray_shape(rays::Vector{Ray}, shape)</code> for ray collections</li><li><code>intersect_ray_shape(rays::Matrix{Ray}, shape)</code> preserves grid structure</li><li><code>intersect_ray_shape(shape, origins, directions)</code> for maximum performance</li></ul></li><li><strong>BVH acceleration</strong>: Must be pre-built using <code>build_bvh!(shape)</code> or <code>with_bvh=true</code> when loading a shape model</li><li><strong>Scale appropriately</strong>: Use consistent units (typically meters)</li><li><strong>Precompute visibility</strong>: Use <code>with_face_visibility=true</code> when loading if you need visibility analysis</li><li><strong>Access patterns</strong>: The face visibility graph uses CSR format - sequential access is faster than random</li></ol><h2 id="Next-Steps"><a class="docs-heading-anchor" href="#Next-Steps">Next Steps</a><a id="Next-Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-Steps" title="Permalink"></a></h2><ul><li>See the API Reference pages for detailed function documentation</li><li>Check the test suite for more examples</li><li>Explore integration with <a href="https://github.com/JuliaAstro/SPICE.jl">SPICE.jl</a> for ephemeris data</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../guides/bvh_usage/">BVH Usage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.13.0 on <span class="colophon-date" title="Monday 7 July 2025 23:06">Monday 7 July 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
