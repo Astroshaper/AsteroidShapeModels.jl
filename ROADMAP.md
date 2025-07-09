@@ -42,6 +42,11 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
 - **Performance Enhancements**
   - [ ] Add basic multi-threading support using `Threads.jl`
   - [ ] Optimize critical paths for better single-threaded performance
+  - [ ] **Optimize `apply_eclipse_shadowing!` memory allocations**
+    - Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call
+    - For a thermophysical simulation of a binary asteroid with mutual shadowing, many allocations causes as ~200 allocations × 2 calls (for primary and secondary) × number of time steps.
+    - Implement true batch ray tracing for mutual shadowing to reduce allocations
+    - Consider pre-allocating buffers for ray intersection calculations
 
 ### API Improvements
 - [ ] Unify parameter naming conventions across the package
