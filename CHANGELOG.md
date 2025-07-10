@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **New `apply_eclipse_shadowing!` API with improved parameter ordering** (feature/eclipse-shadowing-new-api)
+  - New signature: `apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, r☉₁, r₁₂, R₁₂)`
+  - Directly accepts `r₁₂` (shape2's position in shape1's frame) for better SPICE integration
+  - More intuitive parameter ordering with shapes grouped together
+  - The old signature using `t₁₂` is deprecated and will be removed in v0.5.0
+
+### Changed
+- **Parameter naming consistency for batch illumination functions**
+  - Renamed `illuminated` parameter to `illuminated_faces` across all batch processing functions
+  - Affects `update_illumination!`, `apply_eclipse_shadowing!`, and related functions
+  - Improves API consistency and clarity
+
+### Fixed
+- **Critical coordinate transformation bug in eclipse detection** (#42)
+  - Translation vector `t₁₂` was incorrectly interpreted as position vector
+  - This caused false TOTAL_ECLIPSE detections when shape2 was actually behind shape1
+  - Now correctly recovers shape2's position using `r₁₂ = -R₁₂' * t₁₂`
+  - This was a critical bug affecting binary asteroid thermal simulations
+  
+- **Sun position transformation in `apply_eclipse_shadowing!`**
+  - Now correctly includes translation when transforming sun position to shape2's frame
+  - Previously only applied rotation, which could lead to incorrect shadow calculations
+  - Ensures accurate eclipse detection in binary asteroid systems
+
 ## [0.4.0] - 2025-07-07
 
 ### Breaking Changes
