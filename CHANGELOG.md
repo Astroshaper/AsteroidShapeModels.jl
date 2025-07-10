@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-07-10
+
 ### Added
-- **New `apply_eclipse_shadowing!` API with improved parameter ordering** (feature/eclipse-shadowing-new-api)
+- **New `apply_eclipse_shadowing!` API with improved parameter ordering** (#43)
   - New signature: `apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, r☉₁, r₁₂, R₁₂)`
   - Directly accepts `r₁₂` (shape2's position in shape1's frame) for better SPICE integration
   - More intuitive parameter ordering with shapes grouped together
