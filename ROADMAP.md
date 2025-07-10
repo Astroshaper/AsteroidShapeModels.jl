@@ -64,6 +64,9 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
     - Consider pre-allocating buffers for ray intersection calculations
 
 ### API Improvements
+- [ ] Remove deprecated `apply_eclipse_shadowing!` signature that uses `t₁₂` parameter
+  - Old signature: `apply_eclipse_shadowing!(illuminated_faces, shape1, r☉₁, R₁₂, t₁₂, shape2)`
+  - Keep only the new signature with `r₁₂` parameter introduced in v0.4.1
 - [ ] Unify parameter naming conventions across the package
 - [ ] Create configuration structs for complex operations
 - [ ] Improve error messages and validation
