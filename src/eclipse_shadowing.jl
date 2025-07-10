@@ -114,13 +114,13 @@ The transformation from `shape1` frame to `shape2` frame is given by:
 
 # Example
 ```julia
-# Check self-shadowing first (considering self-shadowing effect)
-update_illumination_with_self_shadowing!(illuminated_faces1, shape1, sun_position1)
-update_illumination_with_self_shadowing!(illuminated_faces2, shape2, sun_position2)
+# Check self-shadowing first
+update_illumination!(illuminated_faces1, shape1, sun_position1; with_self_shadowing=true)
+update_illumination!(illuminated_faces2, shape2, sun_position2; with_self_shadowing=true)
 
 # Or if you want to ignore self-shadowing:
-update_illumination_pseudo_convex!(illuminated_faces1, shape1, sun_position1)
-update_illumination_pseudo_convex!(illuminated_faces2, shape2, sun_position2)
+update_illumination!(illuminated_faces1, shape1, sun_position1; with_self_shadowing=false)
+update_illumination!(illuminated_faces2, shape2, sun_position2; with_self_shadowing=false)
 
 # Then check eclipse shadowing
 # For checking mutual shadowing, apply to both shape1 and shape2:
