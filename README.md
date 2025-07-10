@@ -89,10 +89,51 @@ illuminated = isilluminated(shape, sun_position, face_idx; with_self_shadowing=t
 illuminated_faces = Vector{Bool}(undef, length(shape.faces))
 update_illumination!(illuminated_faces, shape, sun_position; with_self_shadowing=true)
 
+# Binary asteroid mutual shadowing (NEW in v0.4.1)
+# For eclipse detection in binary systems
+shape1 = load_shape_obj("primary.obj"; scale=1000, with_bvh=true)
+shape2 = load_shape_obj("secondary.obj"; scale=1000, with_bvh=true)
+
+# Positions and orientations from e.g., SPICE
+sun_pos1 = SA[149597870700, 0.0, 0.0]  # Sun position in primary's frame
+secondary_pos = SA[2000.0, 0.0, 0.0]     # Secondary's position in primary's frame
+P2S = SA[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]  # Rotation matrix
+
+# Check for eclipse shadowing
+status = apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, sun_pos1, secondary_pos, P2S)
+# Returns: NO_ECLIPSE, PARTIAL_ECLIPSE, or TOTAL_ECLIPSE
+
 # Access to face properties
 shape.face_centers  # Center position of each face
 shape.face_normals  # Normal vector of each face
 shape.face_areas    # Area of of each face
+```
+
+## API Migration Guide (v0.4.1)
+
+### New `apply_eclipse_shadowing!` API
+
+The new API provides more intuitive parameter ordering for SPICE integration:
+
+```julia
+# Old API (deprecated, will be removed in v0.5.0)
+apply_eclipse_shadowing!(illuminated_faces, shape1, r☉₁, R₁₂, t₁₂, shape2)
+
+# New API (recommended)
+apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, r☉₁, r₁₂, R₁₂)
+# where r₁₂ is shape2's position in shape1's frame (directly from SPICE)
+```
+
+### Parameter Naming Changes
+
+All batch illumination functions now use `illuminated_faces` instead of `illuminated`:
+
+```julia
+# Old
+update_illumination!(illuminated, shape, sun_pos; with_self_shadowing=true)
+
+# New  
+update_illumination!(illuminated_faces, shape, sun_pos; with_self_shadowing=true)
 ```
 
 ## License

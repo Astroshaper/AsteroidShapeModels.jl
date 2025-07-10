@@ -2,7 +2,7 @@
 
 This document outlines the development plans and milestones for `AsteroidShapeModels.jl`. We use [Semantic Versioning](https://semver.org/) for version numbering.
 
-## Version 0.4.0 - BVH Integration and Optimization (Target: July 2025)
+## Version 0.4.0 - BVH Integration and Optimization (Released: July 2025)
 
 ### Major Changes (Breaking Changes)
 - **Full Integration of `ImplicitBVH.jl`**
@@ -25,6 +25,21 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
 ### Documentation
 - [x] Add comprehensive BVH usage documentation
 - [x] Update examples for new APIs
+
+## Version 0.4.1 - API Improvements (Released: July 2025)
+
+### Completed
+- **Improved `apply_eclipse_shadowing!` API**
+  - [x] New function signature with better parameter ordering
+  - [x] Direct support for shape2's position (r₁₂) instead of transformation parameter
+  - [x] Backward compatibility with deprecated old signature
+
+- **Bug fixes**
+  - [x] Fixed critical coordinate transformation bug in eclipse detection (#42)
+    - Translation vector `t₁₂` was incorrectly interpreted as position vector
+    - This caused false TOTAL_ECLIPSE detections when shape2 was actually behind shape1
+    - Now correctly recovers shape2's position using `r₁₂ = -R₁₂' * t₁₂`
+  - [x] Fixed sun position transformation in eclipse shadowing (include rotation + translation)
 
 ## Version 0.5.0 - Advanced Surface Modeling (Target: August 2025)
 
