@@ -306,28 +306,25 @@ for occlusion by the other body.
 # Example with SPICE integration
 ```julia
 # Get positions and orientations from SPICE
-et = ...  # Ephemeris time
-sun_pos_primary = ...  # Sun position in primary's frame
+et = ...               # Ephemeris time
+sun_pos1 = ...         # Sun's position in primary's frame
 secondary_pos = ...    # Secondary's position in primary's frame  
-P2S = ...             # Rotation matrix from primary to secondary frame
+P2S = ...              # Rotation matrix from primary to secondary frame
+
+# Calcuate required transformation
+sun_pos2 = P2S * sun_pos1           # Sun's position in secondary's frame
+S2P = P2S'                          # Inverse rotation
+primary_pos = -S2P * secondary_pos  # Primary's position in secondary's frame
 
 # Check self-shadowing first
-update_illumination!(illuminated_faces_primary, shape_primary, sun_pos_primary; with_self_shadowing=true)
-update_illumination!(illuminated_faces_secondary, shape_secondary, sun_pos_secondary; with_self_shadowing=true)
+update_illumination!(illuminated_faces1, shape1, sun_pos1; with_self_shadowing=true)
+update_illumination!(illuminated_faces2, shape2, sun_pos2; with_self_shadowing=true)
 
-# Apply mutual shadowing using the new API
-status1 = apply_eclipse_shadowing!(
-    illuminated_faces_primary, shape_primary, shape_secondary, 
-    sun_pos_primary, secondary_pos, P2S
-)
+# For primary eclipsed by secondary
+status1 = apply_eclipse_shadowing!(illuminated_faces1, shape1, shape2, sun_pos1, secondary_pos, P2S)
 
 # For secondary eclipsed by primary
-S2P = P2S'  # Inverse rotation
-primary_pos_in_secondary = -S2P * secondary_pos
-status2 = apply_eclipse_shadowing!(
-    illuminated_faces_secondary, shape_secondary, shape_primary,
-    sun_pos_secondary, primary_pos_in_secondary, S2P
-)
+status2 = apply_eclipse_shadowing!(illuminated_faces2, shape2, shape1, sun_pos2, primary_pos, S2P)
 ```
 
 See also: [`update_illumination!`](@ref), [`EclipseStatus`](@ref)
