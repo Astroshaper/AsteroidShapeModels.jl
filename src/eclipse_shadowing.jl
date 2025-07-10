@@ -149,8 +149,8 @@ function apply_eclipse_shadowing!(
     # 0 = R₁₂ * r₁₂ + t₁₂, therefore: r₁₂ = -R₁₂' * t₁₂
     r₁₂ = -R₁₂' * t₁₂
     
-    r̂☉₁ = normalize(r☉₁)        # Normalized sun direction in shape1's frame
-    r̂☉₂ = normalize(R₁₂ * r̂☉₁)  # Normalized sun direction in shape2's frame
+    r̂☉₁ = normalize(r☉₁)              # Normalized sun direction in shape1's frame
+    r̂☉₂ = normalize(R₁₂ * r☉₁ + t₁₂)  # Normalized sun direction in shape2's frame
     
     # Get bounding sphere radii for both shapes
     ρ₁ = maximum_radius(shape1)
@@ -336,8 +336,13 @@ function apply_eclipse_shadowing!(
     @assert length(illuminated_faces) == length(shape1.faces) "illuminated_faces vector must have same length as number of faces."
     isnothing(shape2.bvh) && throw(ArgumentError("Occluding shape model (`shape2`) must have BVH built before checking eclipse shadowing. Call `build_bvh!(shape2)` first."))
     
-    r̂☉₁ = normalize(r☉₁)        # Normalized sun direction in shape1's frame
-    r̂☉₂ = normalize(R₁₂ * r̂☉₁)  # Normalized sun direction in shape2's frame
+    # Compute transformation parameter t₁₂ for coordinate transformation
+    # p_shape2 = R₁₂ * p_shape1 + t₁₂, where shape2's origin is at r₁₂ in shape1's frame
+    # Therefore: 0 = R₁₂ * r₁₂ + t₁₂, so t₁₂ = -R₁₂ * r₁₂
+    t₁₂ = -R₁₂ * r₁₂
+    
+    r̂☉₁ = normalize(r☉₁)              # Normalized sun direction in shape1's frame
+    r̂☉₂ = normalize(R₁₂ * r☉₁ + t₁₂)  # Normalized sun direction in shape2's frame
     
     # Get bounding sphere radii for both shapes
     ρ₁ = maximum_radius(shape1)
@@ -372,11 +377,6 @@ function apply_eclipse_shadowing!(
     
     # Track whether any eclipse occurred
     eclipse_occurred = false
-    
-    # Compute transformation parameter t₁₂ for coordinate transformation
-    # p_shape2 = R₁₂ * p_shape1 + t₁₂, where shape2's origin is at r₁₂ in shape1's frame
-    # Therefore: 0 = R₁₂ * r₁₂ + t₁₂, so t₁₂ = -R₁₂ * r₁₂
-    t₁₂ = -R₁₂ * r₁₂
     
     # Check occlusion by the other body for illuminated faces only
     @inbounds for i in eachindex(shape1.faces)
