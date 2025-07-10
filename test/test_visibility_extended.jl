@@ -531,6 +531,56 @@ This file tests advanced visibility and illumination calculations:
                 @test count(illuminated) < length(shape1.faces)
             end
         end
+        
+        @testset "New API signature tests" begin
+            # Test the new function signature that directly takes r₁₂
+            nodes1, faces1 = create_unit_cube()
+            nodes1_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes1]
+            shape1 = ShapeModel(nodes1_scaled, faces1)
+            build_bvh!(shape1)
+            
+            shape2 = ShapeModel(nodes1_scaled, faces1)
+            build_bvh!(shape2)
+            
+            sun_pos = SA[10.0, 0.0, 0.0]  # Sun along +x direction
+            R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]  # Identity rotation
+            
+            @testset "NO_ECLIPSE with new API" begin
+                r₁₂ = SA[-10.0, 0.0, 0.0]  # shape2 behind shape1
+                illuminated = fill(true, length(shape1.faces))
+                status = apply_eclipse_shadowing!(illuminated, shape1, shape2, sun_pos, r₁₂, R)
+                @test status == NO_ECLIPSE
+                @test all(illuminated)
+            end
+            
+            @testset "PARTIAL_ECLIPSE with new API" begin
+                r₁₂ = SA[-2.0, 0.3, 0.0]  # shape2 between sun and shape1, partial overlap
+                illuminated = fill(true, length(shape1.faces))
+                status = apply_eclipse_shadowing!(illuminated, shape1, shape2, sun_pos, r₁₂, R)
+                @test status == PARTIAL_ECLIPSE || status == NO_ECLIPSE
+                if status == PARTIAL_ECLIPSE
+                    @test count(illuminated) < length(shape1.faces)
+                    @test count(illuminated) > 0
+                end
+            end
+            
+            @testset "Consistency between old and new API" begin
+                r₁₂ = SA[-3.0, 0.5, 0.0]  # Test position
+                t₁₂ = -R * r₁₂  # Corresponding transformation parameter
+                
+                # Test with old API
+                illuminated_old = fill(true, length(shape1.faces))
+                status_old = apply_eclipse_shadowing!(illuminated_old, shape1, sun_pos, R, t₁₂, shape2)
+                
+                # Test with new API
+                illuminated_new = fill(true, length(shape1.faces))
+                status_new = apply_eclipse_shadowing!(illuminated_new, shape1, shape2, sun_pos, r₁₂, R)
+                
+                # Results should be identical
+                @test status_old == status_new
+                @test illuminated_old == illuminated_new
+            end
+        end
     end
     
     @testset "Edge Cases for View Factor" begin

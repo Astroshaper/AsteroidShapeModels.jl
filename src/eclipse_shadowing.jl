@@ -44,6 +44,11 @@ end
 
 Apply eclipse shadowing effects from another shape onto already illuminated faces.
 
+!!! warning "Deprecated"
+    This function signature will be removed in v0.5.0. Please use the new signature:
+    `apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, r☉₁, r₁₂, R₁₂)`
+    which directly accepts shape2's position instead of the transformation parameter.
+
 !!! note
     As of v0.4.0, `shape2` must have BVH pre-built before calling this function.
     Use either `with_bvh=true` when loading or call `build_bvh!(shape2)` explicitly.
@@ -245,6 +250,201 @@ function apply_eclipse_shadowing!(
     if !eclipse_occurred
         return NO_ECLIPSE
     elseif count(illuminated) == 0  # if all faces are now in shadow
+        return TOTAL_ECLIPSE
+    else
+        return PARTIAL_ECLIPSE
+    end
+end
+
+"""
+    apply_eclipse_shadowing!(
+        illuminated_faces::AbstractVector{Bool}, shape1::ShapeModel, shape2::ShapeModel,
+        r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3}
+    ) -> EclipseStatus
+
+Apply eclipse shadowing effects from shape2 onto shape1's already illuminated faces.
+
+This is the recommended API as of v0.4.1, with more intuitive parameter ordering and direct use of shape2's position.
+
+!!! note
+    As of v0.4.0, `shape2` must have BVH pre-built before calling this function.
+    Use either `with_bvh=true` when loading or call `build_bvh!(shape2)` explicitly.
+
+!!! tip "New in v0.4.1"
+    This function signature directly accepts `r₁₂` (shape2's position in shape1's frame),
+    which is more intuitive when working with SPICE data. The older signature using `t₁₂`
+    is maintained for backward compatibility but will be removed in v0.5.0.
+
+!!! warning "OPTIMIZE"
+    Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call.
+    For binary asteroid thermophysical simulations, this results in ~200 allocations × 2 bodies × 
+    number of time steps. Future optimization should implement true batch ray tracing for mutual 
+    shadowing to reduce allocation overhead.
+
+# Arguments
+- `illuminated_faces` : Boolean vector with current illumination state (will be modified)
+- `shape1`            : Target shape model being shadowed (the shape receiving shadows)
+- `shape2`            : Occluding shape model that may cast shadows on `shape1` (must have BVH built)
+- `r☉₁`               : Sun's position in shape1's frame
+- `r₁₂`               : Shape2's position in shape1's frame (e.g., secondary's position from SPICE)
+- `R₁₂`               : 3×3 rotation matrix from `shape1` frame to `shape2` frame
+
+# Returns
+- `NO_ECLIPSE`: No eclipse occurs (bodies are misaligned).
+- `PARTIAL_ECLIPSE`: Some faces that were illuminated are now in shadow by the occluding body.
+- `TOTAL_ECLIPSE`: All faces that were illuminated are now in shadow.
+
+# Throws
+- `ArgumentError` if `shape2` does not have BVH built. Call `build_bvh!(shape2)` before using this function.
+
+# Description
+This function ONLY checks for mutual shadowing (eclipse) effects. It assumes that
+the `illuminated_faces` vector already contains the result of face orientation and/or
+self-shadowing checks. Only faces marked as `true` in the input will be tested
+for occlusion by the other body.
+
+# Example with SPICE integration
+```julia
+# Get positions and orientations from SPICE
+et = ...  # Ephemeris time
+sun_pos_primary = ...  # Sun position in primary's frame
+secondary_pos = ...    # Secondary's position in primary's frame  
+P2S = ...             # Rotation matrix from primary to secondary frame
+
+# Check self-shadowing first
+update_illumination!(illuminated_primary, shape_primary, sun_pos_primary; with_self_shadowing=true)
+update_illumination!(illuminated_secondary, shape_secondary, sun_pos_secondary; with_self_shadowing=true)
+
+# Apply mutual shadowing using the new API
+status1 = apply_eclipse_shadowing!(
+    illuminated_primary, shape_primary, shape_secondary, 
+    sun_pos_primary, secondary_pos, P2S
+)
+
+# For secondary eclipsed by primary
+S2P = P2S'  # Inverse rotation
+primary_pos_in_secondary = -S2P * secondary_pos
+status2 = apply_eclipse_shadowing!(
+    illuminated_secondary, shape_secondary, shape_primary,
+    sun_pos_secondary, primary_pos_in_secondary, S2P
+)
+```
+
+See also: [`update_illumination!`](@ref), [`EclipseStatus`](@ref)
+"""
+function apply_eclipse_shadowing!(
+    illuminated_faces::AbstractVector{Bool}, shape1::ShapeModel, shape2::ShapeModel,
+    r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3}
+)::EclipseStatus
+    @assert length(illuminated_faces) == length(shape1.faces) "illuminated_faces vector must have same length as number of faces."
+    isnothing(shape2.bvh) && throw(ArgumentError("Occluding shape model (`shape2`) must have BVH built before checking eclipse shadowing. Call `build_bvh!(shape2)` first."))
+    
+    r̂☉₁ = normalize(r☉₁)        # Normalized sun direction in shape1's frame
+    r̂☉₂ = normalize(R₁₂ * r̂☉₁)  # Normalized sun direction in shape2's frame
+    
+    # Get bounding sphere radii for both shapes
+    ρ₁ = maximum_radius(shape1)
+    ρ₂ = maximum_radius(shape2)
+    
+    # Get inscribed sphere radius for shape2 (for guaranteed shadow regions)
+    ρ₂_inner = minimum_radius(shape2)
+    
+    # ==== Early Out 1 (Behind Check) ====
+    # If shape2 is entirely behind shape1 relative to sun, no eclipse occur.
+    if dot(r₁₂, r̂☉₁) < -(ρ₁ + ρ₂)
+        return NO_ECLIPSE  
+    end
+    
+    # ==== Early Out 2 (Lateral Separation Check)  ====
+    # If bodies are too far apart laterally, no eclipse occur.
+    r₁₂⊥ = r₁₂ - (dot(r₁₂, r̂☉₁) * r̂☉₁)  # Component of r₁₂ perpendicular to sun direction
+    d⊥ = norm(r₁₂⊥)                     # Lateral distance between bodies
+    if d⊥ > ρ₁ + ρ₂
+        return NO_ECLIPSE
+    end
+    
+    # ==== Early Out 3 (Total Eclipse Check) ====
+    # If shape1 is completely within shape2's shadow, all faces are shadowed.
+    # This happens when shape2 is between sun and shape1, and is larger than shape1.
+    # Check if shape2 is in front of shape1 along sun direction,
+    # and if the lateral distance is small enough.
+    if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂
+        illuminated_faces .= false  # All faces are shadowed.
+        return TOTAL_ECLIPSE
+    end
+    
+    # Track whether any eclipse occurred
+    eclipse_occurred = false
+    
+    # Compute transformation parameter t₁₂ for coordinate transformation
+    # p_shape2 = R₁₂ * p_shape1 + t₁₂, where shape2's origin is at r₁₂ in shape1's frame
+    # Therefore: 0 = R₁₂ * r₁₂ + t₁₂, so t₁₂ = -R₁₂ * r₁₂
+    t₁₂ = -R₁₂ * r₁₂
+    
+    # Check occlusion by the other body for illuminated faces only
+    @inbounds for i in eachindex(shape1.faces)
+        if illuminated_faces[i]  # Only check if not already in shadow
+            # Ray from face center to sun in shape1's frame
+            ray_origin1 = shape1.face_centers[i]
+            
+            # Transform ray's origin to shape2's frame
+            ray_origin2 = R₁₂ * ray_origin1 + t₁₂
+            
+            # ==== Face-level Early Out ====
+            # Check if the ray from this face to the sun can possibly intersect
+            # shape2's bounding sphere.
+            
+            # Calculate the parameter t where the ray is closest to shape2's center.
+            # Ray: P(t) = ray_origin2 + t * r̂☉₂, where t > 0 toward sun
+            # The closest point is where d/dt |P(t)|² = 0
+            t_min = -dot(ray_origin2, r̂☉₂)
+            
+            if t_min < 0
+                # Shape2's center is in the opposite direction from the sun.
+                # (i.e., the ray is moving away from shape2)
+                # In this case, check if the face itself is outside bounding sphere.
+                if norm(ray_origin2) > ρ₂
+                    continue
+                end
+            else
+                # The ray approaches shape2's center.
+                # Calculate the closest point on the ray to the center
+                p_closest = ray_origin2 + t_min * r̂☉₂
+                d_center = norm(p_closest)
+                
+                # ==== Early Out 4 (Ray-Sphere Intersection Check) ====
+                # If the ray passes outside the bounding sphere,
+                # ray misses the bounding sphere entirely.
+                if d_center > ρ₂
+                    continue
+                end
+                
+                # ==== Early Out 5 (Inscribed Sphere Check) ====
+                # If the ray passes through the inscribed sphere, it's guaranteed to hit shape2
+                # (no need for detailed intersection test)
+                if d_center < ρ₂_inner
+                    illuminated_faces[i] = false
+                    eclipse_occurred = true
+                    continue
+                end
+            end
+            
+            # Create ray in shape2's frame
+            # (Direction was already transformed at the beginning of the function)
+            ray2 = Ray(ray_origin2, r̂☉₂)
+            
+            # Check intersection with shape2
+            if intersect_ray_shape(ray2, shape2).hit
+                illuminated_faces[i] = false
+                eclipse_occurred = true
+            end
+        end
+    end
+    
+    # Determine eclipse status based on results
+    if !eclipse_occurred
+        return NO_ECLIPSE
+    elseif count(illuminated_faces) == 0  # if all faces are now in shadow
         return TOTAL_ECLIPSE
     else
         return PARTIAL_ECLIPSE
