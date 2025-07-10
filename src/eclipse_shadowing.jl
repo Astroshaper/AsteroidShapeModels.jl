@@ -281,6 +281,20 @@ This is the recommended API as of v0.4.1, with more intuitive parameter ordering
     number of time steps. Future optimization should implement true batch ray tracing for mutual 
     shadowing to reduce allocation overhead.
 
+!!! note "TODO"
+    - **Ray-sphere intersection functions**: Implement dedicated functions to improve code readability.
+      Current implementation manually computes ray-sphere intersection tests inline, which makes the code
+      harder to understand. Extract these into reusable functions like `intersect_ray_sphere`.
+    
+    - **Parallel processing**: Add multi-threading support using `@threads` for face-level calculations.
+      Each face's shadow test is independent, making this function ideal for parallelization.
+    
+    - **Spatial optimization**: Implement spatial data structures (e.g., octree) to pre-filter faces
+      that could potentially be shadowed, reducing unnecessary ray tests.
+    
+    - **Caching for temporal coherence**: For simulations with small time steps, implement caching
+      to reuse shadow information from previous time steps when relative positions change gradually.
+
 # Arguments
 - `illuminated_faces` : Boolean vector with current illumination state (will be modified)
 - `shape1`            : Target shape model being shadowed (the shape receiving shadows)
