@@ -139,6 +139,11 @@ function apply_eclipse_shadowing!(
     @assert length(illuminated) == length(shape1.faces) "illuminated vector must have same length as number of faces."
     isnothing(shape2.bvh) && throw(ArgumentError("Occluding shape model (`shape2`) must have BVH built before checking eclipse shadowing. Call `build_bvh!(shape2)` first."))
     
+    # Recover shape2's position in shape1's frame
+    # Since p_shape2 = R₁₂ * p_shape1 + t₁₂, and shape2's origin (0) is at r₁₂ in shape1's frame:
+    # 0 = R₁₂ * r₁₂ + t₁₂, therefore: r₁₂ = -R₁₂' * t₁₂
+    r₁₂ = -R₁₂' * t₁₂
+    
     r̂☉₁ = normalize(r☉₁)        # Normalized sun direction in shape1's frame
     r̂☉₂ = normalize(R₁₂ * r̂☉₁)  # Normalized sun direction in shape2's frame
     
@@ -151,14 +156,14 @@ function apply_eclipse_shadowing!(
     
     # ==== Early Out 1 (Behind Check) ====
     # If shape2 is entirely behind shape1 relative to sun, no eclipse occur.
-    if dot(t₁₂, r̂☉₁) < -(ρ₁ + ρ₂)
+    if dot(r₁₂, r̂☉₁) < -(ρ₁ + ρ₂)
         return NO_ECLIPSE  
     end
     
     # ==== Early Out 2 (Lateral Separation Check)  ====
     # If bodies are too far apart laterally, no eclipse occur.
-    t₁₂⊥ = t₁₂ - (dot(t₁₂, r̂☉₁) * r̂☉₁)  # Component of t₁₂ perpendicular to sun direction
-    d⊥ = norm(t₁₂⊥)                     # Lateral distance between bodies
+    r₁₂⊥ = r₁₂ - (dot(r₁₂, r̂☉₁) * r̂☉₁)  # Component of r₁₂ perpendicular to sun direction
+    d⊥ = norm(r₁₂⊥)                     # Lateral distance between bodies
     if d⊥ > ρ₁ + ρ₂
         return NO_ECLIPSE
     end
@@ -168,7 +173,7 @@ function apply_eclipse_shadowing!(
     # This happens when shape2 is between sun and shape1, and is larger than shape1.
     # Check if shape2 is in front of shape1 along sun direction,
     # and if the lateral distance is small enough.
-    if dot(t₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂
+    if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂
         illuminated .= false  # All faces are shadowed.
         return TOTAL_ECLIPSE
     end
