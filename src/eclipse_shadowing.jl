@@ -38,7 +38,7 @@ end
 
 """
     apply_eclipse_shadowing!(
-        illuminated::AbstractVector{Bool}, shape1::ShapeModel, r☉₁::StaticVector{3}, 
+        illuminated_faces::AbstractVector{Bool}, shape1::ShapeModel, r☉₁::StaticVector{3}, 
         R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}, shape2::ShapeModel
     ) -> EclipseStatus
 
@@ -60,12 +60,12 @@ Apply eclipse shadowing effects from another shape onto already illuminated face
     shadowing to reduce allocation overhead.
 
 # Arguments
-- `illuminated` : Boolean vector with current illumination state (will be modified)
-- `shape1`      : Target shape model being shadowed (the shape receiving shadows)
-- `r☉₁`         : Sun's position in shape1's frame
-- `R₁₂`         : 3×3 rotation matrix from `shape1` frame to `shape2` frame
-- `t₁₂`         : 3D translation vector from `shape1` frame to `shape2` frame
-- `shape2`      : Occluding shape model that may cast shadows on `shape1` (must have BVH built via `build_bvh!`)
+- `illuminated_faces` : Boolean vector with current illumination state (will be modified)
+- `shape1`            : Target shape model being shadowed (the shape receiving shadows)
+- `r☉₁`               : Sun's position in shape1's frame
+- `R₁₂`               : 3×3 rotation matrix from `shape1` frame to `shape2` frame
+- `t₁₂`               : 3D translation vector from `shape1` frame to `shape2` frame
+- `shape2`            : Occluding shape model that may cast shadows on `shape1` (must have BVH built via `build_bvh!`)
 
 # Returns
 - `NO_ECLIPSE`: No eclipse occurs (bodies are misaligned).
@@ -77,7 +77,7 @@ Apply eclipse shadowing effects from another shape onto already illuminated face
 
 # Description
 This function ONLY checks for mutual shadowing (eclipse) effects. It assumes that
-the `illuminated` vector already contains the result of face orientation and/or
+the `illuminated_faces` vector already contains the result of face orientation and/or
 self-shadowing checks. Only faces marked as `true` in the input will be tested
 for occlusion by the other body.
 
@@ -115,17 +115,17 @@ The transformation from `shape1` frame to `shape2` frame is given by:
 # Example
 ```julia
 # Check self-shadowing first (considering self-shadowing effect)
-update_illumination_with_self_shadowing!(illuminated1, shape1, sun_position1)
-update_illumination_with_self_shadowing!(illuminated2, shape2, sun_position2)
+update_illumination_with_self_shadowing!(illuminated_faces1, shape1, sun_position1)
+update_illumination_with_self_shadowing!(illuminated_faces2, shape2, sun_position2)
 
 # Or if you want to ignore self-shadowing:
-update_illumination_pseudo_convex!(illuminated1, shape1, sun_position1)
-update_illumination_pseudo_convex!(illuminated2, shape2, sun_position2)
+update_illumination_pseudo_convex!(illuminated_faces1, shape1, sun_position1)
+update_illumination_pseudo_convex!(illuminated_faces2, shape2, sun_position2)
 
 # Then check eclipse shadowing
 # For checking mutual shadowing, apply to both shape1 and shape2:
-status1 = apply_eclipse_shadowing!(illuminated1, shape1, sun_position1, R12, t12, shape2)
-status2 = apply_eclipse_shadowing!(illuminated2, shape2, sun_position2, R21, t21, shape1)
+status1 = apply_eclipse_shadowing!(illuminated_faces1, shape1, sun_position1, R12, t12, shape2)
+status2 = apply_eclipse_shadowing!(illuminated_faces2, shape2, sun_position2, R21, t21, shape1)
 
 # Handle eclipse status
 if status1 == NO_ECLIPSE
@@ -138,10 +138,10 @@ end
 ```
 """
 function apply_eclipse_shadowing!(
-    illuminated::AbstractVector{Bool}, shape1::ShapeModel, r☉₁::StaticVector{3},
+    illuminated_faces::AbstractVector{Bool}, shape1::ShapeModel, r☉₁::StaticVector{3},
     R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}, shape2::ShapeModel
 )::EclipseStatus
-    @assert length(illuminated) == length(shape1.faces) "illuminated vector must have same length as number of faces."
+    @assert length(illuminated_faces) == length(shape1.faces) "illuminated_faces vector must have same length as number of faces."
     isnothing(shape2.bvh) && throw(ArgumentError("Occluding shape model (`shape2`) must have BVH built before checking eclipse shadowing. Call `build_bvh!(shape2)` first."))
     
     # Recover shape2's position in shape1's frame
@@ -179,7 +179,7 @@ function apply_eclipse_shadowing!(
     # Check if shape2 is in front of shape1 along sun direction,
     # and if the lateral distance is small enough.
     if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂
-        illuminated .= false  # All faces are shadowed.
+        illuminated_faces .= false  # All faces are shadowed.
         return TOTAL_ECLIPSE
     end
     
@@ -188,7 +188,7 @@ function apply_eclipse_shadowing!(
     
     # Check occlusion by the other body for illuminated faces only
     @inbounds for i in eachindex(shape1.faces)
-        if illuminated[i]  # Only check if not already in shadow
+        if illuminated_faces[i]  # Only check if not already in shadow
             # Ray from face center to sun in shape1's frame
             ray_origin1 = shape1.face_centers[i]
             
@@ -228,7 +228,7 @@ function apply_eclipse_shadowing!(
                 # If the ray passes through the inscribed sphere, it's guaranteed to hit shape2
                 # (no need for detailed intersection test)
                 if d_center < ρ₂_inner
-                    illuminated[i] = false
+                    illuminated_faces[i] = false
                     eclipse_occurred = true
                     continue
                 end
@@ -240,7 +240,7 @@ function apply_eclipse_shadowing!(
             
             # Check intersection with shape2
             if intersect_ray_shape(ray2, shape2).hit
-                illuminated[i] = false
+                illuminated_faces[i] = false
                 eclipse_occurred = true
             end
         end
@@ -249,7 +249,7 @@ function apply_eclipse_shadowing!(
     # Determine eclipse status based on results
     if !eclipse_occurred
         return NO_ECLIPSE
-    elseif count(illuminated) == 0  # if all faces are now in shadow
+    elseif count(illuminated_faces) == 0  # if all faces are now in shadow
         return TOTAL_ECLIPSE
     else
         return PARTIAL_ECLIPSE
@@ -312,12 +312,12 @@ secondary_pos = ...    # Secondary's position in primary's frame
 P2S = ...             # Rotation matrix from primary to secondary frame
 
 # Check self-shadowing first
-update_illumination!(illuminated_primary, shape_primary, sun_pos_primary; with_self_shadowing=true)
-update_illumination!(illuminated_secondary, shape_secondary, sun_pos_secondary; with_self_shadowing=true)
+update_illumination!(illuminated_faces_primary, shape_primary, sun_pos_primary; with_self_shadowing=true)
+update_illumination!(illuminated_faces_secondary, shape_secondary, sun_pos_secondary; with_self_shadowing=true)
 
 # Apply mutual shadowing using the new API
 status1 = apply_eclipse_shadowing!(
-    illuminated_primary, shape_primary, shape_secondary, 
+    illuminated_faces_primary, shape_primary, shape_secondary, 
     sun_pos_primary, secondary_pos, P2S
 )
 
@@ -325,7 +325,7 @@ status1 = apply_eclipse_shadowing!(
 S2P = P2S'  # Inverse rotation
 primary_pos_in_secondary = -S2P * secondary_pos
 status2 = apply_eclipse_shadowing!(
-    illuminated_secondary, shape_secondary, shape_primary,
+    illuminated_faces_secondary, shape_secondary, shape_primary,
     sun_pos_secondary, primary_pos_in_secondary, S2P
 )
 ```

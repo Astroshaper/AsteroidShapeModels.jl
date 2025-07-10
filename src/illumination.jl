@@ -130,14 +130,14 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    update_illumination!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool)
+    update_illumination!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool)
 
 Update illumination state for all faces of a shape model.
 
 # Arguments
-- `illuminated` : Boolean vector to store illumination state (must have length equal to number of faces)
-- `shape`       : Shape model of an asteroid
-- `r☉`          : Sun's position in the asteroid-fixed frame
+- `illuminated_faces` : Boolean vector to store illumination state (must have length equal to number of faces)
+- `shape`             : Shape model of an asteroid
+- `r☉`                : Sun's position in the asteroid-fixed frame
 
 # Keyword Arguments
 - `with_self_shadowing::Bool` : Whether to include self-shadowing effects.
@@ -151,35 +151,35 @@ Update illumination state for all faces of a shape model.
 # Examples
 ```julia
 # Prepare illumination vector
-illuminated = Vector{Bool}(undef, length(shape.faces))
+illuminated_faces = Vector{Bool}(undef, length(shape.faces))
 
 # Without self-shadowing (pseudo-convex model)
-update_illumination!(illuminated, shape, sun_position; with_self_shadowing=false)
+update_illumination!(illuminated_faces, shape, sun_position; with_self_shadowing=false)
 
 # With self-shadowing
-update_illumination!(illuminated, shape, sun_position; with_self_shadowing=true)
+update_illumination!(illuminated_faces, shape, sun_position; with_self_shadowing=true)
 ```
 
 See also: [`isilluminated`](@ref) for single face checks, [`apply_eclipse_shadowing!`](@ref) for binary asteroid shadowing
 """
-function update_illumination!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool)
+function update_illumination!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool)
     if with_self_shadowing
         @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
-        update_illumination_with_self_shadowing!(illuminated, shape, r☉)
+        update_illumination_with_self_shadowing!(illuminated_faces, shape, r☉)
     else
-        update_illumination_pseudo_convex!(illuminated, shape, r☉)
+        update_illumination_pseudo_convex!(illuminated_faces, shape, r☉)
     end
 end
 
 """
-    update_illumination_pseudo_convex!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+    update_illumination_pseudo_convex!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
 
 Update illumination state using pseudo-convex model (face orientation only, no shadow testing).
 
 # Arguments
-- `illuminated` : Boolean vector to store illumination state (must have length equal to number of faces)
-- `shape`       : Shape model of an asteroid
-- `r☉`          : Sun's position in the asteroid-fixed frame
+- `illuminated_faces` : Boolean vector to store illumination state (must have length equal to number of faces)
+- `shape`             : Shape model of an asteroid
+- `r☉`                : Sun's position in the asteroid-fixed frame
 
 # Description
 This function checks only if each face is oriented towards the sun, without any
@@ -197,28 +197,28 @@ the performance impact is negligible for most use cases.
 # Example
 ```julia
 # Always use pseudo-convex model regardless of `face_visibility_graph`
-update_illumination_pseudo_convex!(illuminated, shape, sun_position)
+update_illumination_pseudo_convex!(illuminated_faces, shape, sun_position)
 ```
 """
-function update_illumination_pseudo_convex!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
-    @assert length(illuminated) == length(shape.faces) "illuminated vector must have same length as number of faces."
+function update_illumination_pseudo_convex!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+    @assert length(illuminated_faces) == length(shape.faces) "illuminated_faces vector must have same length as number of faces."
     
     @inbounds for i in eachindex(shape.faces)
-        illuminated[i] = isilluminated_pseudo_convex(shape, r☉, i)
+        illuminated_faces[i] = isilluminated_pseudo_convex(shape, r☉, i)
     end
     
     return nothing
 end
 
 """
-    update_illumination_with_self_shadowing!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+    update_illumination_with_self_shadowing!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
 
 Update illumination state with self-shadowing effects using face visibility graph.
 
 # Arguments
-- `illuminated` : Boolean vector to store illumination state (must have length equal to number of faces)
-- `shape`       : Shape model with face_visibility_graph (required)
-- `r☉`          : Sun's position in the asteroid-fixed frame
+- `illuminated_faces` : Boolean vector to store illumination state (must have length equal to number of faces)
+- `shape`             : Shape model with face_visibility_graph (required)
+- `r☉`                : Sun's position in the asteroid-fixed frame
 
 # Description
 This function performs full illumination calculation including self-shadowing effects.
@@ -238,15 +238,15 @@ shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=tru
 # Or build it manually:
 # build_face_visibility_graph!(shape)
 
-update_illumination_with_self_shadowing!(illuminated, shape, sun_position)
+update_illumination_with_self_shadowing!(illuminated_faces, shape, sun_position)
 ```
 """
-function update_illumination_with_self_shadowing!(illuminated::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
-    @assert length(illuminated) == length(shape.faces) "illuminated vector must have same length as number of faces."
+function update_illumination_with_self_shadowing!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+    @assert length(illuminated_faces) == length(shape.faces) "illuminated_faces vector must have same length as number of faces."
     @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using build_face_visibility_graph!(shape)."
     
     @inbounds for i in eachindex(shape.faces)
-        illuminated[i] = isilluminated_with_self_shadowing(shape, r☉, i)
+        illuminated_faces[i] = isilluminated_with_self_shadowing(shape, r☉, i)
     end
     
     return nothing
