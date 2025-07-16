@@ -53,12 +53,6 @@ Apply eclipse shadowing effects from another shape onto already illuminated face
     As of v0.4.0, `shape2` must have BVH pre-built before calling this function.
     Use either `with_bvh=true` when loading or call `build_bvh!(shape2)` explicitly.
 
-!!! warning "OPTIMIZE"
-    Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call.
-    For binary asteroid thermophysical simulations, this results in ~200 allocations × 2 bodies × 
-    number of time steps. Future optimization should implement true batch ray tracing for mutual 
-    shadowing to reduce allocation overhead.
-
 # Arguments
 - `illuminated_faces` : Boolean vector with current illumination state (will be modified)
 - `shape1`            : Target shape model being shadowed (the shape receiving shadows)
