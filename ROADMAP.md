@@ -41,7 +41,24 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
     - Now correctly recovers shape2's position using `r₁₂ = -R₁₂' * t₁₂`
   - [x] Fixed sun position transformation in eclipse shadowing (include rotation + translation)
 
-## Version 0.5.0 - Advanced Surface Modeling (Target: August 2025)
+## Version 0.4.2 - Performance Optimizations (Target: August 2025)
+
+### Performance Features
+- **Face Maximum Elevation Precomputation**
+  - [ ] Add `face_max_elevations` field to `ShapeModel` struct
+  - [ ] Implement `compute_face_max_elevations!` function that calculates from `face_visibility_graph`
+  - [ ] Modify `build_face_visibility_graph!` to compute `face_max_elevations` after graph construction
+  - [ ] Ensure `face_max_elevations` is automatically populated when `with_face_visibility=true` in constructor
+  - [ ] Optimize illumination checks using precomputed maximum elevations (skip ray-tracing when sun's elevation > `face_max_elevations[face_idx]`)
+  - [ ] Verify illumination results match the original implementation using Ryugu shape model
+  - [ ] Add benchmarks to measure performance improvements
+  - [ ] Document the feature and its performance benefits
+
+- **Improve `apply_eclipse_shadowing!` code readability**
+  - [ ] Extract ray-sphere intersection tests into dedicated reusable functions
+  - [ ] Ensure consistency in results with previous implementation
+
+## Version 0.5.0 - Advanced Surface Modeling (Target: September 2025)
 
 ### Major Features
 - **Hierarchical Surface Roughness Model**
@@ -59,9 +76,13 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
   - [ ] Optimize critical paths for better single-threaded performance
   - [ ] **Optimize `apply_eclipse_shadowing!` memory allocations**
     - Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call
-    - For a thermophysical simulation of a binary asteroid with mutual shadowing, many allocations causes as ~200 allocations × 2 calls (for primary and secondary) × number of time steps.
-    - Implement true batch ray tracing for mutual shadowing to reduce allocations
-    - Consider pre-allocating buffers for ray intersection calculations
+    - Implement true batch ray tracing with pre-allocated buffers for mutual shadowing
+    - Design `EclipseShadowingBuffer` struct to hold reusable arrays
+    - Implement filtering that preserves early-out optimizations
+    - Ensure zero allocations during runtime after initial buffer creation
+  - [ ] Add multi-threading support to `apply_eclipse_shadowing!` using `@threads`
+  - [ ] Implement spatial data structures (e.g., octree) to pre-filter potentially shadowed faces
+  - [ ] Add caching for temporal coherence in simulations with small time steps
 
 ### API Improvements
 - [ ] Remove deprecated `apply_eclipse_shadowing!` signature that uses `t₁₂` parameter
