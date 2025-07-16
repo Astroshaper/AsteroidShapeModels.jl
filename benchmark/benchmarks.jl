@@ -5,8 +5,8 @@ using StaticArrays
 
 # Load test shape model once
 const SHAPE_PATH = joinpath(@__DIR__, "..", "test", "shape", "ryugu_test.obj")
-const SHAPE     = load_shape_obj(SHAPE_PATH; with_face_visibility=false)
-const SHAPE_VIS = load_shape_obj(SHAPE_PATH; with_face_visibility=true)
+const SHAPE     = load_shape_obj(SHAPE_PATH; with_face_visibility=false, with_bvh=true)
+const SHAPE_VIS = load_shape_obj(SHAPE_PATH; with_face_visibility=true,  with_bvh=true)
 
 # Benchmark suite
 const SUITE = BenchmarkGroup()
@@ -14,7 +14,7 @@ const SUITE = BenchmarkGroup()
 # 1. Shape loading benchmarks
 SUITE["loading"] = BenchmarkGroup()
 SUITE["loading"]["without_visibility"] = @benchmarkable load_shape_obj($SHAPE_PATH; with_face_visibility=false)
-SUITE["loading"]["with_visibility"] = @benchmarkable load_shape_obj($SHAPE_PATH; with_face_visibility=true)
+SUITE["loading"]["with_visibility"]    = @benchmarkable load_shape_obj($SHAPE_PATH; with_face_visibility=true)
 
 # 2. Face property calculations
 SUITE["face_properties"] = BenchmarkGroup()
@@ -43,12 +43,12 @@ end
 SUITE["visibility"] = BenchmarkGroup()
 let view_dir = SA[1.0, 0.0, 0.0]
     # Single face query
-    SUITE["visibility"]["single_face"] = @benchmarkable isilluminated($SHAPE_VIS, $view_dir, 1)
+    SUITE["visibility"]["single_face"] = @benchmarkable isilluminated($SHAPE_VIS, $view_dir, 1; with_self_shadowing=true)
     
     # Batch queries
     SUITE["visibility"]["batch_100_faces"] = @benchmarkable begin
         for idx in 1:100
-            isilluminated($SHAPE_VIS, $view_dir, idx)
+            isilluminated($SHAPE_VIS, $view_dir, idx; with_self_shadowing=true)
         end
     end
     
