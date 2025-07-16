@@ -152,6 +152,56 @@ function Base.show(io::IO, result::RayShapeIntersectionResult)
     end
 end
 
+"""
+    RaySphereIntersectionResult
+
+Structure representing the result of ray-sphere intersection test.
+
+# Fields
+- `hit`       : true if intersection exists, false otherwise
+- `distance1` : Distance from ray origin to first intersection point (entry)
+- `distance2` : Distance from ray origin to second intersection point (exit)
+- `point1`    : Coordinates of the first intersection point (entry)
+- `point2`    : Coordinates of the second intersection point (exit)
+
+# Notes
+- If `hit` is false, all other fields contain NaN values
+- `distance1` ≤ `distance2` (entry point comes before exit point)
+- For tangent rays, `distance1 == distance2` and `point1 == point2`
+"""
+struct RaySphereIntersectionResult
+    hit::Bool
+    distance1::Float64
+    distance2::Float64
+    point1::SVector{3, Float64}
+    point2::SVector{3, Float64}
+end
+
+const NO_INTERSECTION_RAY_SPHERE = RaySphereIntersectionResult(
+    false, NaN, NaN, SVector(NaN, NaN, NaN), SVector(NaN, NaN, NaN)
+)
+
+"""
+    Base.show(io::IO, result::RaySphereIntersectionResult)
+
+Custom display method for `RaySphereIntersectionResult` objects.
+
+Displays hit status and intersection parameters if hit occurred.
+"""
+function Base.show(io::IO, result::RaySphereIntersectionResult)
+    if result.hit
+        print(io, "Ray-Sphere Intersection:\n")
+        print(io, "    ∘ hit       = $(result.hit)\n")
+        print(io, "    ∘ distance1 = $(result.distance1)\n")
+        print(io, "    ∘ distance2 = $(result.distance2)\n")
+        print(io, "    ∘ point1    = $(result.point1)\n")
+        print(io, "    ∘ point2    = $(result.point2)\n")
+    else
+        print(io, "Ray-Sphere Intersection:\n")
+        print(io, "    ∘ hit = $(result.hit)\n")
+    end
+end
+
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                     Visibility Graph Type                         ║
 # ╚═══════════════════════════════════════════════════════════════════╝
