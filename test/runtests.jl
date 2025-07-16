@@ -22,6 +22,7 @@ using BenchmarkTools
 using Downloads
 using LinearAlgebra
 using Random
+using Rotations
 using SPICE
 using StaticArrays
 using Statistics
@@ -56,6 +57,9 @@ include("test_helpers.jl")
     
     # Ryugu shape model test
     include("test_ryugu_shape_model.jl")
+    
+    # Eclipse shadowing tests
+    include("test_eclipse_shadowing.jl")
     
     # Comprehensive BVH tests (ray intersection, isilluminated, visibility graph)
     include("test_bvh_comprehensive.jl")
