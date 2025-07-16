@@ -14,4 +14,5 @@ intersect_ray_shape
 
 ```@docs
 intersect_ray_triangle
+intersect_ray_sphere
 ```

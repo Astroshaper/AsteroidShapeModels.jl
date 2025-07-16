@@ -9,6 +9,7 @@ CurrentModule = AsteroidShapeModels
 ```@docs
 ShapeModel
 Ray
+Sphere
 ```
 
 ## Result Types
@@ -16,6 +17,7 @@ Ray
 ```@docs
 RayTriangleIntersectionResult
 RayShapeIntersectionResult
+RaySphereIntersectionResult
 ```
 
 ## Face-Face Visibility Types
