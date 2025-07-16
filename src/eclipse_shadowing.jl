@@ -172,7 +172,7 @@ function apply_eclipse_shadowing!(
     # This happens when shape2 is between sun and shape1, and is larger than shape1.
     # Check if shape2 is in front of shape1 along sun direction,
     # and if the lateral distance is small enough.
-    if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂
+    if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂_inner
         illuminated_faces .= false  # All faces are shadowed.
         return TOTAL_ECLIPSE
     end
@@ -378,7 +378,7 @@ function apply_eclipse_shadowing!(
     # This happens when shape2 is between sun and shape1, and is larger than shape1.
     # Check if shape2 is in front of shape1 along sun direction,
     # and if the lateral distance is small enough.
-    if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂
+    if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂_inner
         illuminated_faces .= false  # All faces are shadowed.
         return TOTAL_ECLIPSE
     end
