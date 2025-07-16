@@ -401,22 +401,22 @@ function apply_eclipse_shadowing!(
             
             # Create spheres for shape2's bounding and inscribed spheres
             # (shape2 is centered at origin in its own frame)
-            bounding_sphere  = Sphere(zeros(SVector{3, Float64}), ρ₂)
-            inscribed_sphere = Sphere(zeros(SVector{3, Float64}), ρ₂_inner)
+            outer_sphere = Sphere(zeros(SVector{3, Float64}), ρ₂)
+            inner_sphere = Sphere(zeros(SVector{3, Float64}), ρ₂_inner)
             
             # Check intersection with bounding sphere
-            bounding_result = intersect_ray_sphere(ray2, bounding_sphere)
+            outer_sphere_result = intersect_ray_sphere(ray2, outer_sphere)
             
             # ==== Early Out 4 (Ray-Sphere Intersection Check) ====
             # If the ray misses the bounding sphere entirely, skip detailed test
-            !bounding_result.hit && continue
+            !outer_sphere_result.hit && continue
             
             # Check if ray origin is inside the bounding sphere
-            if bounding_result.distance1 < 0 && bounding_result.distance2 > 0
+            if outer_sphere_result.distance1 < 0 && outer_sphere_result.distance2 > 0
                 # Ray origin is inside bounding sphere
                 # This can happen when the face is within shape2's bounding sphere
                 # In this case, we still need to check detailed intersection
-            elseif bounding_result.distance2 < 0
+            elseif outer_sphere_result.distance2 < 0
                 # Both intersection points are behind the ray origin
                 # This means the sphere is entirely behind the face (opposite from sun)
                 # No eclipse possible from this configuration
@@ -424,8 +424,8 @@ function apply_eclipse_shadowing!(
             else
                 # ==== Early Out 5 (Inscribed Sphere Check) ====
                 # If the ray passes through the inscribed sphere, it's guaranteed to hit shape2
-                inscribed_result = intersect_ray_sphere(ray2, inscribed_sphere)
-                if inscribed_result.hit && inscribed_result.distance1 > 0
+                inner_sphere_result = intersect_ray_sphere(ray2, inner_sphere)
+                if inner_sphere_result.hit && inner_sphere_result.distance1 > 0
                     illuminated_faces[i] = false
                     eclipse_occurred = true
                     continue
