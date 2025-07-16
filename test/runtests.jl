@@ -34,6 +34,7 @@ include("test_helpers.jl")
     # Core functionality tests
     include("test_face_properties.jl")
     include("test_ray_intersection.jl")
+    include("test_ray_sphere_intersection.jl")
     include("test_geometry_utils.jl")
     
     # Shape operations tests (volume, radii calculations)
