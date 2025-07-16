@@ -48,7 +48,8 @@ include("face_properties.jl")
 export face_center, face_normal, face_area, get_face_nodes
 
 include("types.jl")
-export Ray, RayTriangleIntersectionResult, RayShapeIntersectionResult, RaySphereIntersectionResult
+export Ray, Sphere
+export RayTriangleIntersectionResult, RayShapeIntersectionResult, RaySphereIntersectionResult
 
 include("shape_model.jl")
 export ShapeModel, build_bvh!

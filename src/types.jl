@@ -3,10 +3,12 @@
 
 Core type definitions for `AsteroidShapeModels.jl`.
 This file contains fundamental data structures used throughout the package:
-- `VisibleFace`: Internal type for temporary visibility data storage
-- `Ray`: Represents a ray in 3D space for intersection tests
-- `RayTriangleIntersectionResult`: Result of ray-triangle intersection test
-- `RayShapeIntersectionResult`: Result of ray-shape intersection test
+- `VisibleFace`                    : Internal type for temporary visibility data storage
+- `Ray`                            : Represents a ray in 3D space for intersection tests
+- `Sphere`                         : Represents a sphere in 3D space for bounding volume tests
+- `RayTriangleIntersectionResult`  : Result of ray-triangle intersection test
+- `RayShapeIntersectionResult`     : Result of ray-shape intersection test
+- `RaySphereIntersectionResult`    : Result of ray-sphere intersection test
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -36,7 +38,7 @@ struct VisibleFace
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
-# ║                      Ray and Intersection Types                   ║
+# ║                       Ray and Sphere Types                        ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
@@ -69,6 +71,38 @@ function Base.show(io::IO, ray::Ray)
     print(io, "Ray:\n")
     print(io, "    ∘ origin    = $(ray.origin)\n")
     print(io, "    ∘ direction = $(ray.direction)\n")
+end
+
+"""
+    Sphere
+
+Structure representing a sphere in 3D space.
+
+# Fields
+- `center` : Center position of the sphere
+- `radius` : Radius of the sphere (must be non-negative)
+"""
+struct Sphere
+    center::SVector{3, Float64}
+    radius::Float64
+    
+    function Sphere(center::AbstractVector{<:Real}, radius::Real)
+        radius < 0 && throw(ArgumentError("Sphere radius must be non-negative, got $radius"))
+        return new(SVector{3, Float64}(center), Float64(radius))
+    end
+end
+
+"""
+    Base.show(io::IO, sphere::Sphere)
+
+Custom display method for Sphere objects.
+
+Displays center and radius.
+"""
+function Base.show(io::IO, sphere::Sphere)
+    print(io, "Sphere:\n")
+    print(io, "    ∘ center = $(sphere.center)\n")
+    print(io, "    ∘ radius = $(sphere.radius)\n")
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗

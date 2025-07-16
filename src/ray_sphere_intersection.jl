@@ -104,3 +104,35 @@ function intersect_ray_sphere(
     
     return RaySphereIntersectionResult(true, distance1, distance2, point1, point2)
 end
+
+"""
+    intersect_ray_sphere(ray::Ray, sphere::Sphere) -> RaySphereIntersectionResult
+
+Test if a ray intersects with a sphere using Ray and Sphere objects.
+
+This is a convenience overload that extracts the parameters from the Ray and Sphere 
+objects and calls the main implementation.
+
+# Arguments
+- `ray`    : Ray object containing origin and direction
+- `sphere` : Sphere object containing center and radius
+
+# Returns
+`RaySphereIntersectionResult` with intersection details
+
+# Example
+```julia
+ray = Ray([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
+sphere = Sphere([5.0, 0.0, 0.0], 2.0)
+
+result = intersect_ray_sphere(ray, sphere)
+if result.hit
+    println("Ray hits sphere at distances: ", result.distance1, " and ", result.distance2)
+    println("Entry point : ", result.point1)
+    println("Exit point  : ", result.point2)
+end
+```
+"""
+function intersect_ray_sphere(ray::Ray, sphere::Sphere)
+    return intersect_ray_sphere(ray.origin, ray.direction, sphere.center, sphere.radius)
+end
