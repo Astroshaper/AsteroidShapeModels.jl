@@ -197,13 +197,11 @@ they produce identical results.
         println("  Didymos   : $(length(shape1.faces)) faces")
         println("  Dimorphos : $(length(shape2.faces)) faces")
         println()
-        println("  Old API: $(round(avg_old_per_step, digits=3)) ms per time step")
-        println("  New API: $(round(avg_new_per_step, digits=3)) ms per time step")
-        println("  Speedup: $(round(avg_old_per_step / avg_new_per_step, digits=2))x")
+        println("  Old API: $(round(time_old_total, digits=3)) s, $(round(avg_old_per_step, digits=3)) ms per time step")
+        println("  New API: $(round(time_new_total, digits=3)) s, $(round(avg_new_per_step, digits=3)) ms per time step")
+        println("  Speedup: $(round(time_old_total / time_new_total, digits=3))x")
         println()
-        println("  Total time (old API): $(round(time_old_total, digits=3)) s")
-        println("  Total time (new API): $(round(time_new_total, digits=3)) s")
-        
+
         println("\n==============================================")
         
         # Basic validation

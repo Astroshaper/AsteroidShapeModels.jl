@@ -389,54 +389,48 @@ function apply_eclipse_shadowing!(
     # Check occlusion by the other body for illuminated faces only
     @inbounds for i in eachindex(shape1.faces)
         if illuminated_faces[i]  # Only check if not already in shadow
-            # Ray from face center to sun in shape1's frame
-            ray_origin1 = shape1.face_centers[i]
             
-            # Transform ray's origin to shape2's frame
-            ray_origin2 = R₁₂ * ray_origin1 + t₁₂
+            # Create ray in shape2's frame
+            ray_origin1 = shape1.face_centers[i]   # Ray from face center to sun in shape1's frame
+            ray_origin2 = R₁₂ * ray_origin1 + t₁₂  # Transform ray's origin to shape2's frame
+            ray2 = Ray(ray_origin2, r̂☉₂)
             
             # ==== Face-level Early Out ====
             # Check if the ray from this face to the sun can possibly intersect
             # shape2's bounding sphere.
             
-            # Calculate the parameter t where the ray is closest to shape2's center.
-            # Ray: P(t) = ray_origin2 + t * r̂☉₂, where t > 0 toward sun
-            # The closest point is where d/dt |P(t)|² = 0
-            t_min = -dot(ray_origin2, r̂☉₂)
+            # Create spheres for shape2's bounding and inscribed spheres
+            # (shape2 is centered at origin in its own frame)
+            bounding_sphere  = Sphere(zeros(SVector{3, Float64}), ρ₂)
+            inscribed_sphere = Sphere(zeros(SVector{3, Float64}), ρ₂_inner)
             
-            if t_min < 0
-                # Shape2's center is in the opposite direction from the sun.
-                # (i.e., the ray is moving away from shape2)
-                # In this case, check if the face itself is outside bounding sphere.
-                if norm(ray_origin2) > ρ₂
-                    continue
-                end
+            # Check intersection with bounding sphere
+            bounding_result = intersect_ray_sphere(ray2, bounding_sphere)
+            
+            # ==== Early Out 4 (Ray-Sphere Intersection Check) ====
+            # If the ray misses the bounding sphere entirely, skip detailed test
+            !bounding_result.hit && continue
+            
+            # Check if ray origin is inside the bounding sphere
+            if bounding_result.distance1 < 0 && bounding_result.distance2 > 0
+                # Ray origin is inside bounding sphere
+                # This can happen when the face is within shape2's bounding sphere
+                # In this case, we still need to check detailed intersection
+            elseif bounding_result.distance2 < 0
+                # Both intersection points are behind the ray origin
+                # This means the sphere is entirely behind the face (opposite from sun)
+                # No eclipse possible from this configuration
+                continue
             else
-                # The ray approaches shape2's center.
-                # Calculate the closest point on the ray to the center
-                p_closest = ray_origin2 + t_min * r̂☉₂
-                d_center = norm(p_closest)
-                
-                # ==== Early Out 4 (Ray-Sphere Intersection Check) ====
-                # If the ray passes outside the bounding sphere,
-                # ray misses the bounding sphere entirely.
-                if d_center > ρ₂
-                    continue
-                end
-                
                 # ==== Early Out 5 (Inscribed Sphere Check) ====
                 # If the ray passes through the inscribed sphere, it's guaranteed to hit shape2
-                # (no need for detailed intersection test)
-                if d_center < ρ₂_inner
+                inscribed_result = intersect_ray_sphere(ray2, inscribed_sphere)
+                if inscribed_result.hit && inscribed_result.distance1 > 0
                     illuminated_faces[i] = false
                     eclipse_occurred = true
                     continue
                 end
             end
-            
-            # Create ray in shape2's frame
-            # (Direction was already transformed at the beginning of the function)
-            ray2 = Ray(ray_origin2, r̂☉₂)
             
             # Check intersection with shape2
             if intersect_ray_shape(ray2, shape2).hit
