@@ -8,18 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Ray-sphere intersection utilities for eclipse calculations**
+- **Ray-sphere intersection utilities for eclipse calculations** (#45)
   - `Sphere` type for cleaner geometric computations
   - `intersect_ray_sphere` function for efficient ray-sphere intersection tests
   - `RaySphereIntersectionResult` struct for detailed intersection information
 
 ### Improved
-- **Enhanced eclipse detection accuracy in `apply_eclipse_shadowing!`**
+- **Enhanced eclipse detection accuracy in `apply_eclipse_shadowing!`** (#45)
   - Total eclipse detection now uses inscribed sphere radius (`ρ₂_inner`) instead of bounding sphere radius
   - This provides more accurate detection of guaranteed shadow regions
   - Prevents false negatives in total eclipse detection for non-spherical shapes
   
-- **Code readability improvements in `apply_eclipse_shadowing!`**
+- **Code readability improvements in `apply_eclipse_shadowing!`** (#45)
   - Refactored to use new ray-sphere intersection utilities
   - Better separation of concerns between geometric calculations and eclipse logic
   - Performance is identical but code is more maintainable
