@@ -53,12 +53,6 @@ Apply eclipse shadowing effects from another shape onto already illuminated face
     As of v0.4.0, `shape2` must have BVH pre-built before calling this function.
     Use either `with_bvh=true` when loading or call `build_bvh!(shape2)` explicitly.
 
-!!! warning "OPTIMIZE"
-    Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call.
-    For binary asteroid thermophysical simulations, this results in ~200 allocations × 2 bodies × 
-    number of time steps. Future optimization should implement true batch ray tracing for mutual 
-    shadowing to reduce allocation overhead.
-
 # Arguments
 - `illuminated_faces` : Boolean vector with current illumination state (will be modified)
 - `shape1`            : Target shape model being shadowed (the shape receiving shadows)
@@ -178,7 +172,7 @@ function apply_eclipse_shadowing!(
     # This happens when shape2 is between sun and shape1, and is larger than shape1.
     # Check if shape2 is in front of shape1 along sun direction,
     # and if the lateral distance is small enough.
-    if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂
+    if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂_inner
         illuminated_faces .= false  # All faces are shadowed.
         return TOTAL_ECLIPSE
     end
@@ -282,10 +276,6 @@ This is the recommended API as of v0.4.1, with more intuitive parameter ordering
     shadowing to reduce allocation overhead.
 
 !!! note "TODO"
-    - **Ray-sphere intersection functions**: Implement dedicated functions to improve code readability.
-      Current implementation manually computes ray-sphere intersection tests inline, which makes the code
-      harder to understand. Extract these into reusable functions like `intersect_ray_sphere`.
-    
     - **Parallel processing**: Add multi-threading support using `@threads` for face-level calculations.
       Each face's shadow test is independent, making this function ideal for parallelization.
     
@@ -384,7 +374,7 @@ function apply_eclipse_shadowing!(
     # This happens when shape2 is between sun and shape1, and is larger than shape1.
     # Check if shape2 is in front of shape1 along sun direction,
     # and if the lateral distance is small enough.
-    if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂
+    if dot(r₁₂, r̂☉₁) > 0  && d⊥ + ρ₁ < ρ₂_inner
         illuminated_faces .= false  # All faces are shadowed.
         return TOTAL_ECLIPSE
     end
@@ -395,54 +385,48 @@ function apply_eclipse_shadowing!(
     # Check occlusion by the other body for illuminated faces only
     @inbounds for i in eachindex(shape1.faces)
         if illuminated_faces[i]  # Only check if not already in shadow
-            # Ray from face center to sun in shape1's frame
-            ray_origin1 = shape1.face_centers[i]
             
-            # Transform ray's origin to shape2's frame
-            ray_origin2 = R₁₂ * ray_origin1 + t₁₂
+            # Create ray in shape2's frame
+            ray_origin1 = shape1.face_centers[i]   # Ray from face center to sun in shape1's frame
+            ray_origin2 = R₁₂ * ray_origin1 + t₁₂  # Transform ray's origin to shape2's frame
+            ray2 = Ray(ray_origin2, r̂☉₂)
             
             # ==== Face-level Early Out ====
             # Check if the ray from this face to the sun can possibly intersect
             # shape2's bounding sphere.
             
-            # Calculate the parameter t where the ray is closest to shape2's center.
-            # Ray: P(t) = ray_origin2 + t * r̂☉₂, where t > 0 toward sun
-            # The closest point is where d/dt |P(t)|² = 0
-            t_min = -dot(ray_origin2, r̂☉₂)
+            # Create spheres for shape2's bounding and inscribed spheres
+            # (shape2 is centered at origin in its own frame)
+            outer_sphere = Sphere(SVector(0.0, 0.0, 0.0), ρ₂)
+            inner_sphere = Sphere(SVector(0.0, 0.0, 0.0), ρ₂_inner)
             
-            if t_min < 0
-                # Shape2's center is in the opposite direction from the sun.
-                # (i.e., the ray is moving away from shape2)
-                # In this case, check if the face itself is outside bounding sphere.
-                if norm(ray_origin2) > ρ₂
-                    continue
-                end
+            # Check intersection with bounding sphere
+            outer_sphere_result = intersect_ray_sphere(ray2, outer_sphere)
+            
+            # ==== Early Out 4 (Ray-Sphere Intersection Check) ====
+            # If the ray misses the bounding sphere entirely, skip detailed test
+            !outer_sphere_result.hit && continue
+            
+            # Check if ray origin is inside the bounding sphere
+            if outer_sphere_result.distance1 < 0 && outer_sphere_result.distance2 > 0
+                # Ray origin is inside bounding sphere
+                # This can happen when the face is within shape2's bounding sphere
+                # In this case, we still need to check detailed intersection
+            elseif outer_sphere_result.distance2 < 0
+                # Both intersection points are behind the ray origin
+                # This means the sphere is entirely behind the face (opposite from sun)
+                # No eclipse possible from this configuration
+                continue
             else
-                # The ray approaches shape2's center.
-                # Calculate the closest point on the ray to the center
-                p_closest = ray_origin2 + t_min * r̂☉₂
-                d_center = norm(p_closest)
-                
-                # ==== Early Out 4 (Ray-Sphere Intersection Check) ====
-                # If the ray passes outside the bounding sphere,
-                # ray misses the bounding sphere entirely.
-                if d_center > ρ₂
-                    continue
-                end
-                
                 # ==== Early Out 5 (Inscribed Sphere Check) ====
                 # If the ray passes through the inscribed sphere, it's guaranteed to hit shape2
-                # (no need for detailed intersection test)
-                if d_center < ρ₂_inner
+                inner_sphere_result = intersect_ray_sphere(ray2, inner_sphere)
+                if inner_sphere_result.hit && inner_sphere_result.distance1 > 0
                     illuminated_faces[i] = false
                     eclipse_occurred = true
                     continue
                 end
             end
-            
-            # Create ray in shape2's frame
-            # (Direction was already transformed at the beginning of the function)
-            ray2 = Ray(ray_origin2, r̂☉₂)
             
             # Check intersection with shape2
             if intersect_ray_shape(ray2, shape2).hit

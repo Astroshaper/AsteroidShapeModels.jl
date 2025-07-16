@@ -294,25 +294,24 @@ This file tests advanced visibility and illumination calculations:
         end
         
         @testset "Performance comparison" begin
-            # Create a larger shape for performance testing (regular tetrahedron)
-            nodes_tet, faces_tet = create_regular_tetrahedron()
-            shape_large = ShapeModel(nodes_tet, faces_tet)
-            nfaces_large = length(shape_large.faces)
-            illuminated_faces_large = Vector{Bool}(undef, nfaces_large)
-            sun_pos = SA[1.0, 0.0, 0.0]
+            # Use Ryugu test model for meaningful performance comparison
+            shape = load_shape_obj("shape/ryugu_test.obj"; scale=1000, with_face_visibility=false, with_bvh=false)
+            nfaces = length(shape.faces)
+            illuminated_faces = Vector{Bool}(undef, nfaces)
+            sun_pos = SA[149597870700, 0.0, 0.0]  # Sun is located at 1 au [m]
             
             # Time batch update
-            t_batch = @elapsed update_illumination!(illuminated_faces_large, shape_large, sun_pos; with_self_shadowing=false)
+            t_batch = @elapsed update_illumination!(illuminated_faces, shape, sun_pos; with_self_shadowing=false)
             
             # Time individual calls
             t_individual = @elapsed begin
-                for i in 1:nfaces_large
-                    isilluminated(shape_large, sun_pos, i; with_self_shadowing=false)
+                for i in eachindex(shape.faces)
+                    isilluminated(shape, sun_pos, i; with_self_shadowing=false)
                 end
             end
             
             # Batch should be comparable or faster (avoiding repeated normalization)
-            @test t_batch < 2.0 * t_individual  # Should not be much slower
+            @test t_batch < t_individual  # Should not be much slower
         end
     end
     

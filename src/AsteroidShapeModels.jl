@@ -48,7 +48,8 @@ include("face_properties.jl")
 export face_center, face_normal, face_area, get_face_nodes
 
 include("types.jl")
-export Ray, RayTriangleIntersectionResult, RayShapeIntersectionResult
+export Ray, Sphere
+export RayTriangleIntersectionResult, RayShapeIntersectionResult, RaySphereIntersectionResult
 
 include("shape_model.jl")
 export ShapeModel, build_bvh!
@@ -63,6 +64,9 @@ export load_obj, isobj
 
 include("ray_intersection.jl")
 export intersect_ray_triangle, intersect_ray_shape
+
+include("ray_sphere_intersection.jl")
+export intersect_ray_sphere
 
 include("shape_operations.jl")
 export load_shape_obj, load_shape_grid, grid_to_faces

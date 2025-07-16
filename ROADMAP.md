@@ -55,8 +55,8 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
   - [ ] Document the feature and its performance benefits
 
 - **Improve `apply_eclipse_shadowing!` code readability**
-  - [ ] Extract ray-sphere intersection tests into dedicated reusable functions
-  - [ ] Ensure consistency in results with previous implementation
+  - [x] Extract ray-sphere intersection tests into dedicated reusable functions (Completed in feature/refactor-eclipse-shadowing-v042)
+  - [x] Ensure consistency in results with previous implementation (Completed in feature/refactor-eclipse-shadowing-v042)
 
 ## Version 0.5.0 - Advanced Surface Modeling (Target: September 2025)
 
