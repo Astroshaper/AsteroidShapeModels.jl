@@ -401,8 +401,8 @@ function apply_eclipse_shadowing!(
             
             # Create spheres for shape2's bounding and inscribed spheres
             # (shape2 is centered at origin in its own frame)
-            outer_sphere = Sphere(zeros(SVector{3, Float64}), ρ₂)
-            inner_sphere = Sphere(zeros(SVector{3, Float64}), ρ₂_inner)
+            outer_sphere = Sphere(SVector(0.0, 0.0, 0.0), ρ₂)
+            inner_sphere = Sphere(SVector(0.0, 0.0, 0.0), ρ₂_inner)
             
             # Check intersection with bounding sphere
             outer_sphere_result = intersect_ray_sphere(ray2, outer_sphere)
