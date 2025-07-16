@@ -276,10 +276,6 @@ This is the recommended API as of v0.4.1, with more intuitive parameter ordering
     shadowing to reduce allocation overhead.
 
 !!! note "TODO"
-    - **Ray-sphere intersection functions**: Implement dedicated functions to improve code readability.
-      Current implementation manually computes ray-sphere intersection tests inline, which makes the code
-      harder to understand. Extract these into reusable functions like `intersect_ray_sphere`.
-    
     - **Parallel processing**: Add multi-threading support using `@threads` for face-level calculations.
       Each face's shadow test is independent, making this function ideal for parallelization.
     
