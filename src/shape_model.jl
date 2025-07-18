@@ -23,8 +23,9 @@ A polyhedral shape model of an asteroid.
 - `faces`                 : Vector of vertex indices of faces
 - `face_centers`          : Center position of each face
 - `face_normals`          : Normal vector of each face
-- `face_areas`            : Area of of each face
+- `face_areas`            : Area of each face
 - `face_visibility_graph` : `FaceVisibilityGraph` for efficient visibility queries
+- `face_max_elevations`   : Maximum elevation angle of the surrounding terrain from each face [rad]
 - `bvh`                   : Bounding Volume Hierarchy for accelerated ray tracing
 """
 mutable struct ShapeModel
@@ -36,6 +37,7 @@ mutable struct ShapeModel
     face_areas   ::Vector{Float64}
 
     face_visibility_graph ::Union{Nothing, FaceVisibilityGraph}
+    face_max_elevations   ::Union{Nothing, Vector{Float64}}
     bvh                   ::Union{Nothing, ImplicitBVH.BVH}
 end
 
@@ -74,18 +76,12 @@ function ShapeModel(nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVect
     face_normals = [face_normal(nodes[face]) for face in faces]
     face_areas   = [face_area(nodes[face])   for face in faces]
     
-    # Initialize with no visibility graph
-    face_visibility_graph = nothing
+    # Initialize ShapeModel without face_visibilitygraph, face_max_elevations, or bvh
+    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, nothing, nothing, nothing)
     
-    # Initialize with no BVH
-    bvh = nothing
-    
-    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, face_visibility_graph, bvh)
-    
-    # Build BVH for ray tracing acceleration if requested
-    with_bvh && build_bvh!(shape)
-    
+    # Build face-to-face visibility graph and BVH if requested
     with_face_visibility && build_face_visibility_graph!(shape)
+    with_bvh && build_bvh!(shape)
     
     return shape
 end
