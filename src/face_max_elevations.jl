@@ -103,14 +103,14 @@ the face normal) and the direction to the highest visible face.
 - `shape`: ShapeModel with face_visibility_graph already built
 
 # Returns
-- Nothing (modifies `ShapeModel.face_max_elevations` in-place)
+- Nothing (modifies `shape.face_max_elevations` in-place)
 
 # Algorithm
 For each face i:
-1. Get all faces j visible from face i (from face_visibility_graph)
+1. Get all faces j visible from face i (from `shape.face_visibility_graph`)
 2. For each visible face j:
-   - Calculate direction vector d_ij from face i to face j
-   - Calculate elevation angle: angle between d_ij and the horizon plane of face i
+   - Check maximum elevation angles on all three edges using `compute_edge_max_elevation`
+   - Note: `compute_edge_max_elevation` handles both edge interiors and endpoints (vertices)
 3. Store the maximum elevation angle found
 """
 function compute_face_max_elevations!(shape::ShapeModel)
@@ -136,24 +136,17 @@ function compute_face_max_elevations!(shape::ShapeModel)
         
         for j in visible_face_indices
             # Get vertices of face j
-            vs = get_face_nodes(shape, j)  # (v1, v2, v3)
+            v1, v2, v3 = get_face_nodes(shape, j)
             
-            # Check elevation angle for each vertex of face j
-            for v in vs
-                # Direction from face i center to vertex of face j
-                d̂ᵢⱼ = normalize(v - cᵢ)
-                
-                # Calculate elevation angle θ [rad]
-                # Elevation θ is the angle from the horizon plane (perpendicular to normal)
-                # cos(90° - θ) = sin(θ) = n̂ᵢ ⋅ d̂ᵢⱼ
-                sinθ = n̂ᵢ ⋅ d̂ᵢⱼ
-                θ = asin(clamp(sinθ, 0.0, 1.0))
-                
-                # Update maximum elevation angle for face i
+            # Check elevation angle for each edge of face j
+            # Note: This includes vertices as edge endpoints (t=0 or t=1)
+            edges = [(v1, v2), (v2, v3), (v3, v1)]
+            for (A, B) in edges
+                _, θ = compute_edge_max_elevation(cᵢ, n̂ᵢ, A, B)
                 θ_max = max(θ_max, θ)
             end
         end
-
+        
         shape.face_max_elevations[i] = θ_max
     end
     
