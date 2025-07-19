@@ -1,10 +1,90 @@
-"""
+#=
     face_max_elevations.jl
 
 Implementation of face maximum elevation computation for illumination optimization.
 This module calculates the maximum elevation angle from which each face can be 
 potentially shadowed by other faces, enabling early-out optimization in illumination checks.
+
+Exported Functions:
+- `compute_face_max_elevations!`: Compute maximum elevation angles for all faces
+- `compute_edge_max_elevation`: Compute maximum elevation angle on a single edge
+- `isilluminated_with_self_shadowing_optimized`: Optimized single-face illumination check
+- `update_illumination_with_self_shadowing_optimized!`: Optimized batch illumination update
+=#
+
 """
+    compute_edge_max_elevation(
+        obs::SVector{3}, n̂::SVector{3},
+        A::SVector{3}, B::SVector{3},
+    ) -> (p_max::SVector{3}, θ_max::Float64)
+
+Compute the maximum elevation angle on the edge from A to B when viewed from obs with normal n̂.
+
+# Arguments
+- `obs` : Observer position (face center)
+- `n̂` : Observer normal (face normal, must be normalized)
+- `A` : First vertex of the edge
+- `B` : Second vertex of the edge
+
+# Returns
+- `p_max`: Point on the edge where maximum elevation occurs
+- `θ_max`: Maximum elevation angle in radians
+
+# Algorithm
+Maximizes the elevation angle θ(t) = arcsin(n̂ · d̂(t)) for t ∈ [0,1],
+where d̂(t) = normalize((1-t)A + t·B - obs) is the direction from observer to a point on edge A-B.
+If t = 0, the edge point is A, if t = 1, it is B.
+
+Approach: Set dθ/dt = 0 and solve for critical points.
+Since sin(θ) = n̂ · d̂(t), maximizing θ is equivalent to maximizing n̂ · d̂(t).
+The derivative leads to a linear equation: β·t + γ = 0,
+where β = (n̂·e)(a·e) - (n̂·a)(e·e),
+      γ = (n̂·e)(a·a) - (n̂·a)(a·e),
+with a = A - obs, e = B - A
+
+# Notes
+- The computation may become unstable when `obs` coincides with vertices A, B, 
+  or points on the edge. In such cases, the normalize operation may produce NaN.
+- This function is designed for use with a face center as the observer position `obs`, 
+  where such degeneracies do not occur in practice.
+"""
+function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector{3}, B::SVector{3})
+    # Relative vectors
+    a = A - obs  # From observer to first vertex
+    b = B - obs  # From observer to second vertex
+    e = B - A    # Edge direction
+    
+    # Compute coefficients for critical point equation
+    n_dot_a = n̂ ⋅ a
+    n_dot_e = n̂ ⋅ e
+    a_dot_a = a ⋅ a
+    a_dot_e = a ⋅ e
+    e_dot_e = e ⋅ e
+    
+    β = n_dot_e * a_dot_e - n_dot_a * e_dot_e
+    γ = n_dot_e * a_dot_a - n_dot_a * a_dot_e
+    
+    # Find optimal t according to t = -γ / β
+    if abs(β) < 1e-10
+        # β ≈ 0: no critical point or constant function
+        # Check endpoints
+        â = normalize(a)
+        b̂ = normalize(b)
+        θ_a = asin(clamp(n̂ ⋅ â, -1.0, 1.0))
+        θ_b = asin(clamp(n̂ ⋅ b̂, -1.0, 1.0))
+        
+        return θ_a ≥ θ_b ? (A, θ_a) : (B, θ_b)
+    else
+        # Find maximum at clamped critical point
+        t_max = clamp(-γ/β, 0.0, 1.0)  # Critical t giving maximum elevation
+        p_max = (1 - t_max) * A + t_max * B    # Point on edge at critical t
+
+        d̂ = normalize(p_max - obs)             # Direction from observer to maximum elevation point
+        θ_max = asin(clamp(n̂ ⋅ d̂, -1.0, 1.0))  # Maximum elevation angle [rad]
+
+        return (p_max, θ_max)
+    end
+end
 
 """
     compute_face_max_elevations!(shape::ShapeModel)
