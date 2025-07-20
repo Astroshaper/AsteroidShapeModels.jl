@@ -7,9 +7,6 @@ potentially shadowed by other faces, enabling early-out optimization in illumina
 
 Exported Functions:
 - `compute_face_max_elevations!`: Compute maximum elevation angles for all faces
-- `compute_edge_max_elevation`: Compute maximum elevation angle on a single edge
-- `isilluminated_with_self_shadowing_optimized`: Optimized single-face illumination check
-- `update_illumination_with_self_shadowing_optimized!`: Optimized batch illumination update
 =#
 
 """
@@ -190,91 +187,6 @@ function compute_face_max_elevations!(shape::ShapeModel)
         end
         
         shape.face_max_elevations[i] = θ_max
-    end
-    
-    return nothing
-end
-
-"""
-    isilluminated_with_self_shadowing_optimized(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer) -> Bool
-
-Optimized version of isilluminated_with_self_shadowing using face_max_elevations.
-
-# Arguments
-- `shape`    : Shape model with face_visibility_graph and face_max_elevations
-- `r☉`       : Sun's position in the asteroid-fixed frame
-- `face_idx` : Index of the face to be checked
-
-# Description
-This function uses the precomputed face_max_elevations to skip ray-triangle
-intersection tests when the sun's elevation is higher than the maximum elevation
-from which the face can be shadowed.
-
-# Performance
-- Best case (high sun): O(1) - only dot product and comparison
-- Worst case (low sun): Same as original implementation
-- Expected speedup: Significant for high sun elevations
-
-# Returns
-- `true` if the face is illuminated
-- `false` if the face is in shadow or facing away from the sun
-"""
-function isilluminated_with_self_shadowing_optimized(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer)::Bool
-    @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
-    @assert !isnothing(shape.face_max_elevations) "face_max_elevations must be computed first."
-    
-    cᵢ = shape.face_centers[face_idx]
-    n̂ᵢ = shape.face_normals[face_idx]
-    r̂☉ = normalize(r☉)
-    
-    # Sun's elevation angle relative to the face, θ☉ [rad]
-    # cos(90° - θ☉) = sin(θ☉) = n̂ᵢ ⋅ r̂☉
-    sinθ☉ = n̂ᵢ ⋅ r̂☉
-    
-    # Early-out 1:
-    # If this face is oriented away from the sun, not illuminated (return false).
-    sinθ☉ < 0 && return false
-    
-    θ☉ = asin(clamp(sinθ☉, 0.0, 1.0))
-    
-    # Early-out 2:
-    # If sun elevation is higher than surrounding maximum elevation for this face,
-    # guaranteed to be illuminated (return true).
-    θ_max = shape.face_max_elevations[face_idx]
-    θ_margin = 1e-3  # Small margin to avoid numerical issues
-    θ☉ > θ_max + θ_margin && return true
-    
-    # Otherwise, perform regular occlusion check
-    ray = Ray(cᵢ, r̂☉)
-    visible_face_indices = get_visible_face_indices(shape.face_visibility_graph, face_idx)
-    for j in visible_face_indices
-        intersect_ray_triangle(ray, shape, j).hit && return false
-    end
-    return true
-end
-
-"""
-    update_illumination_with_self_shadowing_optimized!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
-
-Optimized batch illumination update using `ShapeModel.face_max_elevations`.
-
-# Arguments
-- `illuminated_faces` : Boolean vector to store illumination state
-- `shape`             : Shape model with face_visibility_graph and face_max_elevations
-- `r☉`                : Sun's position in the asteroid-fixed frame
-
-# Description
-Batch version of the optimized illumination check. Uses face_max_elevations
-to skip ray-triangle intersection tests for faces that are guaranteed to be
-illuminated based on sun elevation.
-"""
-function update_illumination_with_self_shadowing_optimized!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
-    @assert length(illuminated_faces) == length(shape.faces) "illuminated_faces vector must have same length as number of faces."
-    @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required. Build it using build_face_visibility_graph!(shape)."
-    @assert !isnothing(shape.face_max_elevations) "face_max_elevations must be computed first."
-    
-    @inbounds for i in eachindex(shape.faces)
-        illuminated_faces[i] = isilluminated_with_self_shadowing_optimized(shape, r☉, i)
     end
     
     return nothing

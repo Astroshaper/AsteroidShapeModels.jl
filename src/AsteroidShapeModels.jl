@@ -77,8 +77,6 @@ export isilluminated, update_illumination!
 
 include("face_max_elevations.jl")
 export compute_face_max_elevations!
-export isilluminated_with_self_shadowing_optimized
-export update_illumination_with_self_shadowing_optimized!
 
 include("eclipse_shadowing.jl")
 export apply_eclipse_shadowing!, EclipseStatus, NO_ECLIPSE, PARTIAL_ECLIPSE, TOTAL_ECLIPSE
