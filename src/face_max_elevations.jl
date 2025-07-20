@@ -226,7 +226,7 @@ function isilluminated_with_self_shadowing_optimized(shape::ShapeModel, r☉::St
     cᵢ = shape.face_centers[face_idx]
     n̂ᵢ = shape.face_normals[face_idx]
     r̂☉ = normalize(r☉)
-
+    
     # Sun's elevation angle relative to the face, θ☉ [rad]
     # cos(90° - θ☉) = sin(θ☉) = n̂ᵢ ⋅ r̂☉
     sinθ☉ = n̂ᵢ ⋅ r̂☉
@@ -240,7 +240,9 @@ function isilluminated_with_self_shadowing_optimized(shape::ShapeModel, r☉::St
     # Early-out 2:
     # If sun elevation is higher than surrounding maximum elevation for this face,
     # guaranteed to be illuminated (return true).
-    θ☉ > shape.face_max_elevations[face_idx] && return true
+    θ_max = shape.face_max_elevations[face_idx]
+    θ_margin = 1e-3  # Small margin to avoid numerical issues
+    θ☉ > θ_max + θ_margin && return true
     
     # Otherwise, perform regular occlusion check
     ray = Ray(cᵢ, r̂☉)
