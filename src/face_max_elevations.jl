@@ -39,7 +39,7 @@ end
     compute_edge_max_elevation(
         obs::SVector{3}, n̂::SVector{3},
         A::SVector{3}, B::SVector{3},
-    ) -> (p_max::SVector{3}, θ_max::Float64)
+    ) -> (θ_max::Float64, p_max::SVector{3})
 
 Compute the maximum elevation angle on the edge from A to B when viewed from obs with normal n̂.
 
@@ -50,8 +50,8 @@ Compute the maximum elevation angle on the edge from A to B when viewed from obs
 - `B` : Second vertex of the edge
 
 # Returns
-- `p_max`: Point on the edge where maximum elevation occurs
 - `θ_max`: Maximum elevation angle in radians
+- `p_max`: Point on the edge where maximum elevation occurs
 
 # Algorithm
 Maximizes the elevation angle θ(t) = arcsin(n̂ · d̂(t)) for t ∈ [0, 1],
@@ -72,7 +72,7 @@ A critical t giving the maximum of f(t) is obtained by solving df/dt = β·t + �
 - This function is designed for use with a face center as the observer position `obs`, 
   where such degeneracies do not occur in practice.
 """
-function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector{3}, B::SVector{3})::Tuple{SVector{3,Float64}, Float64}
+function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector{3}, B::SVector{3})::Tuple{Float64, SVector{3,Float64}}
     # Relative vectors
     a = A - obs  # From observer to first vertex
     b = B - obs  # From observer to second vertex
@@ -100,33 +100,33 @@ function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector
         # If γ < 0, f(t) is decreasing → maximum at t=0
         # If γ ≈ 0, f(t) is constant   → check endpoints
         if abs(γ) < 1e-10
-            return θ_a ≥ θ_b ? (A, θ_a) : (B, θ_b)
+            return θ_a ≥ θ_b ? (θ_a, A) : (θ_b, B)
         elseif γ > 0
-            return (B, θ_b)
+            return (θ_b, B)
         else
-            return (A, θ_a)
+            return (θ_a, A)
         end
     elseif β < 0
         # β < 0: df/dt has a maximum (f is concave down)
         # Critical point t_crit = -γ/β could be a maximum
-        t_crit = -γ/β
+        t_crit = -γ / β
         
         if t_crit ≤ 0
             # Maximum is at t=0 (or before the edge)
-            return (A, θ_a)
+            return (θ_a, A)
         elseif t_crit ≥ 1
             # Maximum is at t=1 (or beyond the edge)
-            return (B, θ_b)
+            return (θ_b, B)
         else
             # Maximum is at the critical point inside [0, 1]
             p_crit = (1 - t_crit) * A + t_crit * B
             θ_crit = compute_elevation_angle(obs, n̂, p_crit)
-            return (p_crit, θ_crit)
+            return (θ_crit, p_crit)
         end
     else  # β > 0
         # β > 0: df/dt has a minimum (f is concave up)
         # Maximum must be at one of the endpoints
-        return θ_a ≥ θ_b ? (A, θ_a) : (B, θ_b)
+        return θ_a ≥ θ_b ? (θ_a, A) : (θ_b, B)
     end
 end
 
@@ -186,7 +186,7 @@ function compute_face_max_elevations!(shape::ShapeModel)
             # Note: This includes vertices as edge endpoints (t=0 or t=1)
             edges = [(v1, v2), (v2, v3), (v3, v1)]
             for (A, B) in edges
-                _, θ = compute_edge_max_elevation(cᵢ, n̂ᵢ, A, B)
+                θ, _ = compute_edge_max_elevation(cᵢ, n̂ᵢ, A, B)
                 θ_max = max(θ_max, θ)
             end
         end
