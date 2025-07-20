@@ -45,22 +45,31 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
 
 ### Performance Features
 - **Face Maximum Elevation Precomputation**
-  - [ ] Add `face_max_elevations` field to `ShapeModel` struct
-  - [ ] Implement `compute_face_max_elevations!` function that calculates from `face_visibility_graph`
-  - [ ] Modify `build_face_visibility_graph!` to compute `face_max_elevations` after graph construction
-  - [ ] Ensure `face_max_elevations` is automatically populated when `with_face_visibility=true` in constructor
-  - [ ] Optimize illumination checks using precomputed maximum elevations (skip ray-tracing when sun's elevation > `face_max_elevations[face_idx]`)
-  - [ ] Verify illumination results match the original implementation using Ryugu shape model
-  - [ ] Add benchmarks to measure performance improvements
+  - [x] Add `face_max_elevations` field to `ShapeModel` struct (#46)
+  - [x] Implement `compute_face_max_elevations!` function that calculates from `face_visibility_graph` (#46)
+  - [x] Automatically compute `face_max_elevations` when `with_face_visibility=true` in constructor (#46)
+  - [x] Add `use_elevation_optimization` parameter to illumination APIs (default: `true`) (#46)
+  - [x] Optimize illumination checks using precomputed maximum elevations (#46)
+  - [x] Verify illumination results match the original implementation (#46)
+  - [ ] Add comprehensive benchmarks to measure performance improvements
   - [ ] Document the feature and its performance benefits
 
 - **Improve `apply_eclipse_shadowing!` code readability**
   - [x] Extract ray-sphere intersection tests into dedicated reusable functions (#45)
   - [x] Ensure consistency in results with previous implementation (#45)
 
+### Roadmap for Face Maximum Elevation Optimization
+- **v0.4.2** (Current PR #46): Experimental feature with `use_elevation_optimization` parameter
+- **v0.4.3**: Add comprehensive benchmarks and performance validation
+- **v0.4.4**: Gather user feedback and edge case testing
+- **v0.5.0**: Remove `use_elevation_optimization` parameter and make optimization the default implementation
+
 ## Version 0.5.0 - Advanced Surface Modeling (Target: September 2025)
 
 ### Major Features
+- **Breaking Changes**
+  - [ ] Remove `use_elevation_optimization` parameter from illumination APIs
+  - [ ] Make face maximum elevation optimization the default implementation
 - **Hierarchical Surface Roughness Model**
   - [ ] Support nested shape models for multi-scale surface representation
   - [ ] Implement efficient traversal algorithms for nested structures
