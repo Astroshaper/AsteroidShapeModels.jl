@@ -31,16 +31,17 @@ Compute the maximum elevation angle on the edge from A to B when viewed from obs
 - `θ_max`: Maximum elevation angle in radians
 
 # Algorithm
-Maximizes the elevation angle θ(t) = arcsin(n̂ · d̂(t)) for t ∈ [0,1],
+Maximizes the elevation angle θ(t) = arcsin(n̂ · d̂(t)) for t ∈ [0, 1],
 where d̂(t) = normalize((1-t)A + t·B - obs) is the direction from observer to a point on edge A-B.
 If t = 0, the edge point is A, if t = 1, it is B.
 
-Approach: Set dθ/dt = 0 and solve for critical points.
-Since sin(θ) = n̂ · d̂(t), maximizing θ is equivalent to maximizing n̂ · d̂(t).
-The derivative leads to a linear equation: β·t + γ = 0,
-where β = (n̂·e)(a·e) - (n̂·a)(e·e),
+Since sin(θ) = n̂ · d̂(t), maximizing θ is equivalent to maximizing f(t) = n̂ · d̂(t).
+The derivative results in df/dt = α·t² + β·t + γ,
+where α = 0,
+      β = (n̂·e)(a·e) - (n̂·a)(e·e),
       γ = (n̂·e)(a·a) - (n̂·a)(a·e),
-with a = A - obs, e = B - A
+with a = A - obs, e = B - A.
+A critical t giving the maximum of f(t) is obtained by solving df/dt = β·t + γ = 0.
 
 # Notes
 - The computation may become unstable when `obs` coincides with vertices A, B, 
@@ -64,25 +65,47 @@ function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector
     β = n_dot_e * a_dot_e - n_dot_a * e_dot_e
     γ = n_dot_e * a_dot_a - n_dot_a * a_dot_e
     
-    # Find optimal t according to t = -γ / β
+    # Evaluate endpoints first
+    â = normalize(a)
+    b̂ = normalize(b)
+    θ_a = asin(clamp(n̂ ⋅ â, -1.0, 1.0))
+    θ_b = asin(clamp(n̂ ⋅ b̂, -1.0, 1.0))
+    
+    # Find optimal t based on β
     if abs(β) < 1e-10
-        # β ≈ 0: no critical point or constant function
-        # Check endpoints
-        â = normalize(a)
-        b̂ = normalize(b)
-        θ_a = asin(clamp(n̂ ⋅ â, -1.0, 1.0))
-        θ_b = asin(clamp(n̂ ⋅ b̂, -1.0, 1.0))
+        # β ≈ 0: df/dt = γ is constant
+        # If γ > 0, f(t) is increasing → maximum at t=1
+        # If γ < 0, f(t) is decreasing → maximum at t=0
+        # If γ ≈ 0, f(t) is constant   → check endpoints
+        if abs(γ) < 1e-10
+            return θ_a ≥ θ_b ? (A, θ_a) : (B, θ_b)
+        elseif γ > 0
+            return (B, θ_b)
+        else
+            return (A, θ_a)
+        end
+    elseif β < 0
+        # β < 0: df/dt has a maximum (f is concave down)
+        # Critical point t_crit = -γ/β could be a maximum
+        t_crit = -γ/β
         
+        if t_crit ≤ 0
+            # Maximum is at t=0 (or before the edge)
+            return (A, θ_a)
+        elseif t_crit ≥ 1
+            # Maximum is at t=1 (or beyond the edge)
+            return (B, θ_b)
+        else
+            # Maximum is at the critical point inside [0, 1]
+            p_crit = (1 - t_crit) * A + t_crit * B
+            d̂_crit = normalize(p_crit - obs)
+            θ_crit = asin(clamp(n̂ ⋅ d̂_crit, -1.0, 1.0))
+            return (p_crit, θ_crit)
+        end
+    else  # β > 0
+        # β > 0: df/dt has a minimum (f is concave up)
+        # Maximum must be at one of the endpoints
         return θ_a ≥ θ_b ? (A, θ_a) : (B, θ_b)
-    else
-        # Find maximum at clamped critical point
-        t_max = clamp(-γ/β, 0.0, 1.0)  # Critical t giving maximum elevation
-        p_max = (1 - t_max) * A + t_max * B    # Point on edge at critical t
-
-        d̂ = normalize(p_max - obs)             # Direction from observer to maximum elevation point
-        θ_max = asin(clamp(n̂ ⋅ d̂, -1.0, 1.0))  # Maximum elevation angle [rad]
-
-        return (p_max, θ_max)
     end
 end
 
