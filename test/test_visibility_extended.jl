@@ -140,10 +140,7 @@ This file tests advanced visibility and illumination calculations:
             SA[3, 1, 4]   # Side 3
         ]
         
-        shape = ShapeModel(nodes, faces)
-        
-        # Compute visibility for shadow testing
-        build_face_visibility_graph!(shape)
+        shape = ShapeModel(nodes, faces; with_face_visibility=true)
         
         @testset "Direct Illumination" begin
             # Sun directly above (positive z direction)
@@ -215,9 +212,7 @@ This file tests advanced visibility and illumination calculations:
                 SA[5, 7, 6], SA[5, 8, 7]   # Horizontal floor (facing +z)
             ]
             
-            shape_shadow = ShapeModel(nodes_shadow, faces_shadow)
-            
-            build_face_visibility_graph!(shape_shadow)
+            shape_shadow = ShapeModel(nodes_shadow, faces_shadow; with_face_visibility=true)
             
             # Sun from low angle that should cast shadow
             sun_low = SA[0.0, -1.0, 0.1]  # Slightly above horizon from -y
@@ -259,8 +254,9 @@ This file tests advanced visibility and illumination calculations:
         end
         
         @testset "With Face Visibility (Full occlusion)" begin
-            # Build visibility graph
+            # Build visibility graph and face_max_elevations
             build_face_visibility_graph!(shape)
+            compute_face_max_elevations!(shape)
             
             # Sun from diagonal direction
             sun_pos = SA[1.0, 1.0, 1.0]
@@ -319,8 +315,7 @@ This file tests advanced visibility and illumination calculations:
         # Create a simple shape with visibility graph
         nodes, faces = create_unit_cube()
         nodes_scaled = [2.0 * (node - SA[0.5, 0.5, 0.5]) for node in nodes]
-        shape = ShapeModel(nodes_scaled, faces)
-        build_face_visibility_graph!(shape)
+        shape = ShapeModel(nodes_scaled, faces; with_face_visibility=true)
         
         nfaces = length(shape.faces)
         sun_pos = SA[10.0, 5.0, 3.0]

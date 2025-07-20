@@ -8,13 +8,7 @@ Verifies that optimized illumination functions produce identical results to orig
     shape = load_shape_obj("shape/ryugu_test.obj", scale=1000, with_face_visibility=true)
     
     @testset "compute_face_max_elevations!" begin
-        # Test initialization
-        @test isnothing(shape.face_max_elevations)
-        
-        # Compute face max elevations
-        compute_face_max_elevations!(shape)
-        
-        # Verify field is populated
+        # When loaded with_face_visibility=true, face_max_elevations should already be computed
         @test !isnothing(shape.face_max_elevations)
         @test length(shape.face_max_elevations) == length(shape.faces)
         
@@ -25,6 +19,15 @@ Verifies that optimized illumination functions produce identical results to orig
         elevations_copy = copy(shape.face_max_elevations)
         compute_face_max_elevations!(shape)
         @test shape.face_max_elevations ≈ elevations_copy
+        
+        # Test manual computation on a shape without face_max_elevations
+        shape_manual = load_shape_obj("shape/icosahedron.obj", scale=1.0, with_face_visibility=false)
+        build_face_visibility_graph!(shape_manual)
+        @test isnothing(shape_manual.face_max_elevations)
+        
+        compute_face_max_elevations!(shape_manual)
+        @test !isnothing(shape_manual.face_max_elevations)
+        @test length(shape_manual.face_max_elevations) == length(shape_manual.faces)
     end
     
     @testset "Result Consistency - Single Face" begin
@@ -47,14 +50,14 @@ Verifies that optimized illumination functions produce identical results to orig
         
         for face_idx in test_faces
             for r☉ in sun_positions
-                # Original implementation
-                result_original = isilluminated(shape, r☉, face_idx; with_self_shadowing=true)
+                # Without optimization
+                result_without_opt = isilluminated(shape, r☉, face_idx; with_self_shadowing=true, use_elevation_optimization=false)
                 
-                # Optimized implementation
-                result_optimized = isilluminated_with_self_shadowing_optimized(shape, r☉, face_idx)
+                # With optimization (default)
+                result_with_opt = isilluminated(shape, r☉, face_idx; with_self_shadowing=true, use_elevation_optimization=true)
                 
                 # Results must match exactly
-                @test result_original == result_optimized
+                @test result_without_opt == result_with_opt
             end
         end
     end
@@ -81,11 +84,11 @@ Verifies that optimized illumination functions produce identical results to orig
         ]
         
         for r☉ in sun_positions
-            # Original batch update
-            update_illumination!(illuminated_original, shape, r☉; with_self_shadowing=true)
+            # Without optimization
+            update_illumination!(illuminated_original, shape, r☉; with_self_shadowing=true, use_elevation_optimization=false)
             
-            # Optimized batch update
-            update_illumination_with_self_shadowing_optimized!(illuminated_optimized, shape, r☉)
+            # With optimization (default)
+            update_illumination!(illuminated_optimized, shape, r☉; with_self_shadowing=true, use_elevation_optimization=true)
             
             # Results must match for all faces
             @test illuminated_original == illuminated_optimized
@@ -98,7 +101,6 @@ Verifies that optimized illumination functions produce identical results to orig
     @testset "Different Shape Models" begin
         # Test with a simple shape (icosahedron)
         shape_simple = load_shape_obj("shape/icosahedron.obj", scale=1.0, with_face_visibility=true)
-        compute_face_max_elevations!(shape_simple)
         
         # Random sun positions
         for _ in 1:10
@@ -107,8 +109,8 @@ Verifies that optimized illumination functions produce identical results to orig
             illuminated_original = Vector{Bool}(undef, length(shape_simple.faces))
             illuminated_optimized = Vector{Bool}(undef, length(shape_simple.faces))
             
-            update_illumination!(illuminated_original, shape_simple, r☉; with_self_shadowing=true)
-            update_illumination_with_self_shadowing_optimized!(illuminated_optimized, shape_simple, r☉)
+            update_illumination!(illuminated_original, shape_simple, r☉; with_self_shadowing=true, use_elevation_optimization=false)
+            update_illumination!(illuminated_optimized, shape_simple, r☉; with_self_shadowing=true, use_elevation_optimization=true)
             
             @test illuminated_original == illuminated_optimized
         end

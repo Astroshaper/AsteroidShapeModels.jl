@@ -177,8 +177,7 @@ end
     end
     
     @testset "isilluminated with FaceVisibilityGraph" begin
-        shape = ShapeModel(nodes, faces)
-        build_face_visibility_graph!(shape)
+        shape = ShapeModel(nodes, faces; with_face_visibility=true)
         
         # Sun position
         r_sun = SA[1.0, 1.0, 1.0]
