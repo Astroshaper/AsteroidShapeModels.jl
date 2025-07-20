@@ -13,6 +13,29 @@ Exported Functions:
 =#
 
 """
+    compute_elevation_angle(obs::SVector{3}, n̂::SVector{3}, p::SVector{3}) -> Float64
+
+Compute the elevation angle from observer position to a point.
+
+# Arguments
+- `obs` : Observer position
+- `n̂`   : Observer's surface normal (must be normalized)
+- `p`   : Point to compute elevation angle to
+
+# Returns
+- Elevation angle in radians, in range [-π/2, π/2]
+
+# Notes
+The elevation angle is the angle between the horizon plane (perpendicular to n̂) 
+and the direction from observer to the point. Positive angles indicate the point 
+is above the horizon, negative angles indicate below.
+"""
+@inline function compute_elevation_angle(obs::SVector{3}, n̂::SVector{3}, p::SVector{3})::Float64
+    d̂ = normalize(p - obs)
+    return asin(clamp(n̂ ⋅ d̂, -1.0, 1.0))
+end
+
+"""
     compute_edge_max_elevation(
         obs::SVector{3}, n̂::SVector{3},
         A::SVector{3}, B::SVector{3},
@@ -49,7 +72,7 @@ A critical t giving the maximum of f(t) is obtained by solving df/dt = β·t + �
 - This function is designed for use with a face center as the observer position `obs`, 
   where such degeneracies do not occur in practice.
 """
-function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector{3}, B::SVector{3})
+function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector{3}, B::SVector{3})::Tuple{SVector{3,Float64}, Float64}
     # Relative vectors
     a = A - obs  # From observer to first vertex
     b = B - obs  # From observer to second vertex
@@ -62,14 +85,13 @@ function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector
     a_dot_e = a ⋅ e
     e_dot_e = e ⋅ e
     
+    # Coefficients of the dervative df/dt = β·t + γ
     β = n_dot_e * a_dot_e - n_dot_a * e_dot_e
     γ = n_dot_e * a_dot_a - n_dot_a * a_dot_e
     
     # Evaluate endpoints first
-    â = normalize(a)
-    b̂ = normalize(b)
-    θ_a = asin(clamp(n̂ ⋅ â, -1.0, 1.0))
-    θ_b = asin(clamp(n̂ ⋅ b̂, -1.0, 1.0))
+    θ_a = compute_elevation_angle(obs, n̂, A)
+    θ_b = compute_elevation_angle(obs, n̂, B)
     
     # Find optimal t based on β
     if abs(β) < 1e-10
@@ -98,8 +120,7 @@ function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector
         else
             # Maximum is at the critical point inside [0, 1]
             p_crit = (1 - t_crit) * A + t_crit * B
-            d̂_crit = normalize(p_crit - obs)
-            θ_crit = asin(clamp(n̂ ⋅ d̂_crit, -1.0, 1.0))
+            θ_crit = compute_elevation_angle(obs, n̂, p_crit)
             return (p_crit, θ_crit)
         end
     else  # β > 0
