@@ -73,12 +73,10 @@ A critical t giving the maximum of f(t) is obtained by solving df/dt = β·t + �
   where such degeneracies do not occur in practice.
 """
 function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector{3}, B::SVector{3})::Tuple{Float64, SVector{3,Float64}}
-    # Relative vectors
     a = A - obs  # From observer to first vertex
-    b = B - obs  # From observer to second vertex
-    e = B - A    # Edge direction
+    e = B - A    # Edge vector from A to B
     
-    # Compute coefficients for critical point equation
+    # Compute coefficients for critical point equation, df/dt = 0
     n_dot_a = n̂ ⋅ a
     n_dot_e = n̂ ⋅ e
     a_dot_a = a ⋅ a
@@ -89,22 +87,22 @@ function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector
     β = n_dot_e * a_dot_e - n_dot_a * e_dot_e
     γ = n_dot_e * a_dot_a - n_dot_a * a_dot_e
     
-    # Evaluate endpoints first
-    θ_a = compute_elevation_angle(obs, n̂, A)
-    θ_b = compute_elevation_angle(obs, n̂, B)
+    # Evaluate elevation for endpoints
+    θ_A = compute_elevation_angle(obs, n̂, A)
+    θ_B = compute_elevation_angle(obs, n̂, B)
     
     # Find optimal t based on β
     if abs(β) < 1e-10
         # β ≈ 0: df/dt = γ is constant
-        # If γ > 0, f(t) is increasing → maximum at t=1
-        # If γ < 0, f(t) is decreasing → maximum at t=0
+        # If γ > 0, f(t) is increasing → maximum at t = 1
+        # If γ < 0, f(t) is decreasing → maximum at t = 0
         # If γ ≈ 0, f(t) is constant   → check endpoints
         if abs(γ) < 1e-10
-            return θ_a ≥ θ_b ? (θ_a, A) : (θ_b, B)
+            return θ_A ≥ θ_B ? (θ_A, A) : (θ_B, B)
         elseif γ > 0
-            return (θ_b, B)
+            return (θ_B, B)
         else
-            return (θ_a, A)
+            return (θ_A, A)
         end
     elseif β < 0
         # β < 0: df/dt has a maximum (f is concave down)
@@ -112,11 +110,11 @@ function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector
         t_crit = -γ / β
         
         if t_crit ≤ 0
-            # Maximum is at t=0 (or before the edge)
-            return (θ_a, A)
+            # Maximum is at t = 0 (or before the edge)
+            return (θ_A, A)
         elseif t_crit ≥ 1
-            # Maximum is at t=1 (or beyond the edge)
-            return (θ_b, B)
+            # Maximum is at t = 1 (or beyond the edge)
+            return (θ_B, B)
         else
             # Maximum is at the critical point inside [0, 1]
             p_crit = (1 - t_crit) * A + t_crit * B
@@ -126,7 +124,7 @@ function compute_edge_max_elevation(obs::SVector{3}, n̂::SVector{3}, A::SVector
     else  # β > 0
         # β > 0: df/dt has a minimum (f is concave up)
         # Maximum must be at one of the endpoints
-        return θ_a ≥ θ_b ? (θ_a, A) : (θ_b, B)
+        return θ_A ≥ θ_B ? (θ_A, A) : (θ_B, B)
     end
 end
 
