@@ -8,6 +8,7 @@ CurrentModule = AsteroidShapeModels
 
 ```@docs
 build_face_visibility_graph!
+compute_face_max_elevations!
 view_factor
 ```
 
