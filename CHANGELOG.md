@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2025-01-21
+
 ### Added
 - **Face maximum elevation optimization for faster illumination calculations** (#46)
   - New `face_max_elevations` field in `ShapeModel` for storing pre-computed maximum elevation angles
