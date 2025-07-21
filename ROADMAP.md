@@ -51,8 +51,8 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
   - [x] Add `use_elevation_optimization` parameter to illumination APIs (default: `true`) (#46)
   - [x] Optimize illumination checks using precomputed maximum elevations (#46)
   - [x] Verify illumination results match the original implementation (#46)
-  - [ ] Add comprehensive benchmarks to measure performance improvements
-  - [ ] Document the feature and its performance benefits
+  - [x] Add comprehensive benchmarks to measure performance improvements
+  - [x] Document the feature and its performance benefits
 
 - **Improve `apply_eclipse_shadowing!` code readability**
   - [x] Extract ray-sphere intersection tests into dedicated reusable functions (#45)

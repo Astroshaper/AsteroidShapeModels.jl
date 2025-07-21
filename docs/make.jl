@@ -26,6 +26,10 @@ makedocs(;
             "Visibility Analysis" => "api/visibility.md",
             "Surface Roughness" => "api/roughness.md",
         ],
+        "Benchmarks" => [
+            "v0.2.0 Face Visibility Graph" => "benchmarks/v0.2.0_face_visibility_graph.md",
+            "v0.4.2 Face Max Elevations" => "benchmarks/v0.4.2_face_max_elevations.md",
+        ],
     ],
     checkdocs=:exports,
 )
