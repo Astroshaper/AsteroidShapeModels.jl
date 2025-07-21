@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Face maximum elevation optimization for faster illumination calculations** (#46)
+  - New `face_max_elevations` field in `ShapeModel` for storing pre-computed maximum elevation angles
+  - `compute_face_max_elevations!` function that computes maximum elevation angles using edge-based analysis
+  - `use_elevation_optimization` parameter (default: `true`) for illumination functions:
+    - `isilluminated(...; use_elevation_optimization=true)`
+    - `update_illumination!(...; use_elevation_optimization=true)`
+  - Automatic computation of `face_max_elevations` when creating `ShapeModel` with `with_face_visibility=true`
+  - Early-out optimization that skips ray-triangle intersection tests when sun elevation exceeds maximum terrain elevation
+
 - **Ray-sphere intersection utilities for eclipse calculations** (#45)
   - `Sphere` type for cleaner geometric computations
   - `intersect_ray_sphere` function for efficient ray-sphere intersection tests

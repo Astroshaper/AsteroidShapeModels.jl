@@ -63,4 +63,7 @@ include("test_helpers.jl")
     
     # Comprehensive BVH tests (ray intersection, isilluminated, visibility graph)
     include("test_bvh_comprehensive.jl")
+    
+    # Face max elevations optimization tests
+    include("test_face_max_elevations.jl")
 end

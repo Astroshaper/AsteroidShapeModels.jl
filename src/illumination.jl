@@ -15,7 +15,10 @@ Exported Functions:
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    isilluminated(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer; with_self_shadowing::Bool) -> Bool
+    isilluminated(
+        shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer; 
+        with_self_shadowing::Bool, use_elevation_optimization::Bool=true,
+    ) -> Bool
 
 Check if a face is illuminated by the sun.
 
@@ -27,7 +30,9 @@ Check if a face is illuminated by the sun.
 # Keyword Arguments
 - `with_self_shadowing::Bool` : Whether to include self-shadowing effects.
   - `false`: Use pseudo-convex model (face orientation only)
-  - `true`: Include self-shadowing (requires `face_visibility_graph` to be built)
+  - `true`: Include self-shadowing (requires `face_visibility_graph` and `face_max_elevations`)
+- `use_elevation_optimization::Bool` : Whether to use elevation-based early-out optimization (default: `true`).
+  - Only applies when `with_self_shadowing=true`
 
 # Returns
 - `true` if the face is illuminated
@@ -50,10 +55,14 @@ illuminated = isilluminated(shape, sun_position, face_idx; with_self_shadowing=t
 
 See also: [`update_illumination!`](@ref) for batch processing
 """
-function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer; with_self_shadowing::Bool)
+function isilluminated(
+    shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer; 
+    with_self_shadowing::Bool, use_elevation_optimization::Bool=true,
+)
     if with_self_shadowing
         @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
-        return isilluminated_with_self_shadowing(shape, r☉, face_idx)
+        @assert !isnothing(shape.face_max_elevations) "face_max_elevations is required for self-shadowing. Build it using `compute_face_max_elevations!(shape)`."
+        return isilluminated_with_self_shadowing(shape, r☉, face_idx; use_elevation_optimization)
     else
         return isilluminated_pseudo_convex(shape, r☉, face_idx)
     end
@@ -106,15 +115,35 @@ If `face_visibility_graph` is not available, this function will throw an error.
 - `true` if the face is illuminated (facing the sun and not occluded)
 - `false` if the face is facing away from the sun or is in shadow
 """
-function isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer)::Bool
+function isilluminated_with_self_shadowing(
+    shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer; 
+    use_elevation_optimization::Bool=true,
+)::Bool
     @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
+    @assert !isnothing(shape.face_max_elevations) "face_max_elevations is required for self-shadowing. Build it using `compute_face_max_elevations!(shape)`."
     
     cᵢ = shape.face_centers[face_idx]
     n̂ᵢ = shape.face_normals[face_idx]
     r̂☉ = normalize(r☉)
     
-    # First check if the face is oriented away from the sun
-    n̂ᵢ ⋅ r̂☉ < 0 && return false
+    # Sun's elevation angle θ☉ relative to the face
+    sinθ☉ = n̂ᵢ ⋅ r̂☉
+    
+    # Early-out 1:
+    # If face is oriented away from the sun, return false (not illuminated).
+    sinθ☉ < 0 && return false
+    
+    # Early-out 2:
+    # If sun's elevation is higher than surrounding maximum elevation for this face,
+    # return true (guaranteed to be illuminated).
+    # Use elevation optimization if available
+    if use_elevation_optimization
+        θ☉ = asin(clamp(sinθ☉, -1.0, 1.0))           # Sun's elevation angle
+        θ_max = shape.face_max_elevations[face_idx]  # Maximum elevation angle of surrounding terrain
+        θ_margin = 1e-3                              # Small margin to avoid numerical issues
+        
+        θ☉ > θ_max + θ_margin && return true
+    end
     
     # Check for occlusions using face visibility graph
     ray = Ray(cᵢ, r̂☉)  # Ray from face center to the sun's position
@@ -122,7 +151,9 @@ function isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector
     for j in visible_face_indices
         intersect_ray_triangle(ray, shape, j).hit && return false
     end
-    return true  # No obstruction found
+
+    # No obstruction found
+    return true
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -130,7 +161,10 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    update_illumination!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool)
+    update_illumination!(
+        illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; 
+        with_self_shadowing::Bool, use_elevation_optimization::Bool=true,
+    )
 
 Update illumination state for all faces of a shape model.
 
@@ -142,7 +176,9 @@ Update illumination state for all faces of a shape model.
 # Keyword Arguments
 - `with_self_shadowing::Bool` : Whether to include self-shadowing effects.
   - `false`: Use pseudo-convex model (face orientation only)
-  - `true`: Include self-shadowing (requires `face_visibility_graph` to be built)
+  - `true`: Include self-shadowing (requires `face_visibility_graph` and `face_max_elevations`)
+- `use_elevation_optimization::Bool` : Whether to use elevation-based early-out optimization (default: `true`).
+  - Only applies when `with_self_shadowing=true`
 
 # Performance
 - Pseudo-convex model: O(n) where n is number of faces
@@ -162,10 +198,14 @@ update_illumination!(illuminated_faces, shape, sun_position; with_self_shadowing
 
 See also: [`isilluminated`](@ref) for single face checks, [`apply_eclipse_shadowing!`](@ref) for binary asteroid shadowing
 """
-function update_illumination!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool)
+function update_illumination!(
+    illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3}; 
+    with_self_shadowing::Bool, use_elevation_optimization::Bool=true,
+)
     if with_self_shadowing
         @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
-        update_illumination_with_self_shadowing!(illuminated_faces, shape, r☉)
+        @assert !isnothing(shape.face_max_elevations) "face_max_elevations is required for self-shadowing. Build it using `compute_face_max_elevations!(shape)`."
+        update_illumination_with_self_shadowing!(illuminated_faces, shape, r☉; use_elevation_optimization)
     else
         update_illumination_pseudo_convex!(illuminated_faces, shape, r☉)
     end
@@ -241,12 +281,16 @@ shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=tru
 update_illumination_with_self_shadowing!(illuminated_faces, shape, sun_position)
 ```
 """
-function update_illumination_with_self_shadowing!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
+function update_illumination_with_self_shadowing!(
+    illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3};
+    use_elevation_optimization::Bool=true,
+)
     @assert length(illuminated_faces) == length(shape.faces) "illuminated_faces vector must have same length as number of faces."
     @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using build_face_visibility_graph!(shape)."
+    @assert !isnothing(shape.face_max_elevations) "face_max_elevations is required for self-shadowing. Build it using compute_face_max_elevations!(shape)."
     
     @inbounds for i in eachindex(shape.faces)
-        illuminated_faces[i] = isilluminated_with_self_shadowing(shape, r☉, i)
+        illuminated_faces[i] = isilluminated_with_self_shadowing(shape, r☉, i; use_elevation_optimization)
     end
     
     return nothing

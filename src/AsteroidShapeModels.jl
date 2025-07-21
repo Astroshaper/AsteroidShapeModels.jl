@@ -75,6 +75,9 @@ export polyhedron_volume, equivalent_radius, maximum_radius, minimum_radius
 include("illumination.jl")
 export isilluminated, update_illumination!
 
+include("face_max_elevations.jl")
+export compute_face_max_elevations!
+
 include("eclipse_shadowing.jl")
 export apply_eclipse_shadowing!, EclipseStatus, NO_ECLIPSE, PARTIAL_ECLIPSE, TOTAL_ECLIPSE
 
