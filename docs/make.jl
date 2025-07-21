@@ -17,6 +17,7 @@ makedocs(;
         "Tutorial" => "tutorial.md",
         "Guides" => [
             "BVH Usage" => "guides/bvh_usage.md",
+            "Migration Guide" => "guides/migration.md",
         ],
         "API Reference" => [
             "Types" => "api/types.md",
