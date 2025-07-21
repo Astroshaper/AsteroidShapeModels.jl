@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `update_illumination!(...; use_elevation_optimization=true)`
   - Automatic computation of `face_max_elevations` when creating `ShapeModel` with `with_face_visibility=true`
   - Early-out optimization that skips ray-triangle intersection tests when sun elevation exceeds maximum terrain elevation
+  - Performance improvements: ~2.5-2.7x speedup for illumination calculations (see [benchmarks](docs/src/benchmarks/v0.4.2_face_max_elevations.md))
 
 - **Ray-sphere intersection utilities for eclipse calculations** (#45)
   - `Sphere` type for cleaner geometric computations
