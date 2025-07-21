@@ -58,12 +58,6 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
   - [x] Extract ray-sphere intersection tests into dedicated reusable functions (#45)
   - [x] Ensure consistency in results with previous implementation (#45)
 
-### Roadmap for Face Maximum Elevation Optimization
-- **v0.4.2** (Current PR #46): Experimental feature with `use_elevation_optimization` parameter
-- **v0.4.3**: Add comprehensive benchmarks and performance validation
-- **v0.4.4**: Gather user feedback and edge case testing
-- **v0.5.0**: Remove `use_elevation_optimization` parameter and make optimization the default implementation
-
 ## Version 0.5.0 - Advanced Surface Modeling (Target: September 2025)
 
 ### Major Features
