@@ -21,17 +21,26 @@ For future development plans, see our [Development Roadmap](ROADMAP.md).
 ## Key Features
 
 - **Shape Model Loading**: Load 3D models in OBJ file format
-- **Face Geometric Properties**: Calculate face centers, normal vectors, and areas
+- **Geometric Properties**:
+  - Face properties: Calculate face centers, normal vectors, and areas
+  - Shape properties: Compute volume, equivalent radius, and maximum/minimum radii
 - **Ray Intersection Detection**: High-precision ray-triangle intersection using the Möller–Trumbore algorithm with BVH (Bounding Volume Hierarchy) acceleration for efficient computation
   - **Batch Ray Processing**: Process multiple rays efficiently in vectors or matrices while preserving input structure
 - **Visibility Analysis**: Calculate visibility and view factors between faces
   - Optimized non-BVH algorithm with candidate filtering for face-to-face visibility
   - Distance-based sorting provides ~2x speedup over naive approaches
 - **Illumination Analysis**: Determine face illumination states with flexible shadowing models
-  - **Unified API**: Single interface with configurable self-shadowing effects
-  - **Batch Updates**: Efficient illumination state updates for all faces
-  - **Binary Asteroid Support**: Mutual shadowing and eclipse detection for binary systems
-- **Shape Characteristics**: Calculate volume, equivalent radius, maximum and minimum radii
+  - Pseudo-convex model for fast computation (only face orientation check)
+  - Self-shadowing model for accurate shading (considers occlusions from other faces)
+  - Mutual shadowing (eclipse) detection for a binary asteroid
+
+## What's New in v0.4.2
+
+- **Performance Optimization**: Face maximum elevation pre-computation provides ~2.5x speedup for illumination calculations with self-shadowing
+- **Enhanced Eclipse Detection**: More accurate total eclipse detection for non-spherical shapes
+- **Ray-Sphere Utilities**: New geometric utilities for cleaner eclipse calculations
+
+For detailed migration instructions between versions, see the [Migration Guide](https://astroshaper.github.io/AsteroidShapeModels.jl/dev/guides/migration/).
 
 ## Requirements
 
@@ -70,6 +79,11 @@ shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=tru
 # build_face_visibility_graph!(shape)
 # build_bvh!(shape)
 
+# Access to face properties
+shape.face_centers  # Center position of each face
+shape.face_normals  # Normal vector of each face
+shape.face_areas    # Area of of each face
+
 # Single ray intersection (requires BVH to be built)
 ray = Ray(SA[1000.0, 0.0, 0.0], SA[-1.0, 0.0, 0.0])
 result = intersect_ray_shape(ray, shape)
@@ -102,38 +116,6 @@ P2S = SA[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]  # Rotation matrix
 # Check for eclipse shadowing
 status = apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, sun_pos1, secondary_pos, P2S)
 # Returns: NO_ECLIPSE, PARTIAL_ECLIPSE, or TOTAL_ECLIPSE
-
-# Access to face properties
-shape.face_centers  # Center position of each face
-shape.face_normals  # Normal vector of each face
-shape.face_areas    # Area of of each face
-```
-
-## API Migration Guide (v0.4.1)
-
-### New `apply_eclipse_shadowing!` API
-
-The new API provides more intuitive parameter ordering for SPICE integration:
-
-```julia
-# Old API (deprecated, will be removed in v0.5.0)
-apply_eclipse_shadowing!(illuminated_faces, shape1, r☉₁, R₁₂, t₁₂, shape2)
-
-# New API (recommended)
-apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, r☉₁, r₁₂, R₁₂)
-# where r₁₂ is shape2's position in shape1's frame (directly from SPICE)
-```
-
-### Parameter Naming Changes
-
-All batch illumination functions now use `illuminated_faces` instead of `illuminated`:
-
-```julia
-# Old
-update_illumination!(illuminated, shape, sun_pos; with_self_shadowing=true)
-
-# New  
-update_illumination!(illuminated_faces, shape, sun_pos; with_self_shadowing=true)
 ```
 
 ## License
