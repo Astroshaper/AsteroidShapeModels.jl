@@ -2,7 +2,11 @@
 
 This document outlines the development plans and milestones for `AsteroidShapeModels.jl`. We use [Semantic Versioning](https://semver.org/) for version numbering.
 
-## Version 0.4.0 - BVH Integration and Optimization (Released: July 2025)
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to get involved.
+
+Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeModels.jl/issues) for current tasks and discussions.
+
+## Version 0.4.0 - BVH Integration and Optimization (Released: 2025-07-08)
 
 ### Major Changes (Breaking Changes)
 - **Full Integration of `ImplicitBVH.jl`**
@@ -26,7 +30,7 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
 - [x] Add comprehensive BVH usage documentation
 - [x] Update examples for new APIs
 
-## Version 0.4.1 - API Improvements (Released: July 2025)
+## Version 0.4.1 - API Improvements (Released: 2025-07-10)
 
 ### Completed
 - **Improved `apply_eclipse_shadowing!` API**
@@ -41,7 +45,7 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
     - Now correctly recovers shape2's position using `r₁₂ = -R₁₂' * t₁₂`
   - [x] Fixed sun position transformation in eclipse shadowing (include rotation + translation)
 
-## Version 0.4.2 - Performance Optimizations (Target: August 2025)
+## Version 0.4.2 - Performance Optimizations (Released: 2025-07-21)
 
 ### Performance Features
 - **Face Maximum Elevation Precomputation**
@@ -61,9 +65,6 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
 ## Version 0.5.0 - Advanced Surface Modeling (Target: September 2025)
 
 ### Major Features
-- **Breaking Changes**
-  - [ ] Remove `use_elevation_optimization` parameter from illumination APIs
-  - [ ] Make face maximum elevation optimization the default implementation
 - **Hierarchical Surface Roughness Model**
   - [ ] Support nested shape models for multi-scale surface representation
   - [ ] Implement efficient traversal algorithms for nested structures
@@ -74,26 +75,24 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
   - [ ] Implement Fractal surface generation
   - [ ] Add comprehensive test coverage for roughness features
 
-- **Performance Enhancements**
-  - [ ] Add basic multi-threading support using `Threads.jl`
-  - [ ] Optimize critical paths for better single-threaded performance
-  - [ ] **Optimize `apply_eclipse_shadowing!` memory allocations**
-    - Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call
-    - Implement true batch ray tracing with pre-allocated buffers for mutual shadowing
-    - Design `EclipseShadowingBuffer` struct to hold reusable arrays
-    - Implement filtering that preserves early-out optimizations
-    - Ensure zero allocations during runtime after initial buffer creation
-  - [ ] Add multi-threading support to `apply_eclipse_shadowing!` using `@threads`
-  - [ ] Implement spatial data structures (e.g., octree) to pre-filter potentially shadowed faces
-  - [ ] Add caching for temporal coherence in simulations with small time steps
-
 ### API Improvements
 - [ ] Remove deprecated `apply_eclipse_shadowing!` signature that uses `t₁₂` parameter
   - Old signature: `apply_eclipse_shadowing!(illuminated_faces, shape1, r☉₁, R₁₂, t₁₂, shape2)`
   - Keep only the new signature with `r₁₂` parameter introduced in v0.4.1
+- [ ] Remove `use_elevation_optimization` parameter from illumination APIs
+  - Make face maximum elevation optimization the default implementation
 - [ ] Unify parameter naming conventions across the package
 - [ ] Create configuration structs for complex operations
 - [ ] Improve error messages and validation
+
+### Performance Enhancements
+- [ ] **Optimize `apply_eclipse_shadowing!` memory allocations**
+  - Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call
+  - Implement true batch ray tracing with pre-allocated buffers for mutual shadowing
+  - Design `EclipseShadowingBuffer` struct to hold reusable arrays
+  - Implement filtering that preserves early-out optimizations
+  - Ensure zero allocations during runtime after initial buffer creation
+- [ ] Add basic multi-threading support using `Threads.jl`
 
 ## Version 0.6.0 - High-Performance Computing Support (Target: October 2025)
 
@@ -121,16 +120,3 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
 
 - **Extended File Format Support**
   - PLY/STL/VTK/DSK format support
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to get involved.
-
-## Tracking Progress
-
-Development progress is tracked through:
-- GitHub Milestones for each version
-- GitHub Issues for specific features and bugs
-- Pull Requests for implementation
-
-Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeModels.jl/issues) for current tasks and discussions.
