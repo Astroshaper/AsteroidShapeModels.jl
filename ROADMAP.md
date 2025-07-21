@@ -65,9 +65,6 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 ## Version 0.5.0 - Advanced Surface Modeling (Target: September 2025)
 
 ### Major Features
-- **Breaking Changes**
-  - [ ] Remove `use_elevation_optimization` parameter from illumination APIs
-  - [ ] Make face maximum elevation optimization the default implementation
 - **Hierarchical Surface Roughness Model**
   - [ ] Support nested shape models for multi-scale surface representation
   - [ ] Implement efficient traversal algorithms for nested structures
@@ -78,26 +75,24 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
   - [ ] Implement Fractal surface generation
   - [ ] Add comprehensive test coverage for roughness features
 
-- **Performance Enhancements**
-  - [ ] Add basic multi-threading support using `Threads.jl`
-  - [ ] Optimize critical paths for better single-threaded performance
-  - [ ] **Optimize `apply_eclipse_shadowing!` memory allocations**
-    - Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call
-    - Implement true batch ray tracing with pre-allocated buffers for mutual shadowing
-    - Design `EclipseShadowingBuffer` struct to hold reusable arrays
-    - Implement filtering that preserves early-out optimizations
-    - Ensure zero allocations during runtime after initial buffer creation
-  - [ ] Add multi-threading support to `apply_eclipse_shadowing!` using `@threads`
-  - [ ] Implement spatial data structures (e.g., octree) to pre-filter potentially shadowed faces
-  - [ ] Add caching for temporal coherence in simulations with small time steps
-
 ### API Improvements
 - [ ] Remove deprecated `apply_eclipse_shadowing!` signature that uses `t₁₂` parameter
   - Old signature: `apply_eclipse_shadowing!(illuminated_faces, shape1, r☉₁, R₁₂, t₁₂, shape2)`
   - Keep only the new signature with `r₁₂` parameter introduced in v0.4.1
+- [ ] Remove `use_elevation_optimization` parameter from illumination APIs
+  - Make face maximum elevation optimization the default implementation
 - [ ] Unify parameter naming conventions across the package
 - [ ] Create configuration structs for complex operations
 - [ ] Improve error messages and validation
+
+### Performance Enhancements
+- [ ] **Optimize `apply_eclipse_shadowing!` memory allocations**
+  - Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call
+  - Implement true batch ray tracing with pre-allocated buffers for mutual shadowing
+  - Design `EclipseShadowingBuffer` struct to hold reusable arrays
+  - Implement filtering that preserves early-out optimizations
+  - Ensure zero allocations during runtime after initial buffer creation
+- [ ] Add basic multi-threading support using `Threads.jl`
 
 ## Version 0.6.0 - High-Performance Computing Support (Target: October 2025)
 
