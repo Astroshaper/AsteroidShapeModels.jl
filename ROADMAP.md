@@ -2,6 +2,10 @@
 
 This document outlines the development plans and milestones for `AsteroidShapeModels.jl`. We use [Semantic Versioning](https://semver.org/) for version numbering.
 
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to get involved.
+
+Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeModels.jl/issues) for current tasks and discussions.
+
 ## Version 0.4.0 - BVH Integration and Optimization (Released: July 2025)
 
 ### Major Changes (Breaking Changes)
@@ -121,16 +125,3 @@ This document outlines the development plans and milestones for `AsteroidShapeMo
 
 - **Extended File Format Support**
   - PLY/STL/VTK/DSK format support
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to get involved.
-
-## Tracking Progress
-
-Development progress is tracked through:
-- GitHub Milestones for each version
-- GitHub Issues for specific features and bugs
-- Pull Requests for implementation
-
-Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeModels.jl/issues) for current tasks and discussions.
