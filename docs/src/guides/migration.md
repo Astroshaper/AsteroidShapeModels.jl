@@ -2,6 +2,56 @@
 
 This guide helps you migrate your code when upgrading between major versions of `AsteroidShapeModels.jl`.
 
+## Getting Help
+
+If you encounter issues during migration:
+
+1. Check the [CHANGELOG](https://github.com/Astroshaper/AsteroidShapeModels.jl/blob/main/CHANGELOG.md) for detailed changes
+2. Review the [API documentation](https://astroshaper.github.io/AsteroidShapeModels.jl/stable)
+3. Open an [issue](https://github.com/Astroshaper/AsteroidShapeModels.jl/issues) on GitHub
+
+## Future Deprecations
+
+1. **`use_elevation_optimization` parameter**
+   - Will be removed in a future version
+   - Optimization will become the default behavior
+   - Start removing explicit `use_elevation_optimization=true` from your code
+
+## Migrating to v0.5.0 (Unreleased)
+
+### Breaking Changes
+
+#### Removed `apply_eclipse_shadowing!` deprecated signature
+
+The old function signature that used the `t₁₂` parameter has been removed:
+
+```julia
+# Old signature (removed)
+apply_eclipse_shadowing!(illuminated_faces, shape1, r☉₁, R₁₂, t₁₂, shape2)
+
+# New signature (use this)
+apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, r☉₁, r₁₂, R₁₂)
+```
+
+**Migration steps:**
+
+1. Replace the `t₁₂` parameter with `r₁₂` (shape2's position in shape1's frame)
+  - The position corresponding to `r₁₂` can be retrieved from SPICE kernels.
+  - If you have `t₁₂`, compute `r₁₂` using: `r₁₂ = -R₁₂' * t₁₂`
+2. Update the parameter order to group shapes together
+
+**Example migration:**
+
+```julia
+# Before (v0.4.x)
+t₁₂ = -R₁₂ * r₁₂  # You might have computed t₁₂ like this
+apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R₁₂, t₁₂, shape2)
+
+# After (v0.5.0)
+# Use r₁₂ directly (shape2's position)
+apply_eclipse_shadowing!(illuminated, shape1, shape2, sun_pos, r₁₂, R₁₂)
+```
+
 ## Migrating to v0.4.2
 
 ### New Performance Features
@@ -68,24 +118,3 @@ New batch processing functions for better performance:
 illuminated = Vector{Bool}(undef, length(shape.faces))
 update_illumination!(illuminated, shape, sun_position; with_self_shadowing=true)
 ```
-
-## Future Deprecations (v0.5.0)
-
-### Planned Removals
-
-1. **`use_elevation_optimization` parameter**
-   - Will be removed in v0.5.0
-   - Optimization will become the default behavior
-   - Start removing explicit `use_elevation_optimization=true` from your code
-
-2. **Old `apply_eclipse_shadowing!` signature**
-   - The deprecated signature with `t₁₂` will be removed
-   - Migrate to the new API with `r₁₂` parameter
-
-## Getting Help
-
-If you encounter issues during migration:
-
-1. Check the [CHANGELOG](https://github.com/Astroshaper/AsteroidShapeModels.jl/blob/main/CHANGELOG.md) for detailed changes
-2. Review the [API documentation](https://astroshaper.github.io/AsteroidShapeModels.jl/stable)
-3. Open an [issue](https://github.com/Astroshaper/AsteroidShapeModels.jl/issues) on GitHub
