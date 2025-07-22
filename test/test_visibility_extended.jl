@@ -382,14 +382,14 @@ This file tests advanced visibility and illumination calculations:
             build_bvh!(shape_occluding)
             
             R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
-            t = @SVector[3.0, 0.0, 0.0]
+            r₁₂ = @SVector[3.0, 0.0, 0.0]
             
             # Start with all faces illuminated
             illuminated = fill(true, nfaces)
             initial_count = count(illuminated)
             
             # Apply eclipse shadowing
-            status = apply_eclipse_shadowing!(illuminated, shape, sun_pos, R, t, shape_occluding)
+            status = apply_eclipse_shadowing!(illuminated, shape, shape_occluding, sun_pos, r₁₂, R)
             
             # Should reduce or maintain illumination count
             @test count(illuminated) <= initial_count
@@ -429,30 +429,29 @@ This file tests advanced visibility and illumination calculations:
         R = @SMatrix[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]  # Identity rotation
         
         @testset "NO_ECLIPSE - Bodies far apart" begin
-            # shape2 is at [0, 10, 0] in shape1's frame, so t = -R * [0, 10, 0] = [0, -10, 0]
-            t = @SVector[0.0, -10.0, 0.0]  # Lateral separation
+            # shape2 is at [0, 10, 0] in shape1's frame
+            r₁₂ = @SVector[0.0, 10.0, 0.0]  # Lateral separation
             illuminated_faces = fill(true, length(shape1.faces))
-            status = apply_eclipse_shadowing!(illuminated_faces, shape1, sun_pos, R, t, shape2)
+            status = apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, sun_pos, r₁₂, R)
             @test status == NO_ECLIPSE
             @test all(illuminated_faces)  # No faces should be shadowed
         end
         
         @testset "NO_ECLIPSE - Occluder behind target" begin
             # shape2 is at [-10, 0, 0] in shape1's frame (behind relative to sun at [10, 0, 0])
-            # so t = -R * [-10, 0, 0] = [10, 0, 0]
-            t = @SVector[10.0, 0.0, 0.0]  # shape2 is behind shape1 relative to sun
+            r₁₂ = @SVector[-10.0, 0.0, 0.0]  # shape2 is behind shape1 relative to sun
             illuminated_faces = fill(true, length(shape1.faces))
-            status = apply_eclipse_shadowing!(illuminated_faces, shape1, sun_pos, R, t, shape2)
+            status = apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, sun_pos, r₁₂, R)
             @test status == NO_ECLIPSE
             @test all(illuminated_faces)  # No faces should be shadowed
         end
         
         @testset "PARTIAL_ECLIPSE - Partial shadowing" begin
             # To get partial eclipse, shape2 needs to be between sun and shape1
-            # shape2 is at [-2, 0.3, 0] in shape1's frame, so t = -R * [-2, 0.3, 0] = [2, -0.3, 0]
-            t = @SVector[2.0, -0.3, 0.0]  # Partial overlap
+            # shape2 is at [-2, 0.3, 0] in shape1's frame
+            r₁₂ = @SVector[-2.0, 0.3, 0.0]  # Partial overlap
             illuminated_faces = fill(true, length(shape1.faces))
-            status = apply_eclipse_shadowing!(illuminated_faces, shape1, sun_pos, R, t, shape2)
+            status = apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, sun_pos, r₁₂, R)
             @test status == PARTIAL_ECLIPSE || status == NO_ECLIPSE  # Depends on exact geometry
             # At least some faces should remain illuminated if partial
             if status == PARTIAL_ECLIPSE
@@ -472,10 +471,9 @@ This file tests advanced visibility and illumination calculations:
             build_bvh!(shape_large)
             
             # shape_large is at [5, 0, 0] in shape_small's frame (between sun and target)
-            # so t = -R * [5, 0, 0] = [-5, 0, 0]
-            t = @SVector[-5.0, 0.0, 0.0]  # Large occluder between sun and small target
+            r₁₂ = @SVector[5.0, 0.0, 0.0]  # Large occluder between sun and small target
             illuminated_faces = fill(true, length(shape_small.faces))
-            status = apply_eclipse_shadowing!(illuminated_faces, shape_small, sun_pos, R, t, shape_large)
+            status = apply_eclipse_shadowing!(illuminated_faces, shape_small, shape_large, sun_pos, r₁₂, R)
             @test status == TOTAL_ECLIPSE
             @test !any(illuminated_faces)  # All faces should be shadowed
         end
@@ -485,10 +483,10 @@ This file tests advanced visibility and illumination calculations:
             @testset "Ray moving away from occluder" begin
                 # Place shape2 behind shape1's face but offset laterally
                 sun_pos_diagonal = SA[1.0, 1.0, 0.0]  # Sun at 45 degrees
-                t = @SVector[-2.0, 2.0, 0.0]  # shape2 behind and to the side
+                r₁₂ = @SVector[2.0, -2.0, 0.0]  # shape2 behind and to the side
                 
                 illuminated_faces = fill(true, length(shape1.faces))
-                status = apply_eclipse_shadowing!(illuminated_faces, shape1, sun_pos_diagonal, R, t, shape2)
+                status = apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, sun_pos_diagonal, r₁₂, R)
                 
                 # Some faces might be shadowed depending on exact geometry
                 @test status == NO_ECLIPSE || status == PARTIAL_ECLIPSE
@@ -497,10 +495,10 @@ This file tests advanced visibility and illumination calculations:
             @testset "Ray-sphere intersection miss" begin
                 # Create shapes with specific positioning to test d_center > ρ₂
                 # Shape2 is offset such that rays from shape1 miss its bounding sphere
-                t = @SVector[5.0, 5.0, 0.0]  # Diagonal offset
+                r₁₂ = @SVector[-5.0, -5.0, 0.0]  # Diagonal offset
                 
                 illuminated_faces = fill(true, length(shape1.faces))
-                status = apply_eclipse_shadowing!(illuminated_faces, shape1, sun_pos, R, t, shape2)
+                status = apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, sun_pos, r₁₂, R)
                 
                 # Should have no eclipse or minimal shadowing
                 @test status == NO_ECLIPSE || (status == PARTIAL_ECLIPSE && count(illuminated_faces) > length(shape1.faces) * 0.8)
@@ -515,10 +513,10 @@ This file tests advanced visibility and illumination calculations:
                 build_bvh!(shape_sphere)
                 
                 # Position sphere to guarantee some rays pass through its center
-                t = @SVector[5.0, 0.0, 0.0]
+                r₁₂ = @SVector[-5.0, 0.0, 0.0]
                 
                 illuminated_faces = fill(true, length(shape1.faces))
-                status = apply_eclipse_shadowing!(illuminated_faces, shape1, sun_pos, R, t, shape_sphere)
+                status = apply_eclipse_shadowing!(illuminated_faces, shape1, shape_sphere, sun_pos, r₁₂, R)
                 
                 # Should have some shadowing
                 @test status == PARTIAL_ECLIPSE || status == TOTAL_ECLIPSE
@@ -558,22 +556,6 @@ This file tests advanced visibility and illumination calculations:
                 end
             end
             
-            @testset "Consistency between old and new API" begin
-                r₁₂ = SA[-3.0, 0.5, 0.0]  # Test position
-                t₁₂ = -R * r₁₂  # Corresponding transformation parameter
-                
-                # Test with old API
-                illuminated_faces_old = fill(true, length(shape1.faces))
-                status_old = apply_eclipse_shadowing!(illuminated_faces_old, shape1, sun_pos, R, t₁₂, shape2)
-                
-                # Test with new API
-                illuminated_faces_new = fill(true, length(shape1.faces))
-                status_new = apply_eclipse_shadowing!(illuminated_faces_new, shape1, shape2, sun_pos, r₁₂, R)
-                
-                # Results should be identical
-                @test status_old == status_new
-                @test illuminated_faces_old == illuminated_faces_new
-            end
         end
     end
     

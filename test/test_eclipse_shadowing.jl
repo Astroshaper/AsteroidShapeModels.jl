@@ -82,131 +82,32 @@ they produce identical results.
             r☉₁ = ephem.sun[i]  # Sun's position in the primary's frame
             r₁₂ = ephem.sec[i]  # Secondary's position in the primary's frame
             R₁₂ = ephem.P2S[i]  # Rotation matrix from primary to secondary frames
-
+            
             # Pre-compute all coordinate transformations
             r☉₂ = R₁₂ * (r☉₁ - r₁₂)  # Sun's position in the secondary's frame
             R₂₁ = R₁₂'               # Rotation matrix from secondary to primary
             r₂₁ = -R₁₂ * r₁₂         # Primary's position in the secondary's frame
             
-            t₁₂ = -R₁₂ * r₁₂  # Transformation parameter for old API
-            t₂₁ = -R₂₁ * r₂₁  # Transformation parameter for new API
+            # Test eclipses on Dimorphos and Didymos
+            illuminated_faces1 = zeros(Bool, length(shape1.faces))
+            illuminated_faces2 = zeros(Bool, length(shape2.faces))
             
-            # Test Dimorphos shadows Didymos
-            illuminated_faces_old = zeros(Bool, length(shape1.faces))
-            illuminated_faces_new = zeros(Bool, length(shape1.faces))
+            # Initialize illumination considering self-shadowing
+            update_illumination!(illuminated_faces1, shape1, r☉₁; with_self_shadowing=true)
+            update_illumination!(illuminated_faces2, shape2, r☉₂; with_self_shadowing=true)
             
-            # Initialize illumination using update_illumination!
-            update_illumination!(illuminated_faces_old, shape1, r☉₁; with_self_shadowing=true)
-            update_illumination!(illuminated_faces_new, shape1, r☉₁; with_self_shadowing=true)
-            
-            # Test both APIs
-            status_old = apply_eclipse_shadowing!(illuminated_faces_old, shape1, r☉₁, R₁₂, t₁₂, shape2)
-            status_new = apply_eclipse_shadowing!(illuminated_faces_new, shape1, shape2, r☉₁, r₁₂, R₁₂)
+            # Test new API
+            status1 = apply_eclipse_shadowing!(illuminated_faces1, shape1, shape2, r☉₁, r₁₂, R₁₂)
+            status2 = apply_eclipse_shadowing!(illuminated_faces2, shape2, shape1, r☉₂, r₂₁, R₂₁)
             
             # Check conditions and update overall test status
-            all_dimorphos_shadows_didymos_tests_pass &= (status_old == status_new)
-            all_dimorphos_shadows_didymos_tests_pass &= (illuminated_faces_old == illuminated_faces_new)
-            all_dimorphos_shadows_didymos_tests_pass &= (status_old == PARTIAL_ECLIPSE || status_old == NO_ECLIPSE)
-            
-            # Test Didymos shadows Dimorphos
-            illuminated_faces_old = zeros(Bool, length(shape2.faces))
-            illuminated_faces_new = zeros(Bool, length(shape2.faces))
-            
-            # Initialize illumination using update_illumination!
-            update_illumination!(illuminated_faces_old, shape2, r☉₂; with_self_shadowing=true)
-            update_illumination!(illuminated_faces_new, shape2, r☉₂; with_self_shadowing=true)
-            
-            # Test both APIs
-            status_old = apply_eclipse_shadowing!(illuminated_faces_old, shape2, r☉₂, R₂₁, t₂₁, shape1)
-            status_new = apply_eclipse_shadowing!(illuminated_faces_new, shape2, shape1, r☉₂, r₂₁, R₂₁)
-
-            # Check conditions and update overall test status
-            all_didymos_shadows_dimorphos_tests_pass &= (status_old == status_new)
-            all_didymos_shadows_dimorphos_tests_pass &= (illuminated_faces_old == illuminated_faces_new)
-            all_didymos_shadows_dimorphos_tests_pass &= (status_old in [NO_ECLIPSE, PARTIAL_ECLIPSE, TOTAL_ECLIPSE])
+            all_dimorphos_shadows_didymos_tests_pass &= (status1 == PARTIAL_ECLIPSE || status1 == NO_ECLIPSE)
+            all_didymos_shadows_dimorphos_tests_pass &= (status2 in [NO_ECLIPSE, PARTIAL_ECLIPSE, TOTAL_ECLIPSE])
         end
         
         # Single test assertions for all time steps
         @test all_dimorphos_shadows_didymos_tests_pass
         @test all_didymos_shadows_dimorphos_tests_pass
-    end
-    
-    @testset "Performance Comparison" begin
-        println("\n=== Eclipse Shadowing Performance Comparison ===")
-        
-        # Time all time steps for comprehensive performance comparison
-        println("\nTiming eclipse calculations for $(length(ephem.time)) time steps...")
-        println("Each time step includes both mutual shadowing calculations.")
-        
-        illuminated_faces1 = zeros(Bool, length(shape1.faces))
-        illuminated_faces2 = zeros(Bool, length(shape2.faces))
-
-        # Old API - Both directions per time step
-        time_old_total = @elapsed begin
-            for i in eachindex(ephem.time)
-                r☉₁ = ephem.sun[i]
-                r₁₂ = ephem.sec[i]
-                R₁₂ = ephem.P2S[i]
-                
-                # Pre-compute transformations
-                r☉₂ = R₁₂ * (r☉₁ - r₁₂)  # Sun's position in the secondary's frame
-                R₂₁ = R₁₂'               # Rotation matrix from secondary to primary
-                r₂₁ = -R₁₂ * r₁₂         # Primary's position in the secondary's frame
-
-                t₁₂ = -R₁₂ * r₁₂  # Transformation parameter for old API
-                t₂₁ = -R₂₁ * r₂₁  # Transformation parameter for new API
-                
-                # Dimorphos shadows Didymos
-                
-                update_illumination!(illuminated_faces1, shape1, r☉₁; with_self_shadowing=true)
-                update_illumination!(illuminated_faces2, shape2, r☉₂; with_self_shadowing=true)
-                
-                apply_eclipse_shadowing!(illuminated_faces1, shape1, r☉₁, R₁₂, t₁₂, shape2)
-                apply_eclipse_shadowing!(illuminated_faces2, shape2, r☉₂, R₂₁, t₂₁, shape1)
-            end
-        end
-        
-        # New API - Both directions per time step
-        time_new_total = @elapsed begin
-            for i in eachindex(ephem.time)
-                r☉₁ = ephem.sun[i]
-                r₁₂ = ephem.sec[i]
-                R₁₂ = ephem.P2S[i]
-                
-                # Pre-compute all coordinate transformations
-                r☉₂ = R₁₂ * (r☉₁ - r₁₂)  # Sun's position in the secondary's frame
-                R₂₁ = R₁₂'               # Rotation matrix from secondary to primary
-                r₂₁ = -R₁₂ * r₁₂         # Primary's position in the secondary's frame
-                
-                # Both directions
-                update_illumination!(illuminated_faces1, shape1, r☉₁; with_self_shadowing=true)
-                update_illumination!(illuminated_faces2, shape2, r☉₂; with_self_shadowing=true)
-                
-                apply_eclipse_shadowing!(illuminated_faces1, shape1, shape2, r☉₁, r₁₂, R₁₂)
-                apply_eclipse_shadowing!(illuminated_faces2, shape2, shape1, r☉₂, r₂₁, R₂₁)
-            end
-        end
-        
-        # Calculate averages
-        n_steps = length(ephem.time)
-        avg_old_per_step = time_old_total / n_steps * 1000  # ms per time step
-        avg_new_per_step = time_new_total / n_steps * 1000  # ms per time step
-        
-        # Print results
-        println("\nMutual shadowing performance (both directions per time step):")
-        println("  Didymos   : $(length(shape1.faces)) faces")
-        println("  Dimorphos : $(length(shape2.faces)) faces")
-        println()
-        println("  Old API: $(round(time_old_total, digits=3)) s, $(round(avg_old_per_step, digits=3)) ms per time step")
-        println("  New API: $(round(time_new_total, digits=3)) s, $(round(avg_new_per_step, digits=3)) ms per time step")
-        println("  Speedup: $(round(time_old_total / time_new_total, digits=3))x")
-        println()
-
-        println("\n==============================================")
-        
-        # Basic validation
-        @test time_old_total > 0
-        @test time_new_total > 0
     end
     
     @testset "Error Handling" begin
