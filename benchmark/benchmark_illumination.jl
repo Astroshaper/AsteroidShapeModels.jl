@@ -29,47 +29,38 @@ function generate_sun_positions_rotation()
     return positions
 end
 
-# Function to verify results match between optimization on/off
-function verify_results_match(shape_vis, sun_positions)
-    println("\nVerifying results consistency...")
+# Function to verify results are reasonable
+function verify_results(shape_vis, sun_positions)
+    println("\nVerifying results...")
     
-    mismatches = 0
+    illuminated_count = 0
     total_checks = 0
     
-    for (i, r☉) in enumerate(sun_positions)
+    # Sample a few sun positions for validation
+    sample_positions = sun_positions[1:min(10, length(sun_positions))]
+    
+    for (i, r☉) in enumerate(sample_positions)
         for face_idx in 1:length(shape_vis.faces)
-            result_with_opt = isilluminated(shape_vis, r☉, face_idx; 
-                                           with_self_shadowing=true, 
-                                           use_elevation_optimization=true)
-            result_without_opt = isilluminated(shape_vis, r☉, face_idx; 
-                                             with_self_shadowing=true, 
-                                             use_elevation_optimization=false)
+            result = isilluminated(shape_vis, r☉, face_idx; 
+                                  with_self_shadowing=true)
             
-            if result_with_opt != result_without_opt
-                mismatches += 1
-                if mismatches <= 5  # Print first few mismatches
-                    println(
-                        "  Mismatch at sun position $i, face $face_idx: " *
-                        "with_opt=$result_with_opt, without_opt=$result_without_opt"
-                    )
-                end
+            if result
+                illuminated_count += 1
             end
             total_checks += 1
         end
     end
     
-    if mismatches == 0
-        println("  ✓ All results match perfectly! ($total_checks checks)")
-    else
-        println("  ✗ Found $mismatches mismatches out of $total_checks checks")
-    end
+    percentage = round(100 * illuminated_count / total_checks, digits=2)
+    println("  $illuminated_count faces illuminated out of $total_checks checks ($percentage%)")
     
-    return mismatches == 0
+    # Sanity check - should have some illuminated faces
+    return illuminated_count > 0 && illuminated_count < total_checks
 end
 
-# Function to analyze optimization effectiveness
+# Function to analyze elevation-based early-out optimization
 function analyze_optimization_effectiveness(shape_vis, sun_positions)
-    println("\nAnalyzing optimization effectiveness...")
+    println("\nAnalyzing elevation-based early-out optimization...")
     
     # Track how often the optimization kicks in
     optimization_used_count = 0
@@ -106,7 +97,7 @@ function analyze_optimization_effectiveness(shape_vis, sun_positions)
     
     effectiveness = optimization_used_count / total_faces_checked * 100
     println(
-        "  Optimization triggered for $(optimization_used_count)/$(total_faces_checked) " *
+        "  Elevation optimization triggered for $(optimization_used_count)/$(total_faces_checked) " *
         "checks ($(round(effectiveness, digits=1))%)"
     )
     
@@ -153,7 +144,7 @@ function benchmark_illumination()
     println("=" ^ 50)
     
     # Verify results match
-    @assert verify_results_match(shape_small_vis, sun_positions[1:3])
+    @assert verify_results(shape_small_vis, sun_positions[1:3])
     
     # Analyze optimization effectiveness
     effectiveness_small = analyze_optimization_effectiveness(shape_small_vis, sun_positions)
@@ -170,27 +161,13 @@ function benchmark_illumination()
         end
     end
     
-    # (2) Self-shadowing without optimization
-    suite["small_model"]["self_shadowing_no_opt"] = @benchmarkable begin
+    # (2) Self-shadowing (with elevation optimization enabled by default)
+    suite["small_model"]["self_shadowing"] = @benchmarkable begin
         for r☉ in $sun_positions
             for face_idx in 1:length($shape_small_vis.faces)
                 isilluminated(
                     $shape_small_vis, r☉, face_idx; 
-                    with_self_shadowing=true, 
-                    use_elevation_optimization=false,
-                )
-            end
-        end
-    end
-    
-    # (3) Self-shadowing with optimization
-    suite["small_model"]["self_shadowing_with_opt"] = @benchmarkable begin
-        for r☉ in $sun_positions
-            for face_idx in 1:length($shape_small_vis.faces)
-                isilluminated(
-                    $shape_small_vis, r☉, face_idx; 
-                    with_self_shadowing=true, 
-                    use_elevation_optimization=true,
+                    with_self_shadowing=true
                 )
             end
         end
@@ -203,7 +180,7 @@ function benchmark_illumination()
         println("=" ^ 50)
         
         # Verify results match (use fewer positions for large model)
-        @assert verify_results_match(shape_49k_vis, sun_positions[1:1])
+        @assert verify_results(shape_49k_vis, sun_positions[1:1])
         
         # Analyze optimization effectiveness
         effectiveness_49k = analyze_optimization_effectiveness(shape_49k_vis, sun_positions)
@@ -222,27 +199,13 @@ function benchmark_illumination()
             end
         end
         
-        # (2) Self-shadowing without optimization
-        suite["49k_model"]["self_shadowing_no_opt"] = @benchmarkable begin
+        # (2) Self-shadowing (with elevation optimization enabled by default)
+        suite["49k_model"]["self_shadowing"] = @benchmarkable begin
             for r☉ in $sun_positions_49k
                 for face_idx in 1:length($shape_49k_vis.faces)
                     isilluminated(
                         $shape_49k_vis, r☉, face_idx; 
-                        with_self_shadowing=true, 
-                        use_elevation_optimization=false,
-                    )
-                end
-            end
-        end
-        
-        # (3) Self-shadowing with optimization
-        suite["49k_model"]["self_shadowing_with_opt"] = @benchmarkable begin
-            for r☉ in $sun_positions_49k
-                for face_idx in 1:length($shape_49k_vis.faces)
-                    isilluminated(
-                        $shape_49k_vis, r☉, face_idx; 
-                        with_self_shadowing=true, 
-                        use_elevation_optimization=true,
+                        with_self_shadowing=true
                     )
                 end
             end
