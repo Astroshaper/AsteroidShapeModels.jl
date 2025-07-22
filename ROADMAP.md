@@ -79,7 +79,7 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 - [x] Remove deprecated `apply_eclipse_shadowing!` signature that uses `t₁₂` parameter
   - Old signature: `apply_eclipse_shadowing!(illuminated_faces, shape1, r☉₁, R₁₂, t₁₂, shape2)`
   - Keep only the new signature with `r₁₂` parameter introduced in v0.4.1
-- [ ] Remove `use_elevation_optimization` parameter from illumination APIs
+- [x] Remove `use_elevation_optimization` parameter from illumination APIs
   - Make face maximum elevation optimization the default implementation
 - [ ] Unify parameter naming conventions across the package
 - [ ] Create configuration structs for complex operations

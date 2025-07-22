@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Only the new signature remains: `apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, r☉₁, r₁₂, R₁₂)`
   - This change was planned in v0.4.1 and scheduled for v0.5.0
 
+- **Removed `use_elevation_optimization` parameter** (PR TBD)
+  - The `use_elevation_optimization` parameter has been removed from all illumination APIs
+  - Elevation-based optimization is now always enabled when `with_self_shadowing=true`
+  - Affected functions: `isilluminated`, `update_illumination!`
+  - This simplifies the API and ensures users always get the best performance
+
 ## [0.4.2] - 2025-01-21
 
 ### Added

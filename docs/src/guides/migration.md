@@ -12,10 +12,7 @@ If you encounter issues during migration:
 
 ## Future Deprecations
 
-1. **`use_elevation_optimization` parameter**
-   - Will be removed in a future version
-   - Optimization will become the default behavior
-   - Start removing explicit `use_elevation_optimization=true` from your code
+No planned deprecations at this time.
 
 ## Migrating to v0.5.0 (Unreleased)
 
@@ -52,6 +49,25 @@ apply_eclipse_shadowing!(illuminated, shape1, sun_pos, R₁₂, t₁₂, shape2)
 apply_eclipse_shadowing!(illuminated, shape1, shape2, sun_pos, r₁₂, R₁₂)
 ```
 
+#### Removed `use_elevation_optimization` parameter
+
+The `use_elevation_optimization` parameter has been removed from all illumination APIs. The elevation-based optimization is now always enabled when using `with_self_shadowing=true`.
+
+```julia
+# Before (v0.4.x)
+isilluminated(shape, sun_pos, face_idx; 
+    with_self_shadowing=true, 
+    use_elevation_optimization=false  # This parameter is removed
+)
+
+# After (v0.5.0)
+isilluminated(shape, sun_pos, face_idx; 
+    with_self_shadowing=true  # Optimization is always enabled
+)
+```
+
+This change applies to both `isilluminated` and `update_illumination!` functions.
+
 ## Migrating to v0.4.2
 
 ### New Performance Features
@@ -65,15 +81,7 @@ The v0.4.2 release includes automatic performance optimizations for illumination
 illuminated = isilluminated(shape, sun_position, face_idx; with_self_shadowing=true)
 ```
 
-To disable the optimization (not recommended):
-```julia
-# Explicitly disable optimization
-illuminated = isilluminated(
-   shape, sun_position, face_idx; 
-   with_self_shadowing=true, 
-   use_elevation_optimization=false,
-)
-```
+Note: The `use_elevation_optimization` parameter was introduced in v0.4.2 but has been removed in v0.5.0 as the optimization is now always enabled.
 
 ## Migrating to v0.4.1
 
