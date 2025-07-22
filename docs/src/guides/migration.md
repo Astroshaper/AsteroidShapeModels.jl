@@ -34,26 +34,14 @@ illuminated = isilluminated(
 The parameter order has been changed for better SPICE integration:
 
 ```julia
-# Old API (deprecated)
-apply_eclipse_shadowing!(illuminated_faces, shape1, r☉₁, R₁₂, t₁₂, shape2)
-
-# New API (recommended)
+# New API
 apply_eclipse_shadowing!(illuminated_faces, shape1, shape2, r☉₁, r₁₂, R₁₂)
 ```
 
-Key differences:
+Key differences from v0.4.0:
 - `shape1` and `shape2` are now grouped together
-- `r₁₂` (shape2's position in shape1's frame) replaces `t₁₂`
-- More intuitive parameter ordering
-
-Migration example:
-```julia
-# If you have t₁₂, convert it to r₁₂:
-r₁₂ = -R₁₂' * t₁₂
-
-# Then use the new API:
-apply_eclipse_shadowing!(illuminated, shape1, shape2, sun_position, r₁₂, R₁₂)
-```
+- `r₁₂` (shape2's position in shape1's frame) is used directly
+- More intuitive parameter ordering for SPICE integration
 
 ## Migrating to v0.4.0
 

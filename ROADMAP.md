@@ -76,7 +76,7 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
   - [ ] Add comprehensive test coverage for roughness features
 
 ### API Improvements
-- [ ] Remove deprecated `apply_eclipse_shadowing!` signature that uses `t₁₂` parameter
+- [x] Remove deprecated `apply_eclipse_shadowing!` signature that uses `t₁₂` parameter
   - Old signature: `apply_eclipse_shadowing!(illuminated_faces, shape1, r☉₁, R₁₂, t₁₂, shape2)`
   - Keep only the new signature with `r₁₂` parameter introduced in v0.4.1
 - [ ] Remove `use_elevation_optimization` parameter from illumination APIs
