@@ -1,22 +1,45 @@
 #=
     shape_model.jl
 
-Defines the core `ShapeModel` type for representing polyhedral asteroid shapes.
-This type encapsulates:
+Defines the core shape model types for representing asteroid shapes.
+
+Type hierarchy:
+- `AbstractShapeModel` : Abstract base type for all shape models
+    - `ShapeModel`             : Concrete type for polyhedral shapes (triangular mesh)
+    - `HierarchicalShapeModel` : Concrete type for multi-scale shape with surface roughness models (defined in hierarchical_shape_model.jl)
+
+The ShapeModel encapsulates:
 - Vertex positions (nodes)
 - Face connectivity (triangular faces)
 - Precomputed geometric properties (centers, normals, areas)
-- Optional face-to-face visibility graph for thermal and radiative calculations
+- (Optional) Face-to-face visibility graph for thermophysical simulations
+- (Optional) Maximum elevation angles of surrounding terrain for each face
+- (Optional) Bounding volume hierarchy (BVH) for accelerated ray tracing
 =#
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                      Abstract Type Definition                     ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    AbstractShapeModel
+
+Abstract base type for all shape models in AsteroidShapeModels.jl.
+
+Concrete subtypes include:
+- `ShapeModel`             : Standard polyhedral shape model using triangular mesh representation
+- `HierarchicalShapeModel` : Multi-scale shape model with localized surface roughness models
+"""
+abstract type AbstractShapeModel end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                        Type Definition                            ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    ShapeModel
+    ShapeModel <: AbstractShapeModel
 
-A polyhedral shape model of an asteroid.
+A polyhedral shape model of an asteroid using triangular mesh representation.
 
 # Fields
 - `nodes`                 : Vector of node positions
@@ -27,8 +50,10 @@ A polyhedral shape model of an asteroid.
 - `face_visibility_graph` : `FaceVisibilityGraph` for efficient visibility queries
 - `face_max_elevations`   : Maximum elevation angle of the surrounding terrain from each face [rad]
 - `bvh`                   : Bounding Volume Hierarchy for accelerated ray tracing
+
+See also: [`AbstractShapeModel`](@ref), [`HierarchicalShapeModel`](@ref)
 """
-mutable struct ShapeModel
+mutable struct ShapeModel <: AbstractShapeModel
     nodes        ::Vector{SVector{3, Float64}}
     faces        ::Vector{SVector{3, Int}}
 
