@@ -10,6 +10,26 @@ The hierarchical structure uses:
 - Detail shape models (ShapeModel) for localized surface roughness
 - Transformation matrices and scales stored as arrays
 - Efficient indexing for O(1) access to face details
+
+## Implementation Considerations
+
+### Coordinate Transformations
+The current implementation uses separate rotation matrix (R), translation vector (t), 
+and scale factor for coordinate transformations. This approach is mathematically 
+equivalent to using 4×4 affine transformation matrices but offers several advantages:
+
+1. **Memory efficiency**: 13 Float64 values vs 16 for a 4×4 matrix (~23% savings)
+2. **Computational efficiency**: Vector transformations can skip translation
+3. **Clarity**: Physical meaning of each component is explicit
+4. **Flexibility**: Easier to handle different scaling for physical quantities
+
+Future implementations might consider using affine transformation matrices if:
+- Uniform interface with other transformation libraries is needed
+- Hardware acceleration for 4×4 matrix operations becomes available
+- Multiple consecutive transformations need to be composed
+- cf. CoordinateTransformations.jl for affine transformations
+
+See `examples/affine_transform_example.jl` for a comparison of both approaches.
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -314,7 +334,21 @@ end
 
 Transform a point from global coordinates to local roughness model coordinates.
 
-Returns the original point if the face has no roughness model.
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face (1-based)
+- `point`      : Point in global coordinates
+
+# Returns
+- Point in local roughness model coordinates [0,1]×[0,1]×ℝ
+- Original point if the face has no roughness model
+
+# Notes
+The local coordinate system has its origin at the face center, with:
+- X-axis pointing east
+- Y-axis pointing north  
+- Z-axis pointing up (along face normal)
+The UV coordinates [0,1]×[0,1] are centered at (0.5, 0.5).
 """
 function transform_point_global_to_local(
     hier_shape ::HierarchicalShapeModel, 
@@ -342,7 +376,19 @@ end
 
 Transform a point from local roughness model coordinates to global coordinates.
 
-Returns the original point if the face has no roughness model.
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face (1-based)
+- `point`      : Point in local roughness model coordinates [0,1]×[0,1]×ℝ
+
+# Returns
+- Point in global coordinates
+- Original point if the face has no roughness model
+
+# Notes
+Inverse transformation of `transform_point_global_to_local`.
+Local coordinates are expected to be in the range [0,1]×[0,1] for UV,
+with arbitrary Z values representing elevation above the face.
 """
 function transform_point_local_to_global(
     hier_shape ::HierarchicalShapeModel,
@@ -368,10 +414,24 @@ end
         vector     ::StaticVector{3}
     ) -> SVector{3, Float64}
 
-Transform a vector (direction) from global coordinates to local roughness model coordinates.
-Vectors are not affected by translation, only rotation and scaling.
+Transform a geometric vector from global coordinates to local roughness model coordinates.
 
-Returns the original vector if the face has no roughness model.
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face (1-based)
+- `vector`     : Geometric vector in global coordinates
+
+# Returns
+- Vector in local roughness model coordinates (scaled)
+- Original vector if the face has no roughness model
+
+# Notes
+This function applies both rotation and scaling, suitable for geometric vectors
+such as displacements and velocities. The scaling ensures that a unit vector
+in local coordinates corresponds to the physical scale of the roughness model.
+
+For physical vectors (forces, torques) that should preserve magnitude,
+use `transform_physical_vector_global_to_local` instead.
 """
 function transform_vector_global_to_local(
     hier_shape ::HierarchicalShapeModel,
@@ -397,10 +457,24 @@ end
         vector     ::StaticVector{3}
     ) -> SVector{3, Float64}
 
-Transform a vector (direction) from local roughness model coordinates to global coordinates.
-Vectors are not affected by translation, only rotation and scaling.
+Transform a geometric vector from local roughness model coordinates to global coordinates.
 
-Returns the original vector if the face has no roughness model.
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face (1-based)
+- `vector`     : Geometric vector in local roughness model coordinates
+
+# Returns
+- Vector in global coordinates (scaled)
+- Original vector if the face has no roughness model
+
+# Notes
+Inverse transformation of `transform_vector_global_to_local`.
+This function applies both rotation and scaling, suitable for geometric vectors
+such as displacements and velocities.
+
+For physical vectors (forces, torques) that should preserve magnitude,
+use `transform_physical_vector_local_to_global` instead.
 """
 function transform_vector_local_to_global(
     hier_shape ::HierarchicalShapeModel,
@@ -414,6 +488,98 @@ function transform_vector_local_to_global(
     
     # Apply transformation: v_global = R' * (scale * v_local)
     v_global = R' * (scale * v_local)
+    
+    return v_global
+end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                    Physical Vector Transformations                ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    transform_physical_vector_global_to_local(
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        v_global   ::StaticVector{3}
+    ) -> SVector{3, Float64}
+
+Transform a physical vector (force, torque, angular velocity, etc.) from global to local coordinates.
+Physical vectors are only rotated, not scaled, preserving their physical magnitude.
+
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face
+- `v_global`   : Physical vector in global coordinates
+
+# Returns
+- Physical vector in local coordinate frame
+
+# Note
+Use this for quantities where the physical magnitude must be preserved:
+- Forces and torques
+- Angular velocities
+- Magnetic fields
+- Any vector representing a physical quantity rather than a geometric displacement
+
+For geometric vectors (displacements, velocities), use `transform_vector_global_to_local` instead.
+"""
+function transform_physical_vector_global_to_local(
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    v_global   ::StaticVector{3}
+)
+    # If no roughness model, return the original vector
+    !has_roughness(hier_shape, face_idx) && return v_global
+    
+    # Get rotation matrix only (scale not needed for physical vectors)
+    R, _, _ = compute_local_transform(hier_shape, face_idx)
+    
+    # Apply pure rotation
+    v_local = R * v_global
+    
+    return v_local
+end
+
+"""
+    transform_physical_vector_local_to_global(
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        v_local    ::StaticVector{3}
+    ) -> SVector{3, Float64}
+
+Transform a physical vector (force, torque, angular velocity, etc.) from local to global coordinates.
+Physical vectors are only rotated, not scaled, preserving their physical magnitude.
+
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face
+- `v_local`    : Physical vector in local coordinates
+
+# Returns
+- Physical vector in global coordinate frame
+
+# Note
+Use this for quantities where the physical magnitude must be preserved:
+- Forces and torques
+- Angular velocities  
+- Magnetic fields
+- Any vector representing a physical quantity rather than a geometric displacement
+
+For geometric vectors (displacements, velocities), use `transform_vector_local_to_global` instead.
+"""
+function transform_physical_vector_local_to_global(
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    v_local    ::StaticVector{3}
+)
+    # If no roughness model, return the original vector
+    !has_roughness(hier_shape, face_idx) && return v_local
+    
+    # Get rotation matrix only (scale not needed for physical vectors)
+    R, _, _ = compute_local_transform(hier_shape, face_idx)
+    
+    # Apply pure rotation
+    v_global = R' * v_local
     
     return v_global
 end
