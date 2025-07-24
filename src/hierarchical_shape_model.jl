@@ -7,9 +7,10 @@ added to base shape models while maintaining computational efficiency.
 
 The hierarchical structure uses:
 - Base shape model (ShapeModel) for global geometry
-- Detail shape models (ShapeModel) for localized surface roughness
-- Transformation matrices and scales stored as arrays
+- Surface roughness models (ShapeModel) attached to global shape's faces
+- Scale factors for each roughness model
 - Efficient indexing for O(1) access to face details
+- On-the-fly computation of coordinate transformations
 
 ## Implementation Considerations
 
