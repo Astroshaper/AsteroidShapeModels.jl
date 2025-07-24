@@ -175,7 +175,7 @@ function get_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int):
 end
 
 """
-    get_roughness_model_scale(hier_shape::HierarchicalShapeModel, face_idx::Int) -> Union{Nothing, Float64}
+    get_roughness_model_scale(hier_shape::HierarchicalShapeModel, face_idx::Int) -> Float64
 
 Get the scale factor for the roughness model on a specific face.
 
@@ -184,12 +184,11 @@ Get the scale factor for the roughness model on a specific face.
 - `face_idx`   : Index of the face to query
 
 # Returns
-- `Float64` : The scale factor for the roughness model
-- `nothing` : If the face has no associated roughness model
+- `Float64` : The scale factor for the roughness model (1.0 if no roughness model)
 """
-function get_roughness_model_scale(hier_shape::HierarchicalShapeModel, face_idx::Int)::Union{Nothing, Float64}
+function get_roughness_model_scale(hier_shape::HierarchicalShapeModel, face_idx::Int)::Float64
     roughness_idx = hier_shape.face_roughness_indices[face_idx]
-    return roughness_idx == 0 ? nothing : hier_shape.roughness_model_scales[roughness_idx]
+    return roughness_idx == 0 ? 1.0 : hier_shape.roughness_model_scales[roughness_idx]
 end
 
 """
@@ -213,11 +212,104 @@ end
 # ║                   Coordinate Transformations                      ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
+# Local coordinate center offset for transformations
+const LOCAL_CENTER_OFFSET = SVector{3, Float64}(0.5, 0.5, 0.0)
+
+"""
+    compute_local_coordinate_system(hier_shape::HierarchicalShapeModel, face_idx::Int)
+    -> (origin::SVector{3}, ê_x::SVector{3}, ê_y::SVector{3}, ê_z::SVector{3})
+
+Compute the local coordinate system for a face's roughness model.
+
+The local coordinate system follows geographic conventions:
+- Origin : Face center
+- ê_z    : Face normal unit vector (outward)
+- ê_y    : Unit vector pointing north (projected onto the face plane)
+- ê_x    : Unit vector pointing east (completing a right-handed system)
+
+# Returns
+A tuple containing:
+- `origin` : The face center position
+- `ê_x`    : Unit vector pointing east
+- `ê_y`    : Unit vector pointing north
+- `ê_z`    : Unit vector pointing up (face normal)
+"""
+function compute_local_coordinate_system(hier_shape::HierarchicalShapeModel, face_idx::Int)
+    # Get precomputed face center and normal
+    origin = hier_shape.global_shape.face_centers[face_idx]
+    ê_z = hier_shape.global_shape.face_normals[face_idx]  # Already normalized outward normal
+    
+    # Define global north direction (assuming Z is up in global frame)
+    global_north = SVector{3, Float64}(0, 0, 1)
+    
+    # Compute local X-axis (east) using cross product
+    # ê_x = North × ê_z (perpendicular to both global north and face normal)
+    ê_x = global_north × ê_z
+    
+    # Handle the case where the face normal is nearly parallel to global north
+    if norm(ê_x) < 1e-10
+        # Check if ê_z points up or down
+        if ê_z ⋅ global_north > 0
+            # Face normal points up: use global X and Y axes
+            ê_x = SVector{3, Float64}(1, 0, 0)  # Global East
+            ê_y = SVector{3, Float64}(0, 1, 0)  # Global North
+            return (origin, ê_x, ê_y, ê_z)
+        else
+            # Face normal points down: flip X-axis to maintain right-handed system
+            ê_x = SVector{3, Float64}(-1, 0, 0)  # Flipped East
+            ê_y = SVector{3, Float64}(0, 1, 0)   # Global North
+            return (origin, ê_x, ê_y, ê_z)
+        end
+    end
+    
+    # Normalize X-axis
+    ê_x = normalize(ê_x)
+    
+    # Compute local Y-axis (north) using right-hand rule
+    # ê_y = ê_z × ê_x (completes the right-handed coordinate system)
+    ê_y = normalize(ê_z × ê_x)
+    
+    return (origin, ê_x, ê_y, ê_z)
+end
+
+"""
+    compute_local_transform(hier_shape::HierarchicalShapeModel, face_idx::Int)
+    -> (R::SMatrix{3,3}, t::SVector{3}, scale::Float64)
+
+Compute the transformation parameters for converting between global and local coordinates.
+
+# Returns
+- `R`     : Rotation matrix for global-to-local transformation (rows are local unit vectors)
+- `t`     : Translation vector (face center position)
+- `scale` : Scale factor - local unit length in global coordinates (UV length 1.0 = scale units in global)
+
+# Coordinate Transformations
+- Global to local : `x_local = R * (x_global - t) / scale + LOCAL_CENTER_OFFSET`
+- Local to global : `x_global = R' * (scale * (x_local - LOCAL_CENTER_OFFSET)) + t`
+- Note: Local coordinates [0,1]×[0,1] with center at (0.5, 0.5, 0.0)
+"""
+function compute_local_transform(hier_shape::HierarchicalShapeModel, face_idx::Int)
+    origin, ê_x, ê_y, ê_z = compute_local_coordinate_system(hier_shape, face_idx)
+    
+    # Build rotation matrix for global-to-local transformation
+    # Rows are local unit vectors (projections onto local axes)
+    R = SMatrix{3,3}(
+        ê_x[1], ê_y[1], ê_z[1],
+        ê_x[2], ê_y[2], ê_z[2],
+        ê_x[3], ê_y[3], ê_z[3]
+    )
+    
+    # Get scale factor (1.0 if no roughness model)
+    scale = get_roughness_model_scale(hier_shape, face_idx)
+    
+    return (R, origin, scale)
+end
+
 """
     transform_point_global_to_local(
-        hier_shape::HierarchicalShapeModel,
-        face_idx::Int,
-        point::StaticVector{3}
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        point      ::StaticVector{3}
     ) -> SVector{3, Float64}
 
 Transform a point from global coordinates to local roughness model coordinates.
@@ -225,24 +317,27 @@ Transform a point from global coordinates to local roughness model coordinates.
 Returns the original point if the face has no roughness model.
 """
 function transform_point_global_to_local(
-    hier_shape::HierarchicalShapeModel, 
-    face_idx::Int,
-    point::StaticVector{3}
+    hier_shape ::HierarchicalShapeModel, 
+    face_idx   ::Int,
+    p_global   ::StaticVector{3}
 )
-    roughness_idx = hier_shape.face_roughness_indices[face_idx]
-    roughness_idx == 0 && return point
+    # If no roughness model, return the original point
+    !has_roughness(hier_shape, face_idx) && return p_global
     
-    # Compute transformation on-the-fly based on face geometry
-    # TODO: Implement coordinate transformation based on face normal and geographic conventions
-    # For now, return the original point
-    return point
+    # Get transformation parameters
+    R, t, scale = compute_local_transform(hier_shape, face_idx)
+    
+    # Apply transformation: x_local = R * (x_global - t) / scale + (0.5, 0.5, 0)
+    p_local = R * (p_global - t) / scale + LOCAL_CENTER_OFFSET
+    
+    return p_local
 end
 
 """
     transform_point_local_to_global(
-        hier_shape::HierarchicalShapeModel,
-        face_idx::Int,
-        point::StaticVector{3}
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        point      ::StaticVector{3}
     ) -> SVector{3, Float64}
 
 Transform a point from local roughness model coordinates to global coordinates.
@@ -250,24 +345,27 @@ Transform a point from local roughness model coordinates to global coordinates.
 Returns the original point if the face has no roughness model.
 """
 function transform_point_local_to_global(
-    hier_shape::HierarchicalShapeModel,
-    face_idx::Int,
-    point::StaticVector{3}
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    p_local    ::StaticVector{3}
 )
-    roughness_idx = hier_shape.face_roughness_indices[face_idx]
-    roughness_idx == 0 && return point
+    # If no roughness model, return the original point
+    !has_roughness(hier_shape, face_idx) && return p_local
     
-    # Compute transformation on-the-fly based on face geometry
-    # TODO: Implement coordinate transformation based on face normal and geographic conventions
-    # For now, return the original point
-    return point
+    # Get transformation parameters
+    R, t, scale = compute_local_transform(hier_shape, face_idx)
+    
+    # Apply transformation: x_global = R' * (scale * (x_local - (0.5, 0.5, 0))) + t
+    p_global = R' * (scale * (p_local - LOCAL_CENTER_OFFSET)) + t
+
+    return p_global
 end
 
 """
     transform_vector_global_to_local(
-        hier_shape::HierarchicalShapeModel,
-        face_idx::Int,
-        vector::StaticVector{3}
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        vector     ::StaticVector{3}
     ) -> SVector{3, Float64}
 
 Transform a vector (direction) from global coordinates to local roughness model coordinates.
@@ -276,24 +374,27 @@ Vectors are not affected by translation, only rotation and scaling.
 Returns the original vector if the face has no roughness model.
 """
 function transform_vector_global_to_local(
-    hier_shape::HierarchicalShapeModel,
-    face_idx::Int,
-    vector::StaticVector{3}
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    v_global   ::StaticVector{3}
 )
-    roughness_idx = hier_shape.face_roughness_indices[face_idx]
-    roughness_idx == 0 && return vector
+    # If no roughness model, return the original vector
+    !has_roughness(hier_shape, face_idx) && return v_global
+
+    # Get transformation parameters (translation not needed for vectors)
+    R, _, scale = compute_local_transform(hier_shape, face_idx)
     
-    # Compute transformation on-the-fly based on face geometry
-    # TODO: Implement coordinate transformation based on face normal and geographic conventions
-    # For now, return the original vector
-    return vector
+    # Apply transformation: v_local = R * v_global / scale
+    v_local = R * v_global / scale
+    
+    return v_local
 end
 
 """
     transform_vector_local_to_global(
-        hier_shape::HierarchicalShapeModel,
-        face_idx::Int,
-        vector::StaticVector{3}
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        vector     ::StaticVector{3}
     ) -> SVector{3, Float64}
 
 Transform a vector (direction) from local roughness model coordinates to global coordinates.
@@ -302,15 +403,17 @@ Vectors are not affected by translation, only rotation and scaling.
 Returns the original vector if the face has no roughness model.
 """
 function transform_vector_local_to_global(
-    hier_shape::HierarchicalShapeModel,
-    face_idx::Int,
-    vector::StaticVector{3}
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    v_local    ::StaticVector{3}
 )
-    roughness_idx = hier_shape.face_roughness_indices[face_idx]
-    roughness_idx == 0 && return vector
+    !has_roughness(hier_shape, face_idx) && return v_local
     
-    # Compute transformation on-the-fly based on face geometry
-    # TODO: Implement coordinate transformation based on face normal and geographic conventions
-    # For now, return the original vector
-    return vector
+    # Get transformation parameters (translation not needed for vectors)
+    R, _, scale = compute_local_transform(hier_shape, face_idx)
+    
+    # Apply transformation: v_global = R' * (scale * v_local)
+    v_global = R' * (scale * v_local)
+    
+    return v_global
 end
