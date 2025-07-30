@@ -487,26 +487,32 @@ function compute_global_to_local_affine(hier_shape::HierarchicalShapeModel, face
     # Get local coordinate system
     origin, ê_x, ê_y, ê_z = compute_local_coordinate_system(hier_shape, face_idx)
     
-    # 1. Translation to face center
-    translate_to_origin = Translation(-origin)
+    # Build "active local-to-global" transformation using CoordinateTransformations.jl,
+    # which is equivalent to "passive global-to-local" transformation to be returned.
     
-    # 2. Rotation to local coordinate system
-    # For global-to-local transformation, rows should be the local basis vectors
+    # 1. Offset from UV center to local origin
+    offset_from_uv_center = Translation(-LOCAL_CENTER_OFFSET)
+    
+    # 2. Scale transformation (from local units to global units)
+    scale_transform = LinearMap(UniformScaling(scale))
+    
+    # 3. Rotation from local to global coordinates
+    # Columns are local basis vectors for the active transformation
     R = SMatrix{3,3}(
-        ê_x[1], ê_x[2], ê_x[3],  # Row 1: ê_x^T
-        ê_y[1], ê_y[2], ê_y[3],  # Row 2: ê_y^T
-        ê_z[1], ê_z[2], ê_z[3]   # Row 3: ê_z^T
+        ê_x[1], ê_y[1], ê_z[1],  # Column 1: ê_x
+        ê_x[2], ê_y[2], ê_z[2],  # Column 2: ê_y
+        ê_x[3], ê_y[3], ê_z[3]   # Column 3: ê_z
     )
-    rotate_to_local = LinearMap(R)
+    rotate_to_global = LinearMap(R)
     
-    # 3. Scale transformation
-    scale_transform = LinearMap(UniformScaling(1/scale))
+    # 4. Translation from local origin to face center
+    translate_to_face_center = Translation(origin)
     
-    # 4. Offset to UV center
-    offset_to_uv_center = Translation(LOCAL_CENTER_OFFSET)
+    # Compose "active local-to-global" transformation (applied right to left)
+    active_local_to_global = translate_to_face_center ∘ rotate_to_global ∘ scale_transform ∘ offset_from_uv_center
     
-    # Compose all transformations (applied right to left)
-    return offset_to_uv_center ∘ scale_transform ∘ rotate_to_local ∘ translate_to_origin
+    # Return directly (no inverse needed due to active/passive equivalence)
+    return active_local_to_global
 end
 
 """
