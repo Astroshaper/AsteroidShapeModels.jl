@@ -477,11 +477,17 @@ This transformation is used when adding new roughness models to face_roughness_t
 # Keyword Arguments
 - `scale`      : Scale factor for the roughness model (default: 1.0)
 
-The transformation includes:
-1. Translation to face center
-2. Rotation to local coordinate system (north-aligned)
-3. Scaling by 1/scale
-4. Offset to UV center (0.5, 0.5, 0.0)
+# Implementation Note
+This function leverages the equivalence between active and passive transformations:
+- Builds an active local-to-global transformation
+- Returns it as the passive global-to-local transformation (they are equivalent)
+- No inverse computation is needed
+
+The transformation pipeline (as active local-to-global):
+1. Offset from UV center (0.5, 0.5, 0.0) to local origin
+2. Scale from local units to global units
+3. Rotate from local coordinate system to global (north-aligned)
+4. Translate from local origin to face center
 """
 function compute_global_to_local_affine(hier_shape::HierarchicalShapeModel, face_idx::Int; scale::Float64=1.0)
     # Get local coordinate system
