@@ -59,7 +59,7 @@ export AbstractShapeModel, ShapeModel, build_bvh!
 
 include("hierarchical_shape_model.jl")
 export HierarchicalShapeModel
-export add_roughness_models!, clear_roughness_models!, get_roughness_model, get_roughness_model_scale, has_roughness_model
+export add_roughness_models!, clear_roughness_models!, get_roughness_model, get_roughness_model_scale, get_roughness_model_transform, has_roughness_model
 export transform_point_global_to_local, transform_point_local_to_global
 export transform_vector_global_to_local, transform_vector_local_to_global
 export transform_physical_vector_global_to_local, transform_physical_vector_local_to_global

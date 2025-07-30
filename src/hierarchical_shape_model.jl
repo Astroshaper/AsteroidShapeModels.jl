@@ -8,29 +8,28 @@ added to base shape models while maintaining computational efficiency.
 The hierarchical structure uses:
 - Base shape model (ShapeModel) for global geometry
 - Surface roughness models (ShapeModel) attached to global shape's faces
-- Scale factors for each roughness model
+- Per-face scale factors and affine transformations
 - Efficient indexing for O(1) access to face details
 - On-the-fly computation of coordinate transformations
 
 ## Implementation Considerations
 
 ### Coordinate Transformations
-The current implementation uses separate rotation matrix (R), translation vector (t), 
-and scale factor for coordinate transformations. This approach is mathematically 
-equivalent to using 4×4 affine transformation matrices but offers several advantages:
+The implementation now uses CoordinateTransformations.jl's AffineMap type for per-face
+transformations, along with separate scale factors. This provides:
 
-1. **Memory efficiency**: 13 Float64 values vs 16 for a 4×4 matrix (~23% savings)
-2. **Computational efficiency**: Vector transformations can skip translation
-3. **Clarity**: Physical meaning of each component is explicit
-4. **Flexibility**: Easier to handle different scaling for physical quantities
+1. **Flexibility**: Support for arbitrary affine transformations per face
+2. **Compatibility**: Integration with Julia's transformation ecosystem
+3. **Memory sharing**: Multiple faces can share the same ShapeModel with different transforms
+4. **Performance**: Efficient composition of transformations when needed
 
-Future implementations might consider using affine transformation matrices if:
-- Uniform interface with other transformation libraries is needed
-- Hardware acceleration for 4×4 matrix operations becomes available
-- Multiple consecutive transformations need to be composed
-- cf. CoordinateTransformations.jl for affine transformations
+The coordinate transformation pipeline:
+1. Apply user-specified AffineMap (if any)
+2. Apply scale factor
+3. Apply automatic north-aligned coordinate system transformation
 
-See `examples/affine_transform_example.jl` for a comparison of both approaches.
+This design allows both manual control over roughness model placement and automatic
+alignment with geographic conventions.
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -93,7 +92,10 @@ hier_shape = HierarchicalShapeModel(global_shape)
 
 # Add crater roughness to specific faces
 crater = load_shape_obj("crater_roughness.obj", scale=10)
-add_roughness_models!(hier_shape, crater, 0.01, face_idx)
+add_roughness_models!(hier_shape, crater, face_idx; 
+    scale=0.01, 
+    transform=IDENTITY_AFFINE_MAP
+)
 ```
 
 # Implementation Notes
@@ -137,7 +139,7 @@ mutable struct HierarchicalShapeModel <: AbstractShapeModel
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
-# ║                      Basic Operations                             ║
+# ║                      Display Functions                            ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
@@ -151,8 +153,88 @@ function Base.show(io::IO, hier_shape::HierarchicalShapeModel)
     print(io, "Global shape:\n")
     print(io, "  - Nodes: $(length(hier_shape.global_shape.nodes))\n")
     print(io, "  - Faces: $(length(hier_shape.global_shape.faces))\n")
-    print(io, "Faces with roughness: $(length(hier_shape.roughness_models)) / $(length(hier_shape.global_shape.faces))")
+    
+    # Count faces with roughness
+    nfaces_with_roughness = count(!=(0), hier_shape.face_roughness_indices)
+    print(io, "Faces with roughness    : $(nfaces_with_roughness)\n")
+    print(io, "Unique roughness models : $(length(hier_shape.roughness_models))")
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                   Roughness Model Accessors                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    has_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int) -> Bool
+
+Check if a face has an associated roughness model.
+
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face to check
+
+# Returns
+- `true`  : If the face has an associated roughness model
+- `false` : If the face has no roughness model
+"""
+function has_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int)::Bool
+    return hier_shape.face_roughness_indices[face_idx] != 0
+end
+
+"""
+    get_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int) -> Union{Nothing, ShapeModel}
+
+Get the roughness model associated with a specific face.
+
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face to query
+
+# Returns
+- `ShapeModel` : The roughness model for the specified face
+- `nothing`    : If the face has no associated roughness model
+"""
+function get_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int)::Union{Nothing, ShapeModel}
+    !has_roughness_model(hier_shape, face_idx) && return nothing
+    roughness_idx = hier_shape.face_roughness_indices[face_idx]
+    return hier_shape.roughness_models[roughness_idx]
+end
+
+"""
+    get_roughness_model_scale(hier_shape::HierarchicalShapeModel, face_idx::Int) -> Float64
+
+Get the scale factor for the roughness model on a specific face.
+
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face to query
+
+# Returns
+- `Float64` : The scale factor for the roughness model (1.0 if no roughness model)
+"""
+function get_roughness_model_scale(hier_shape::HierarchicalShapeModel, face_idx::Int)::Float64
+    return hier_shape.face_roughness_scales[face_idx]
+end
+
+"""
+    get_roughness_model_transform(hier_shape::HierarchicalShapeModel, face_idx::Int) -> AffineMap
+
+Get the affine transformation for the roughness model on a specific face.
+
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face to query
+
+# Returns
+- `AffineMap` : The affine transformation for the roughness model
+"""
+function get_roughness_model_transform(hier_shape::HierarchicalShapeModel, face_idx::Int)::AffineMap{SMatrix{3,3,Float64,9}, SVector{3,Float64}}
+    return hier_shape.face_roughness_transforms[face_idx]
+end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                   Roughness Model Management                      ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     clear_roughness_models!(hier_shape::HierarchicalShapeModel)
@@ -318,57 +400,6 @@ function add_roughness_models!(
     return nothing
 end
 
-"""
-    get_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int) -> Union{Nothing, ShapeModel}
-
-Get the roughness model associated with a specific face.
-
-# Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face to query
-
-# Returns
-- `ShapeModel` : The roughness model for the specified face
-- `nothing`    : If the face has no associated roughness model
-"""
-function get_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int)::Union{Nothing, ShapeModel}
-    roughness_idx = hier_shape.face_roughness_indices[face_idx]
-    return roughness_idx == 0 ? nothing : hier_shape.roughness_models[roughness_idx]
-end
-
-"""
-    get_roughness_model_scale(hier_shape::HierarchicalShapeModel, face_idx::Int) -> Float64
-
-Get the scale factor for the roughness model on a specific face.
-
-# Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face to query
-
-# Returns
-- `Float64` : The scale factor for the roughness model (0.0 if no roughness model)
-"""
-function get_roughness_model_scale(hier_shape::HierarchicalShapeModel, face_idx::Int)::Float64
-    return hier_shape.face_roughness_scales[face_idx]
-end
-
-"""
-    has_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int) -> Bool
-
-Check if a face has an associated roughness model.
-
-# Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face to check
-
-# Returns
-- `true`  : If the face has an associated roughness model
-- `false` : If the face has no roughness model
-"""
-function has_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int)::Bool
-    return hier_shape.face_roughness_indices[face_idx] != 0
-end
-
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                   Coordinate Transformations                      ║
 # ╚═══════════════════════════════════════════════════════════════════╝
@@ -457,11 +488,8 @@ function compute_local_transform(hier_shape::HierarchicalShapeModel, face_idx::I
         ê_x[3], ê_y[3], ê_z[3]
     )
     
-    # Get scale factor (0.0 if no roughness model)
+    # Get scale factor
     scale = get_roughness_model_scale(hier_shape, face_idx)
-    if scale == 0.0
-        scale = 1.0  # Use unit scale for transformations when no roughness
-    end
     
     return (R, origin, scale)
 end
