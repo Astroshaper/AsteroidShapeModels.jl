@@ -465,10 +465,12 @@ function compute_local_coordinate_system(hier_shape::HierarchicalShapeModel, fac
 end
 
 """
-    compute_global_to_local_affine(hier_shape::HierarchicalShapeModel, face_idx::Int; scale::Float64=1.0) -> AffineMap
+    compute_face_roughness_transform(hier_shape::HierarchicalShapeModel, face_idx::Int; scale::Float64=1.0) -> AffineMap
 
-Compute the transformation from global coordinates to local UV coordinates [0,1]×[0,1].
-This transformation is used when adding new roughness models to face_roughness_transforms.
+Compute the transformation for a face's roughness model.
+This function creates an AffineMap that transforms points from global coordinates
+to the roughness model's local UV coordinates [0,1]×[0,1]. The computed transformation
+is intended to be stored in the `hier_shape.face_roughness_transforms` field.
 
 # Arguments
 - `hier_shape` : The hierarchical shape model
@@ -489,7 +491,7 @@ The transformation pipeline (as active local-to-global):
 3. Rotate from local coordinate system to global (north-aligned)
 4. Translate from local origin to face center
 """
-function compute_global_to_local_affine(hier_shape::HierarchicalShapeModel, face_idx::Int; scale::Float64=1.0)
+function compute_face_roughness_transform(hier_shape::HierarchicalShapeModel, face_idx::Int; scale::Float64=1.0)
     # Get local coordinate system
     origin, ê_x, ê_y, ê_z = compute_local_coordinate_system(hier_shape, face_idx)
     
@@ -516,9 +518,12 @@ function compute_global_to_local_affine(hier_shape::HierarchicalShapeModel, face
     
     # Compose "active local-to-global" transformation (applied right to left)
     active_local_to_global = translate_to_face_center ∘ rotate_to_global ∘ scale_transform ∘ offset_from_uv_center
+
+    # "active local-to-global" transformation is equivalent to "passive global-to-local" transformation
+    # (no inverse needed due to active/passive equivalence)
+    passive_global_to_local = active_local_to_global
     
-    # Return directly (no inverse needed due to active/passive equivalence)
-    return active_local_to_global
+    return passive_global_to_local
 end
 
 """
