@@ -168,15 +168,11 @@ The roughness_models array is emptied to free memory.
 """
 function clear_roughness_models!(hier_shape::HierarchicalShapeModel)
     
-    fill!(hier_shape.face_roughness_indices, 0)   # Reset all face indices to 0 (no roughness)
-    fill!(hier_shape.face_roughness_scales, 1.0)  # Reset all scales to 1.0 (identity)
+    hier_shape.face_roughness_indices .= 0                       # Reset all face indices to 0 (no roughness)
+    hier_shape.face_roughness_scales .= 1.0                      # Reset all scales to 1.0 (identity)
+    hier_shape.face_roughness_transforms .= IDENTITY_AFFINE_MAP  # Reset all transforms to identity
     
-    # Reset all transforms to identity
-    for i in eachindex(hier_shape.face_roughness_transforms)
-        hier_shape.face_roughness_transforms[i] = IDENTITY_AFFINE_MAP
-    end
-    
-    empty!(hier_shape.roughness_models)           # Clear the roughness models array
+    empty!(hier_shape.roughness_models)  # Clear the roughness models array
     
     return nothing
 end
@@ -213,11 +209,8 @@ function clear_roughness_models!(hier_shape::HierarchicalShapeModel, face_idx::I
         deleteat!(hier_shape.roughness_models, roughness_idx)
 
         # Update all face indices that point to models after the deleted one
-        for i in eachindex(hier_shape.face_roughness_indices)
-            if hier_shape.face_roughness_indices[i] > roughness_idx
-                hier_shape.face_roughness_indices[i] -= 1
-            end
-        end
+        mask = hier_shape.face_roughness_indices .> roughness_idx
+        hier_shape.face_roughness_indices[mask] .-= 1
     end
     
     return nothing
@@ -256,10 +249,8 @@ function add_roughness_models!(
     roughness_idx = length(hier_shape.roughness_models)
     
     # Apply to all faces
-    for face_idx in eachindex(hier_shape.global_shape.faces)
-        hier_shape.face_roughness_indices[face_idx] = roughness_idx
-        hier_shape.face_roughness_scales[face_idx] = Float64(scale)
-    end
+    hier_shape.face_roughness_indices .= roughness_idx
+    hier_shape.face_roughness_scales .= Float64(scale)
     
     return nothing
 end
