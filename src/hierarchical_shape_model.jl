@@ -24,9 +24,12 @@ transformations, along with separate scale factors. This provides:
 4. **Performance**: Efficient composition of transformations when needed
 
 The coordinate transformation pipeline:
-1. Apply user-specified AffineMap (if any)
+1. Apply user-specified AffineMap (global to local transformation)
 2. Apply scale factor
 3. Apply automatic north-aligned coordinate system transformation
+
+Note: `face_roughness_transforms` stores the global-to-local transformation for each face,
+allowing custom positioning and orientation of roughness models.
 
 This design allows both manual control over roughness model placement and automatic
 alignment with geographic conventions.
@@ -53,10 +56,10 @@ const LOCAL_CENTER_OFFSET = SVector{3,Float64}(0.5, 0.5, 0.0)
 A shape model that supports multi-scale surface representation through surface roughness models.
 
 # Fields
-- `global_shape`           : `ShapeModel` to represent the global shape of the asteroid
-- `face_roughness_indices` : Mapping from face index to roughness model index (0 = no roughness)
+- `global_shape`              : `ShapeModel` to represent the global shape of the asteroid
+- `face_roughness_indices`    : Mapping from face index to roughness model index (0 = no roughness)
 - `face_roughness_scales`     : Vector of scale factors for each face (1.0 = no roughness/identity)
-- `face_roughness_transforms` : Vector of affine transformations for each face (identity = no roughness)
+- `face_roughness_transforms` : Vector of affine transformations (global to local) for each face (identity = no roughness)
 - `roughness_models`          : Vector of `ShapeModel` objects representing surface roughness
 
 # Description
@@ -219,14 +222,14 @@ end
 """
     get_roughness_model_transform(hier_shape::HierarchicalShapeModel, face_idx::Int) -> AffineMap
 
-Get the affine transformation for the roughness model on a specific face.
+Get the affine transformation (global to local) for the roughness model on a specific face.
 
 # Arguments
 - `hier_shape` : The hierarchical shape model
 - `face_idx`   : Index of the face to query
 
 # Returns
-- `AffineMap` : The affine transformation for the roughness model
+- `AffineMap` : The affine transformation from global to local coordinates
 """
 function get_roughness_model_transform(hier_shape::HierarchicalShapeModel, face_idx::Int)::AffineMap{SMatrix{3,3,Float64,9}, SVector{3,Float64}}
     return hier_shape.face_roughness_transforms[face_idx]
@@ -311,8 +314,8 @@ Add the same surface roughness model to all faces of the hierarchical shape mode
 - `roughness_model` : The shape model representing the surface roughness
 
 # Keyword Arguments
-- `scale`           : Scale factor for the roughness model
-- `transform`       : Affine transformation for the roughness model
+- `scale`     : Scale factor for the roughness model
+- `transform` : Affine transformation from global to local coordinates
 
 # Notes
 - This function applies the roughness model to ALL faces, overwriting any existing assignments.
@@ -358,8 +361,8 @@ Add a surface roughness model to a specific face of the hierarchical shape model
 - `face_idx`        : Index of the face to attach the roughness to
 
 # Keyword Arguments
-- `scale`           : Scale factor for the roughness model
-- `transform`       : Affine transformation for the roughness model
+- `scale`     : Scale factor for the roughness model
+- `transform` : Affine transformation from global to local coordinates
 
 # Notes
 - If the face already has a roughness model, it will be replaced.
