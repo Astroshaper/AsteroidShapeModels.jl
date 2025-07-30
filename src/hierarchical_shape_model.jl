@@ -197,11 +197,9 @@ function clear_roughness_models!(hier_shape::HierarchicalShapeModel, face_idx::I
     roughness_idx = hier_shape.face_roughness_indices[face_idx]
     
     # Clear the face's roughness assignment
-    hier_shape.face_roughness_indices[face_idx] = 0
-    hier_shape.face_roughness_scales[face_idx] = 1.0  # Reset to identity scale
-    
-    # Reset transform to identity
-    hier_shape.face_roughness_transforms[face_idx] = IDENTITY_AFFINE_MAP
+    hier_shape.face_roughness_indices[face_idx] = 0                       # Reset to no roughness
+    hier_shape.face_roughness_scales[face_idx] = 1.0                      # Reset to identity scale
+    hier_shape.face_roughness_transforms[face_idx] = IDENTITY_AFFINE_MAP  # Reset transform to identity
     
     # Check if this model is still used by other faces
     if roughness_idx > 0 && !(roughness_idx in hier_shape.face_roughness_indices)
@@ -219,8 +217,9 @@ end
 """
     add_roughness_models!(
         hier_shape      ::HierarchicalShapeModel,
-        roughness_model ::ShapeModel,
-        scale           ::Real
+        roughness_model ::ShapeModel;
+        scale           ::Float64,
+        transform       ::AffineMap,
     )
 
 Add the same surface roughness model to all faces of the hierarchical shape model.
@@ -228,18 +227,22 @@ Add the same surface roughness model to all faces of the hierarchical shape mode
 # Arguments
 - `hier_shape`      : The hierarchical shape model
 - `roughness_model` : The shape model representing the surface roughness
+
+# Keyword Arguments
 - `scale`           : Scale factor for the roughness model
+- `transform`       : Affine transformation for the roughness model
 
 # Notes
 - This function applies the roughness model to ALL faces, overwriting any existing assignments.
 - All faces will share the same ShapeModel instance, making this memory-efficient.
-- Use the face-specific version `add_roughness_models!(hier_shape, roughness_model, scale, face_idx)`
+- Use the face-specific version `add_roughness_models!(hier_shape, roughness_model, face_idx; scale, transform)`
   to selectively apply different models to individual faces.
 """
 function add_roughness_models!(
     hier_shape      ::HierarchicalShapeModel,
-    roughness_model ::ShapeModel,
-    scale           ::Real
+    roughness_model ::ShapeModel;
+    scale           ::Float64,
+    transform       ::AffineMap,
 )
     # Clear all existing roughness models first
     clear_roughness_models!(hier_shape)
@@ -250,7 +253,8 @@ function add_roughness_models!(
     
     # Apply to all faces
     hier_shape.face_roughness_indices .= roughness_idx
-    hier_shape.face_roughness_scales .= Float64(scale)
+    hier_shape.face_roughness_scales .= scale
+    hier_shape.face_roughness_transforms .= transform
     
     return nothing
 end
@@ -259,8 +263,9 @@ end
     add_roughness_models!(
         hier_shape      ::HierarchicalShapeModel,
         roughness_model ::ShapeModel,
-        scale           ::Real,
-        face_idx        ::Int
+        face_idx        ::Int;
+        scale           ::Float64,
+        transform       ::AffineMap,
     )
 
 Add a surface roughness model to a specific face of the hierarchical shape model.
@@ -268,8 +273,11 @@ Add a surface roughness model to a specific face of the hierarchical shape model
 # Arguments
 - `hier_shape`      : The hierarchical shape model
 - `roughness_model` : The shape model representing the surface roughness
-- `scale`           : Scale factor for the roughness model
 - `face_idx`        : Index of the face to attach the roughness to
+
+# Keyword Arguments
+- `scale`           : Scale factor for the roughness model
+- `transform`       : Affine transformation for the roughness model
 
 # Notes
 - If the face already has a roughness model, it will be replaced.
@@ -281,8 +289,9 @@ Add a surface roughness model to a specific face of the hierarchical shape model
 function add_roughness_models!(
     hier_shape      ::HierarchicalShapeModel,
     roughness_model ::ShapeModel,
-    scale           ::Real,
-    face_idx        ::Int
+    face_idx        ::Int;
+    scale           ::Float64,
+    transform       ::AffineMap,
 )
     @assert 1 ≤ face_idx ≤ length(hier_shape.global_shape.faces) "Invalid face index"
     
@@ -301,9 +310,10 @@ function add_roughness_models!(
         roughness_idx = length(hier_shape.roughness_models)
     end
     
-    # Update the face-to-roughness mapping and scale
+    # Update the face-to-roughness mapping, scale, and transform
     hier_shape.face_roughness_indices[face_idx] = roughness_idx
-    hier_shape.face_roughness_scales[face_idx] = Float64(scale)
+    hier_shape.face_roughness_scales[face_idx] = scale
+    hier_shape.face_roughness_transforms[face_idx] = transform
     
     return nothing
 end
