@@ -465,36 +465,48 @@ function compute_local_coordinate_system(hier_shape::HierarchicalShapeModel, fac
 end
 
 """
-    compute_local_transform(hier_shape::HierarchicalShapeModel, face_idx::Int)
-    -> (R::SMatrix{3,3}, t::SVector{3}, scale::Float64)
+    compute_global_to_local_affine(hier_shape::HierarchicalShapeModel, face_idx::Int; scale::Float64=1.0) -> AffineMap
 
-Compute the transformation parameters for converting between global and local coordinates.
+Compute the transformation from global coordinates to local UV coordinates [0,1]×[0,1].
+This transformation is used when adding new roughness models to face_roughness_transforms.
 
-# Returns
-- `R`     : Rotation matrix for global-to-local transformation (rows are local unit vectors)
-- `t`     : Translation vector (face center position)
-- `scale` : Scale factor - local unit length in global coordinates (UV length 1.0 = scale units in global)
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face
 
-# Coordinate Transformations
-- Global to local : `x_local = R * (x_global - t) / scale + LOCAL_CENTER_OFFSET`
-- Local to global : `x_global = R' * (scale * (x_local - LOCAL_CENTER_OFFSET)) + t`
-- Note: Local coordinates [0,1]×[0,1] with center at (0.5, 0.5, 0.0)
+# Keyword Arguments
+- `scale`      : Scale factor for the roughness model (default: 1.0)
+
+The transformation includes:
+1. Translation to face center
+2. Rotation to local coordinate system (north-aligned)
+3. Scaling by 1/scale
+4. Offset to UV center (0.5, 0.5, 0.0)
 """
-function compute_local_transform(hier_shape::HierarchicalShapeModel, face_idx::Int)
+function compute_global_to_local_affine(hier_shape::HierarchicalShapeModel, face_idx::Int; scale::Float64=1.0)
+    # Get local coordinate system
     origin, ê_x, ê_y, ê_z = compute_local_coordinate_system(hier_shape, face_idx)
     
-    # Build rotation matrix for global-to-local transformation
-    # Rows are local unit vectors (projections onto local axes)
+    # 1. Translation to face center
+    translate_to_origin = Translation(-origin)
+    
+    # 2. Rotation to local coordinate system
+    # For global-to-local transformation, rows should be the local basis vectors
     R = SMatrix{3,3}(
-        ê_x[1], ê_y[1], ê_z[1],
-        ê_x[2], ê_y[2], ê_z[2],
-        ê_x[3], ê_y[3], ê_z[3]
+        ê_x[1], ê_x[2], ê_x[3],  # Row 1: ê_x^T
+        ê_y[1], ê_y[2], ê_y[3],  # Row 2: ê_y^T
+        ê_z[1], ê_z[2], ê_z[3]   # Row 3: ê_z^T
     )
+    rotate_to_local = LinearMap(R)
     
-    # Get scale factor
-    scale = get_roughness_model_scale(hier_shape, face_idx)
+    # 3. Scale transformation
+    scale_transform = LinearMap(UniformScaling(1/scale))
     
-    return (R, origin, scale)
+    # 4. Offset to UV center
+    offset_to_uv_center = Translation(LOCAL_CENTER_OFFSET)
+    
+    # Compose all transformations (applied right to left)
+    return offset_to_uv_center ∘ scale_transform ∘ rotate_to_local ∘ translate_to_origin
 end
 
 """
@@ -530,13 +542,11 @@ function transform_point_global_to_local(
     # If no roughness model, return the original point
     !has_roughness_model(hier_shape, face_idx) && return p_global
     
-    # Get transformation parameters
-    R, t, scale = compute_local_transform(hier_shape, face_idx)
+    # Get the complete transformation from face_roughness_transforms
+    transform = get_roughness_model_transform(hier_shape, face_idx)
     
-    # Apply transformation: x_local = R * (x_global - t) / scale + (0.5, 0.5, 0)
-    p_local = R * (p_global - t) / scale + LOCAL_CENTER_OFFSET
-    
-    return p_local
+    # Apply transformation
+    return transform(p_global)
 end
 
 """
@@ -570,13 +580,11 @@ function transform_point_local_to_global(
     # If no roughness model, return the original point
     !has_roughness_model(hier_shape, face_idx) && return p_local
     
-    # Get transformation parameters
-    R, t, scale = compute_local_transform(hier_shape, face_idx)
+    # Get the complete transformation from face_roughness_transforms
+    transform = get_roughness_model_transform(hier_shape, face_idx)
     
-    # Apply transformation: x_global = R' * (scale * (x_local - (0.5, 0.5, 0))) + t
-    p_global = R' * (scale * (p_local - LOCAL_CENTER_OFFSET)) + t
-
-    return p_global
+    # Apply inverse transformation
+    return inv(transform)(p_local)
 end
 
 """
@@ -613,11 +621,12 @@ function transform_vector_global_to_local(
     # If no roughness model, return the original vector
     !has_roughness_model(hier_shape, face_idx) && return v_global
 
-    # Get transformation parameters (translation not needed for vectors)
-    R, _, scale = compute_local_transform(hier_shape, face_idx)
+    # Get the complete transformation from face_roughness_transforms
+    transform = get_roughness_model_transform(hier_shape, face_idx)
     
-    # Apply transformation: v_local = R * v_global / scale
-    v_local = R * v_global / scale
+    # Extract the linear part of the transformation (rotation + scale)
+    # For vectors, we only need the linear transformation, not translation
+    v_local = transform.linear * v_global
     
     return v_local
 end
@@ -655,11 +664,12 @@ function transform_vector_local_to_global(
 )
     !has_roughness_model(hier_shape, face_idx) && return v_local
     
-    # Get transformation parameters (translation not needed for vectors)
-    R, _, scale = compute_local_transform(hier_shape, face_idx)
+    # Get the complete transformation from face_roughness_transforms
+    transform = get_roughness_model_transform(hier_shape, face_idx)
     
-    # Apply transformation: v_global = R' * (scale * v_local)
-    v_global = R' * (scale * v_local)
+    # Apply inverse linear transformation
+    # For vectors, we only need the inverse of the linear part
+    v_global = inv(transform.linear) * v_local
     
     return v_global
 end
@@ -703,11 +713,18 @@ function transform_physical_vector_global_to_local(
     # If no roughness model, return the original vector
     !has_roughness_model(hier_shape, face_idx) && return v_global
     
-    # Get rotation matrix only (scale not needed for physical vectors)
-    R, _, _ = compute_local_transform(hier_shape, face_idx)
+    # Get the complete transformation from face_roughness_transforms
+    transform = get_roughness_model_transform(hier_shape, face_idx)
+    
+    # Extract rotation part from the linear transformation
+    # The linear part includes both rotation and scale, so we need to remove the scale
+    # Since transform.linear = rotation * scale, and scale is uniform,
+    # we can extract the rotation by normalizing
+    scale = hier_shape.face_roughness_scales[face_idx]
+    rotation = transform.linear * scale  # Remove the 1/scale factor
     
     # Apply pure rotation
-    v_local = R * v_global
+    v_local = rotation * v_global
     
     return v_local
 end
@@ -747,11 +764,15 @@ function transform_physical_vector_local_to_global(
     # If no roughness model, return the original vector
     !has_roughness_model(hier_shape, face_idx) && return v_local
     
-    # Get rotation matrix only (scale not needed for physical vectors)
-    R, _, _ = compute_local_transform(hier_shape, face_idx)
+    # Get the complete transformation from face_roughness_transforms
+    transform = get_roughness_model_transform(hier_shape, face_idx)
     
-    # Apply pure rotation
-    v_global = R' * v_local
+    # Extract rotation part from the linear transformation
+    scale = hier_shape.face_roughness_scales[face_idx]
+    rotation = transform.linear * scale  # Remove the 1/scale factor
+    
+    # Apply inverse rotation (transpose for orthogonal matrix)
+    v_global = rotation' * v_local
     
     return v_global
 end
