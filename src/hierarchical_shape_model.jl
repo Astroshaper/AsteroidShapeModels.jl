@@ -34,6 +34,17 @@ See `examples/affine_transform_example.jl` for a comparison of both approaches.
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
+# ║                          Constants                                ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+# Constants for transformations
+const IDENTITY_MATRIX_3x3 = SMatrix{3,3,Float64}(I)
+const ZERO_VECTOR_3 = SVector{3,Float64}(0, 0, 0)
+const IDENTITY_AFFINE_MAP = AffineMap(IDENTITY_MATRIX_3x3, ZERO_VECTOR_3)
+
+const LOCAL_CENTER_OFFSET = SVector{3,Float64}(0.5, 0.5, 0.0)
+
+# ╔═══════════════════════════════════════════════════════════════════╗
 # ║                        Type Definition                            ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
@@ -45,8 +56,9 @@ A shape model that supports multi-scale surface representation through surface r
 # Fields
 - `global_shape`           : `ShapeModel` to represent the global shape of the asteroid
 - `face_roughness_indices` : Mapping from face index to roughness model index (0 = no roughness)
-- `face_roughness_scales`  : Vector of scale factors for each face (0.0 = no roughness)
-- `roughness_models`       : Vector of `ShapeModel` objects representing surface roughness
+- `face_roughness_scales`     : Vector of scale factors for each face (1.0 = no roughness/identity)
+- `face_roughness_transforms` : Vector of affine transformations for each face (identity = no roughness)
+- `roughness_models`          : Vector of `ShapeModel` objects representing surface roughness
 
 # Description
 This structure allows representing asteroid surfaces at two scales:
@@ -100,19 +112,25 @@ For performance-critical applications, consider pre-computing and storing transf
 See also: [`AbstractShapeModel`](@ref), [`ShapeModel`](@ref)
 """
 mutable struct HierarchicalShapeModel <: AbstractShapeModel
-    global_shape           ::ShapeModel
-    face_roughness_indices ::Vector{Int}
-    face_roughness_scales  ::Vector{Float64}
-    roughness_models       ::Vector{ShapeModel}
+    global_shape                ::ShapeModel
+    face_roughness_indices      ::Vector{Int}
+    face_roughness_scales       ::Vector{Float64}
+    face_roughness_transforms   ::Vector{AffineMap{SMatrix{3,3,Float64,9}, SVector{3,Float64}}}
+    roughness_models            ::Vector{ShapeModel}
     
     function HierarchicalShapeModel(global_shape::ShapeModel)
         nfaces = length(global_shape.faces)
-        face_roughness_indices = zeros(Int, nfaces)
-        face_roughness_scales = zeros(Float64, nfaces)
+        face_roughness_indices = zeros(Int, nfaces)    # Initialize with 0 (no roughness)
+        face_roughness_scales = ones(Float64, nfaces)  # Initialize with 1.0 (no scaling)
+
+        # Initialize with identity transformations
+        face_roughness_transforms = [IDENTITY_AFFINE_MAP for _ in 1:nfaces]
+        
         return new(
             global_shape,
             face_roughness_indices,
             face_roughness_scales,
+            face_roughness_transforms,
             ShapeModel[]
         )
     end
@@ -151,7 +169,13 @@ The roughness_models array is emptied to free memory.
 function clear_roughness_models!(hier_shape::HierarchicalShapeModel)
     
     fill!(hier_shape.face_roughness_indices, 0)   # Reset all face indices to 0 (no roughness)
-    fill!(hier_shape.face_roughness_scales, 0.0)  # Reset all scales to 0.0
+    fill!(hier_shape.face_roughness_scales, 1.0)  # Reset all scales to 1.0 (identity)
+    
+    # Reset all transforms to identity
+    for i in eachindex(hier_shape.face_roughness_transforms)
+        hier_shape.face_roughness_transforms[i] = IDENTITY_AFFINE_MAP
+    end
+    
     empty!(hier_shape.roughness_models)           # Clear the roughness models array
     
     return nothing
@@ -178,7 +202,10 @@ function clear_roughness_models!(hier_shape::HierarchicalShapeModel, face_idx::I
     
     # Clear the face's roughness assignment
     hier_shape.face_roughness_indices[face_idx] = 0
-    hier_shape.face_roughness_scales[face_idx] = 0.0
+    hier_shape.face_roughness_scales[face_idx] = 1.0  # Reset to identity scale
+    
+    # Reset transform to identity
+    hier_shape.face_roughness_transforms[face_idx] = IDENTITY_AFFINE_MAP
     
     # Check if this model is still used by other faces
     if roughness_idx > 0 && !(roughness_idx in hier_shape.face_roughness_indices)
@@ -344,9 +371,6 @@ end
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                   Coordinate Transformations                      ║
 # ╚═══════════════════════════════════════════════════════════════════╝
-
-# Local coordinate center offset for transformations
-const LOCAL_CENTER_OFFSET = SVector{3, Float64}(0.5, 0.5, 0.0)
 
 """
     compute_local_coordinate_system(hier_shape::HierarchicalShapeModel, face_idx::Int)

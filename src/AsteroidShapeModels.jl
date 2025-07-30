@@ -38,6 +38,7 @@ See the documentation for detailed usage examples and API reference.
 """
 module AsteroidShapeModels
 
+using CoordinateTransformations
 using FileIO
 using LinearAlgebra
 using StaticArrays
