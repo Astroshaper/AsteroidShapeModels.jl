@@ -45,8 +45,8 @@ A shape model that supports multi-scale surface representation through surface r
 # Fields
 - `global_shape`           : `ShapeModel` to represent the global shape of the asteroid
 - `face_roughness_indices` : Mapping from face index to roughness model index (0 = no roughness)
+- `face_roughness_scales`  : Vector of scale factors for each face (0.0 = no roughness)
 - `roughness_models`       : Vector of `ShapeModel` objects representing surface roughness
-- `roughness_model_scales` : Vector of scale factors for each roughness model
 
 # Description
 This structure allows representing asteroid surfaces at two scales:
@@ -81,7 +81,7 @@ hier_shape = HierarchicalShapeModel(global_shape)
 
 # Add crater roughness to specific faces
 crater = load_shape_obj("crater_roughness.obj", scale=10)
-add_roughness_model!(hier_shape, face_idx, crater, 0.01)
+add_roughness_models!(hier_shape, crater, 0.01, face_idx)
 ```
 
 # Implementation Notes
@@ -102,17 +102,18 @@ See also: [`AbstractShapeModel`](@ref), [`ShapeModel`](@ref)
 mutable struct HierarchicalShapeModel <: AbstractShapeModel
     global_shape           ::ShapeModel
     face_roughness_indices ::Vector{Int}
+    face_roughness_scales  ::Vector{Float64}
     roughness_models       ::Vector{ShapeModel}
-    roughness_model_scales ::Vector{Float64}
     
     function HierarchicalShapeModel(global_shape::ShapeModel)
         nfaces = length(global_shape.faces)
         face_roughness_indices = zeros(Int, nfaces)
+        face_roughness_scales = zeros(Float64, nfaces)
         return new(
             global_shape,
             face_roughness_indices,
-            ShapeModel[],
-            Float64[]
+            face_roughness_scales,
+            ShapeModel[]
         )
     end
 end
@@ -136,43 +137,155 @@ function Base.show(io::IO, hier_shape::HierarchicalShapeModel)
 end
 
 """
-    add_roughness_model!(
-        hier_shape      ::HierarchicalShapeModel, 
-        face_idx        ::Int,
+    clear_roughness_models!(hier_shape::HierarchicalShapeModel)
+
+Remove all roughness models from all faces of the hierarchical shape model.
+
+# Arguments
+- `hier_shape` : The hierarchical shape model
+
+# Notes
+This function clears all roughness model assignments but keeps the model's structure intact.
+The roughness_models array is emptied to free memory.
+"""
+function clear_roughness_models!(hier_shape::HierarchicalShapeModel)
+    
+    fill!(hier_shape.face_roughness_indices, 0)   # Reset all face indices to 0 (no roughness)
+    fill!(hier_shape.face_roughness_scales, 0.0)  # Reset all scales to 0.0
+    empty!(hier_shape.roughness_models)           # Clear the roughness models array
+    
+    return nothing
+end
+
+"""
+    clear_roughness_models!(hier_shape::HierarchicalShapeModel, face_idx::Int)
+
+Remove the roughness model from a specific face.
+
+# Arguments
+- `hier_shape` : The hierarchical shape model
+- `face_idx`   : Index of the face to clear
+
+# Notes
+This function clears the assignment for the specified face.
+If the roughness model is no longer used by any face, it will be removed from memory.
+"""
+function clear_roughness_models!(hier_shape::HierarchicalShapeModel, face_idx::Int)
+    @assert 1 ≤ face_idx ≤ length(hier_shape.global_shape.faces) "Invalid face index"
+    
+    # Get the model index before clearing
+    roughness_idx = hier_shape.face_roughness_indices[face_idx]
+    
+    # Clear the face's roughness assignment
+    hier_shape.face_roughness_indices[face_idx] = 0
+    hier_shape.face_roughness_scales[face_idx] = 0.0
+    
+    # Check if this model is still used by other faces
+    if roughness_idx > 0 && !(roughness_idx in hier_shape.face_roughness_indices)
+        # Remove the unused model and update indices
+        deleteat!(hier_shape.roughness_models, roughness_idx)
+
+        # Update all face indices that point to models after the deleted one
+        for i in eachindex(hier_shape.face_roughness_indices)
+            if hier_shape.face_roughness_indices[i] > roughness_idx
+                hier_shape.face_roughness_indices[i] -= 1
+            end
+        end
+    end
+    
+    return nothing
+end
+
+"""
+    add_roughness_models!(
+        hier_shape      ::HierarchicalShapeModel,
         roughness_model ::ShapeModel,
         scale           ::Real
+    )
+
+Add the same surface roughness model to all faces of the hierarchical shape model.
+
+# Arguments
+- `hier_shape`      : The hierarchical shape model
+- `roughness_model` : The shape model representing the surface roughness
+- `scale`           : Scale factor for the roughness model
+
+# Notes
+- This function applies the roughness model to ALL faces, overwriting any existing assignments.
+- All faces will share the same ShapeModel instance, making this memory-efficient.
+- Use the face-specific version `add_roughness_models!(hier_shape, roughness_model, scale, face_idx)`
+  to selectively apply different models to individual faces.
+"""
+function add_roughness_models!(
+    hier_shape      ::HierarchicalShapeModel,
+    roughness_model ::ShapeModel,
+    scale           ::Real
+)
+    # Clear all existing roughness models first
+    clear_roughness_models!(hier_shape)
+    
+    # Add the model to the list
+    push!(hier_shape.roughness_models, roughness_model)
+    roughness_idx = length(hier_shape.roughness_models)
+    
+    # Apply to all faces
+    for face_idx in eachindex(hier_shape.global_shape.faces)
+        hier_shape.face_roughness_indices[face_idx] = roughness_idx
+        hier_shape.face_roughness_scales[face_idx] = Float64(scale)
+    end
+    
+    return nothing
+end
+
+"""
+    add_roughness_models!(
+        hier_shape      ::HierarchicalShapeModel,
+        roughness_model ::ShapeModel,
+        scale           ::Real,
+        face_idx        ::Int
     )
 
 Add a surface roughness model to a specific face of the hierarchical shape model.
 
 # Arguments
 - `hier_shape`      : The hierarchical shape model
-- `face_idx`        : Index of the face to attach the roughness to
 - `roughness_model` : The shape model representing the surface roughness
 - `scale`           : Scale factor for the roughness model
+- `face_idx`        : Index of the face to attach the roughness to
 
 # Notes
+- If the face already has a roughness model, it will be replaced.
 - The roughness model is automatically positioned at the face center
   with a north-aligned local coordinate system (x: East, y: North, z: Up).
 - The transformation between global and local coordinates is computed
   on-the-fly based on the face geometry.
 """
-function add_roughness_model!(
-    hier_shape      ::HierarchicalShapeModel, 
-    face_idx        ::Int,
+function add_roughness_models!(
+    hier_shape      ::HierarchicalShapeModel,
     roughness_model ::ShapeModel,
-    scale           ::Real
+    scale           ::Real,
+    face_idx        ::Int
 )
     @assert 1 ≤ face_idx ≤ length(hier_shape.global_shape.faces) "Invalid face index"
-    @assert hier_shape.face_roughness_indices[face_idx] == 0 "Face already has a roughness model"
     
-    # Add the roughness model and its metadata
-    push!(hier_shape.roughness_models, roughness_model)
-    push!(hier_shape.roughness_model_scales, Float64(scale))
+    # Check if this model already exists
+    roughness_idx = 0
+    for (idx, model) in enumerate(hier_shape.roughness_models)
+        if model === roughness_model  # Use === for object identity
+            roughness_idx = idx
+            break
+        end
+    end
     
-    # Update the face-to-roughness mapping
-    roughness_idx = length(hier_shape.roughness_models)
+    # Add the model if it doesn't exist
+    if roughness_idx == 0
+        push!(hier_shape.roughness_models, roughness_model)
+        roughness_idx = length(hier_shape.roughness_models)
+    end
+    
+    # Update the face-to-roughness mapping and scale
     hier_shape.face_roughness_indices[face_idx] = roughness_idx
+    hier_shape.face_roughness_scales[face_idx] = Float64(scale)
     
     return nothing
 end
@@ -205,15 +318,14 @@ Get the scale factor for the roughness model on a specific face.
 - `face_idx`   : Index of the face to query
 
 # Returns
-- `Float64` : The scale factor for the roughness model (1.0 if no roughness model)
+- `Float64` : The scale factor for the roughness model (0.0 if no roughness model)
 """
 function get_roughness_model_scale(hier_shape::HierarchicalShapeModel, face_idx::Int)::Float64
-    roughness_idx = hier_shape.face_roughness_indices[face_idx]
-    return roughness_idx == 0 ? 1.0 : hier_shape.roughness_model_scales[roughness_idx]
+    return hier_shape.face_roughness_scales[face_idx]
 end
 
 """
-    has_roughness(hier_shape::HierarchicalShapeModel, face_idx::Int) -> Bool
+    has_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int) -> Bool
 
 Check if a face has an associated roughness model.
 
@@ -225,7 +337,7 @@ Check if a face has an associated roughness model.
 - `true`  : If the face has an associated roughness model
 - `false` : If the face has no roughness model
 """
-function has_roughness(hier_shape::HierarchicalShapeModel, face_idx::Int)::Bool
+function has_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int)::Bool
     return hier_shape.face_roughness_indices[face_idx] != 0
 end
 
@@ -320,8 +432,11 @@ function compute_local_transform(hier_shape::HierarchicalShapeModel, face_idx::I
         ê_x[3], ê_y[3], ê_z[3]
     )
     
-    # Get scale factor (1.0 if no roughness model)
+    # Get scale factor (0.0 if no roughness model)
     scale = get_roughness_model_scale(hier_shape, face_idx)
+    if scale == 0.0
+        scale = 1.0  # Use unit scale for transformations when no roughness
+    end
     
     return (R, origin, scale)
 end
@@ -357,7 +472,7 @@ function transform_point_global_to_local(
     p_global   ::StaticVector{3}
 )
     # If no roughness model, return the original point
-    !has_roughness(hier_shape, face_idx) && return p_global
+    !has_roughness_model(hier_shape, face_idx) && return p_global
     
     # Get transformation parameters
     R, t, scale = compute_local_transform(hier_shape, face_idx)
@@ -397,7 +512,7 @@ function transform_point_local_to_global(
     p_local    ::StaticVector{3}
 )
     # If no roughness model, return the original point
-    !has_roughness(hier_shape, face_idx) && return p_local
+    !has_roughness_model(hier_shape, face_idx) && return p_local
     
     # Get transformation parameters
     R, t, scale = compute_local_transform(hier_shape, face_idx)
@@ -440,7 +555,7 @@ function transform_vector_global_to_local(
     v_global   ::StaticVector{3}
 )
     # If no roughness model, return the original vector
-    !has_roughness(hier_shape, face_idx) && return v_global
+    !has_roughness_model(hier_shape, face_idx) && return v_global
 
     # Get transformation parameters (translation not needed for vectors)
     R, _, scale = compute_local_transform(hier_shape, face_idx)
@@ -482,7 +597,7 @@ function transform_vector_local_to_global(
     face_idx   ::Int,
     v_local    ::StaticVector{3}
 )
-    !has_roughness(hier_shape, face_idx) && return v_local
+    !has_roughness_model(hier_shape, face_idx) && return v_local
     
     # Get transformation parameters (translation not needed for vectors)
     R, _, scale = compute_local_transform(hier_shape, face_idx)
@@ -530,7 +645,7 @@ function transform_physical_vector_global_to_local(
     v_global   ::StaticVector{3}
 )
     # If no roughness model, return the original vector
-    !has_roughness(hier_shape, face_idx) && return v_global
+    !has_roughness_model(hier_shape, face_idx) && return v_global
     
     # Get rotation matrix only (scale not needed for physical vectors)
     R, _, _ = compute_local_transform(hier_shape, face_idx)
@@ -574,7 +689,7 @@ function transform_physical_vector_local_to_global(
     v_local    ::StaticVector{3}
 )
     # If no roughness model, return the original vector
-    !has_roughness(hier_shape, face_idx) && return v_local
+    !has_roughness_model(hier_shape, face_idx) && return v_local
     
     # Get rotation matrix only (scale not needed for physical vectors)
     R, _, _ = compute_local_transform(hier_shape, face_idx)
