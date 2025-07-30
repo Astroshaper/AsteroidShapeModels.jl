@@ -386,20 +386,16 @@ function add_roughness_models!(
 )
     @assert 1 ≤ face_idx ≤ length(hier_shape.global_shape.faces) "Invalid face index"
     
-    # Check if this model already exists
-    roughness_idx = 0
-    for (idx, model) in enumerate(hier_shape.roughness_models)
-        if model === roughness_model  # Use === for object identity
-            roughness_idx = idx
-            break
+    # Find or add the roughness model
+    # `something` uses lazy evaluation: the second argument (begin...end block) is only
+    # evaluated if the first argument returns `nothing` (if no existing model found)
+    roughness_idx = something(
+        findfirst(existing_model -> existing_model === roughness_model, hier_shape.roughness_models),
+        begin
+            push!(hier_shape.roughness_models, roughness_model)
+            length(hier_shape.roughness_models)
         end
-    end
-    
-    # Add the model if it doesn't exist
-    if roughness_idx == 0
-        push!(hier_shape.roughness_models, roughness_model)
-        roughness_idx = length(hier_shape.roughness_models)
-    end
+    )
     
     # Update the face-to-roughness mapping and scale
     hier_shape.face_roughness_indices[face_idx] = roughness_idx
