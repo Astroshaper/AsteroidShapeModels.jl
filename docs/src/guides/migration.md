@@ -16,6 +16,32 @@ No planned deprecations at this time.
 
 ## Migrating to v0.5.0 (Unreleased)
 
+### New Features
+
+#### Hierarchical Shape Models
+
+v0.5.0 introduces `HierarchicalShapeModel` for multi-scale surface representation:
+
+```julia
+# Create hierarchical model from global shape
+hier_shape = HierarchicalShapeModel(global_shape)
+
+# Add roughness models to specific faces
+roughness = load_shape_obj("roughness.obj", scale=10)
+add_roughness_models!(hier_shape, roughness, face_idx; scale=0.01)
+
+# Transform between global and local coordinates
+p_local = transform_point_global_to_local(hier_shape, face_idx, p_global)
+v_local = transform_geometric_vector_global_to_local(hier_shape, face_idx, v_global)
+f_local = transform_physical_vector_global_to_local(hier_shape, face_idx, f_global)
+```
+
+Key features:
+- Add surface roughness models to individual faces
+- Automatic coordinate transformations between global and local frames
+- Separate handling of geometric vectors (with scaling) and physical vectors (rotation only)
+- Memory-efficient sharing of roughness models across multiple faces
+
 ### Breaking Changes
 
 #### Removed `apply_eclipse_shadowing!` deprecated signature

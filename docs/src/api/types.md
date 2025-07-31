@@ -8,6 +8,7 @@ CurrentModule = AsteroidShapeModels
 
 ```@docs
 ShapeModel
+HierarchicalShapeModel
 Ray
 Sphere
 ```
