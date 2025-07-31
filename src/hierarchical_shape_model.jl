@@ -753,10 +753,9 @@ function transform_physical_vector_global_to_local(
     
     # Extract rotation part from the linear transformation
     # The linear part includes both rotation and scale, so we need to remove the scale
-    # Since transform.linear = rotation * scale, and scale is uniform,
-    # we can extract the rotation by normalizing
+    # Since transform.linear = rotation * scale, we divide by scale to extract pure rotation
     scale = hier_shape.face_roughness_scales[face_idx]
-    rotation = transform.linear * scale  # Remove the 1/scale factor
+    rotation = transform.linear / scale  # Extract pure rotation
     v_local = rotation * v_global        # Apply pure rotation
     
     return v_local
@@ -787,7 +786,8 @@ Use this for quantities where the physical magnitude must be preserved:
 - Magnetic fields
 - Any vector representing a physical quantity rather than a geometric displacement
 
-For geometric vectors (displacements, velocities), use `transform_geometric_vector_local_to_global` instead.
+For geometric vectors (e.g., displacements, velocities),
+use `transform_geometric_vector_local_to_global` instead.
 """
 function transform_physical_vector_local_to_global(
     hier_shape ::HierarchicalShapeModel,
@@ -800,9 +800,10 @@ function transform_physical_vector_local_to_global(
     # Get global-to-local transformation
     transform = get_roughness_model_transform(hier_shape, face_idx)
     
-    # Extract rotation part from the linear transformation, inverse it, and apply it.
+    # Extract rotation part from the linear transformation
+    # Since transform.linear = rotation * scale, we divide by scale to extract pure rotation
     scale = hier_shape.face_roughness_scales[face_idx]
-    rotation = transform.linear * scale  # Remove the 1/scale factor
+    rotation = transform.linear / scale  # Extract pure rotation
     v_global = rotation' * v_local       # Apply inverse rotation (transpose for orthogonal matrix)
     
     return v_global
