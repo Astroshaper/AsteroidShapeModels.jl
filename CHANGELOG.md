@@ -5,7 +5,27 @@ All notable changes to `AsteroidShapeModels.jl` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+
 ## [Unreleased]
+
+### Added
+- **Hierarchical shape models for multi-scale surface representation** (PR TBD)
+  - New `HierarchicalShapeModel` type that supports adding surface roughness to a base shape model
+  - Roughness model management functions:
+    - `has_roughness_model` - Check if a face has associated roughness
+    - `get_roughness_model` - Retrieve roughness model for a face
+    - `get_roughness_model_scale` - Get scale factor for roughness model
+    - `get_roughness_model_transform` - Get affine transformation for roughness model
+    - `add_roughness_models!` - Add roughness models to faces (supports both all-faces and specific-face variants)
+    - `clear_roughness_models!` - Remove roughness models from faces (supports both all-faces and specific-face variants)
+  - Coordinate transformation functions:
+    - `transform_point_global_to_local` / `transform_point_local_to_global` - Transform points between coordinate systems (full affine transformation)
+    - `transform_geometric_vector_global_to_local` / `transform_geometric_vector_local_to_global` - Transform geometric vectors (with scaling)
+    - `transform_physical_vector_global_to_local` / `transform_physical_vector_local_to_global` - Transform physical vectors (rotation only)
+  - Memory-efficient design allowing multiple faces to share the same roughness model
+  - Automatic north-aligned local coordinate system for each face
+  - Support for custom affine transformations per face
 
 ### Breaking Changes
 - **Removed deprecated `apply_eclipse_shadowing!` signature** (#51)
@@ -18,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Elevation-based optimization is now always enabled when `with_self_shadowing=true`
   - Affected functions: `isilluminated`, `update_illumination!`
   - This simplifies the API and ensures users always get the best performance
+
+---
 
 ## [0.4.2] - 2025-01-21
 
@@ -48,6 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Better separation of concerns between geometric calculations and eclipse logic
   - Performance is identical but code is more maintainable
 
+---
+
 ## [0.4.1] - 2025-07-10
 
 ### Added
@@ -74,6 +98,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Now correctly includes translation when transforming sun position to shape2's frame
   - Previously only applied rotation, which could lead to incorrect shadow calculations
   - Ensures accurate eclipse detection in binary asteroid systems
+
+---
 
 ## [0.4.0] - 2025-07-07
 
@@ -152,6 +178,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated file-level documentation in `visibility.jl` with new exported functions
 - Updated package structure documentation to reflect new file organization
 
+---
+
 ## [0.3.1] - 2025-07-02
 
 ### Added
@@ -180,6 +208,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backward compatible - no breaking changes
 - BVH support is opt-in and does not affect existing code
 - Current BVH visibility implementation has room for future optimization
+
+---
 
 ## [0.3.0] - 2025-06-20
 
@@ -261,6 +291,8 @@ The new CSR-based implementation provides:
 - ~50% memory reduction across all model sizes
 - Better cache locality for sequential access patterns
 
+---
+
 ## [0.2.1] - 2025-06-17
 
 ### Added
@@ -277,6 +309,8 @@ The new CSR-based implementation provides:
 ### Deprecated
 - Legacy adjacency list implementation will be removed in v0.3.0
 - `shape.visiblefacets` field will be removed in v0.3.0 (use `shape.visibility_graph`)
+
+---
 
 ## [0.2.0] - 2025-06-14
 
@@ -312,6 +346,8 @@ The new CSR-based implementation provides:
 - Added PkgEval badge to README
 - Updated installation instructions for Julia General registry
 - Added Julia REPL package mode installation method
+
+---
 
 ## [0.1.0] - Initial Release
 
