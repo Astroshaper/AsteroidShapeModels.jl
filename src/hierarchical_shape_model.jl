@@ -2,37 +2,27 @@
     hierarchical_shape_model.jl
 
 Implements hierarchical shape models for multi-scale surface representation.
-This allows detailed surface features (craters, boulders, roughness) to be
+This allows detailed surface features (e.g., craters, boulders, roughness) to be
 added to base shape models while maintaining computational efficiency.
 
 The hierarchical structure uses:
 - Base shape model (ShapeModel) for global geometry
 - Surface roughness models (ShapeModel) attached to global shape's faces
 - Per-face scale factors and affine transformations
-- Efficient indexing for O(1) access to face details
-- On-the-fly computation of coordinate transformations
 
 ## Implementation Considerations
 
 ### Coordinate Transformations
-The implementation now uses CoordinateTransformations.jl's AffineMap type for per-face
-transformations, along with separate scale factors. This provides:
+The implementation now uses CoordinateTransformations.jl's `AffineMap` type for per-face
+transformations, along with separate scale factors (`face_roughness_scales`).
 
-1. **Flexibility**: Support for arbitrary affine transformations per face
-2. **Compatibility**: Integration with Julia's transformation ecosystem
-3. **Memory sharing**: Multiple faces can share the same ShapeModel with different transforms
-4. **Performance**: Efficient composition of transformations when needed
-
-The coordinate transformation pipeline:
-1. Apply user-specified AffineMap (global to local transformation)
-2. Apply scale factor
-3. Apply automatic north-aligned coordinate system transformation
+The coordinate transformation approach:
+- Each face stores a complete global-to-local AffineMap in `face_roughness_transforms`
+- The AffineMap includes rotation, scaling, and translation in a single transformation
+- Scale factors are stored separately in `face_roughness_scales` for efficient access
 
 Note: `face_roughness_transforms` stores the global-to-local transformation for each face,
 allowing custom positioning and orientation of roughness models.
-
-This design allows both manual control over roughness model placement and automatic
-alignment with geographic conventions.
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -98,24 +88,15 @@ hier_shape = HierarchicalShapeModel(global_shape)
 
 # Add crater roughness to specific faces
 crater = load_shape_obj("crater_roughness.obj", scale=10)
-add_roughness_models!(hier_shape, crater, face_idx; 
-    scale=0.01, 
-    transform=IDENTITY_AFFINE_MAP
-)
+add_roughness_models!(hier_shape, crater, face_idx; scale=0.01)
 ```
 
 # Implementation Notes
 
-Currently, the coordinate transformations between global and local systems are computed
-on-the-fly based on face geometry. This design prioritizes memory efficiency and simplicity.
-
-## Future Considerations
-
-For performance-critical applications, consider pre-computing and storing transformation matrices:
-- Add fields: `global_to_local_rotations::Vector{SMatrix{3,3}}` and `global_to_local_translations::Vector{SVector{3}}`
-- Trade-off: ~25% increase in memory usage for O(1) transformation access
-- Benefit: Faster coordinate transformations in intensive calculations
-- Additional flexibility: Support custom orientations beyond the default north-aligned system
+The `face_roughness_transforms` field stores complete AffineMap transformations for each face,
+providing efficient O(1) access to coordinate transformations. Custom transformations can be
+provided via the `transform` parameter in `add_roughness_models!`, or they will be automatically
+computed to align with the face's local coordinate system
 
 See also: [`AbstractShapeModel`](@ref), [`ShapeModel`](@ref)
 """
@@ -176,12 +157,11 @@ end
 Check if a face has an associated roughness model.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face to check
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face to check
 
 # Returns
-- `true`  : If the face has an associated roughness model
-- `false` : If the face has no roughness model
+- `Bool` : `true` if the face has an associated roughness model, `false` otherwise
 """
 function has_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int)::Bool
     return hier_shape.face_roughness_indices[face_idx] != 0
@@ -193,12 +173,11 @@ end
 Get the roughness model associated with a specific face.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face to query
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face to query
 
 # Returns
-- `ShapeModel` : The roughness model for the specified face
-- `nothing`    : If the face has no associated roughness model
+- `Union{Nothing, ShapeModel}` : The roughness model for the specified face, or `nothing` if no roughness model is associated
 """
 function get_roughness_model(hier_shape::HierarchicalShapeModel, face_idx::Int)::Union{Nothing, ShapeModel}
     !has_roughness_model(hier_shape, face_idx) && return nothing
@@ -212,8 +191,8 @@ end
 Get the scale factor for the roughness model on a specific face.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face to query
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face to query
 
 # Returns
 - `Float64` : The scale factor for the roughness model (1.0 if no roughness model)
@@ -228,11 +207,11 @@ end
 Get the affine transformation (global to local) for the roughness model on a specific face.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face to query
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face to query
 
 # Returns
-- `AffineMap` : The affine transformation from global to local coordinates
+- `AFFINE_MAP_TYPE` : The affine transformation from global to local coordinates
 """
 function get_roughness_model_transform(hier_shape::HierarchicalShapeModel, face_idx::Int)::AFFINE_MAP_TYPE
     return hier_shape.face_roughness_transforms[face_idx]
@@ -248,7 +227,7 @@ end
 Remove all roughness models from all faces of the hierarchical shape model.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
 
 # Notes
 This function clears all roughness model assignments but keeps the model's structure intact.
@@ -271,8 +250,8 @@ end
 Remove the roughness model from a specific face.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face to clear
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face to clear
 
 # Notes
 This function clears the assignment for the specified face.
@@ -312,11 +291,11 @@ end
 Add the same surface roughness model to all faces of the hierarchical shape model.
 
 # Arguments
-- `hier_shape`      : The hierarchical shape model
-- `roughness_model` : The shape model representing the surface roughness
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `roughness_model::ShapeModel`        : The shape model representing the surface roughness
 
 # Keyword Arguments
-- `scale`     : Scale factor for the roughness model (default: 1.0)
+- `scale::Float64`     : Scale factor for the roughness model (default: 1.0)
 
 # Notes
 - This function applies the roughness model to ALL faces, overwriting any existing assignments.
@@ -362,15 +341,16 @@ end
 Add a surface roughness model to a specific face of the hierarchical shape model.
 
 # Arguments
-- `hier_shape`      : The hierarchical shape model
-- `roughness_model` : The shape model representing the surface roughness
-- `face_idx`        : Index of the face to attach the roughness to
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `roughness_model::ShapeModel`        : The shape model representing the surface roughness
+- `face_idx::Int`                      : Index of the face to attach the roughness to
 
 # Keyword Arguments
-- `scale`     : Scale factor for the roughness model (default: 1.0)
-- `transform` : Affine transformation from global to local coordinates (optional).
-                If `nothing` (default), automatically computes an appropriate transformation
-                using `compute_face_roughness_transform`
+- `scale::Float64`                             : Scale factor for the roughness model (default: 1.0)
+- `transform::Union{Nothing, AFFINE_MAP_TYPE}` :
+        Affine transformation from global to local coordinates (optional).
+        If `nothing` (default), automatically computes an appropriate transformation
+        using `compute_face_roughness_transform`
 
 # Notes
 - If the face already has a roughness model, it will be replaced.
@@ -426,12 +406,16 @@ The local coordinate system follows geographic conventions:
 - ê_y    : Unit vector pointing north (projected onto the face plane)
 - ê_x    : Unit vector pointing east (completing a right-handed system)
 
+# Arguments
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face
+
 # Returns
-A tuple containing:
-- `origin` : The face center position
-- `ê_x`    : Unit vector pointing east
-- `ê_y`    : Unit vector pointing north
-- `ê_z`    : Unit vector pointing up (face normal)
+A tuple `(origin::SVector{3}, ê_x::SVector{3}, ê_y::SVector{3}, ê_z::SVector{3})` containing:
+- `origin::SVector{3}` : The face center position
+- `ê_x::SVector{3}`    : Unit vector pointing east
+- `ê_y::SVector{3}`    : Unit vector pointing north
+- `ê_z::SVector{3}`    : Unit vector pointing up (face normal)
 """
 function compute_local_coordinate_system(hier_shape::HierarchicalShapeModel, face_idx::Int)
     # Get precomputed face center and normal
@@ -480,11 +464,15 @@ to the roughness model's local UV coordinates [0,1]×[0,1]. The computed transfo
 is intended to be stored in the `hier_shape.face_roughness_transforms` field.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face
 
 # Keyword Arguments
-- `scale`      : Scale factor for the roughness model (default: 1.0)
+- `scale::Float64` : Scale factor for the roughness model (default: 1.0).
+                     A scale of 0.01 means 1 unit in the roughness model equals 0.01 units in global coordinates.
+
+# Returns
+- `AFFINE_MAP_TYPE` : The affine transformation from global to local coordinates
 
 # Implementation Note
 This function leverages the equivalence between active and passive transformations:
@@ -493,10 +481,10 @@ This function leverages the equivalence between active and passive transformatio
 - No inverse computation is needed
 
 The transformation pipeline (as active local-to-global):
-1. Offset from UV center (0.5, 0.5, 0.0) to local origin
-2. Scale from local units to global units
-3. Rotate from local coordinate system to global (north-aligned)
-4. Translate from local origin to face center
+- 1. Offset from UV center (0.5, 0.5, 0.0) to local origin
+- 2. Scale from local units to global units
+- 3. Rotate from local coordinate system to global (north-aligned)
+- 4. Translate from local origin to face center
 """
 function compute_face_roughness_transform(hier_shape::HierarchicalShapeModel, face_idx::Int; scale::Float64=1.0)
     # Get local coordinate system
@@ -547,13 +535,13 @@ end
 Transform a point from global to local coordinates.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face (1-based)
-- `point`      : Point in global coordinates
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face (1-based)
+- `point::StaticVector{3}`             : Point in global coordinates
 
 # Returns
-- Point in local roughness model coordinates [0,1]×[0,1]×ℝ
-- Original point if the face has no roughness model
+- `SVector{3, Float64}` : Point in local roughness model coordinates [0,1]×[0,1]×ℝ,
+                          or original point if the face has no roughness model
 
 # Notes
 The local coordinate system has its origin at the face center, with:
@@ -587,13 +575,12 @@ end
 Transform a point from local to global coordinates.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face (1-based)
-- `p_local`    : Point in local roughness model coordinates [0,1]×[0,1]×ℝ
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face (1-based)
+- `p_local::StaticVector{3}`           : Point in local roughness model coordinates [0,1]×[0,1]×ℝ
 
 # Returns
-- Point in global coordinates
-- Original point if the face has no roughness model
+- `SVector{3, Float64}` : Point in global coordinates, or original point if the face has no roughness model
 
 # Notes
 Inverse transformation of `transform_point_global_to_local`.
@@ -630,13 +617,13 @@ end
 Transform a geometric vector from global to local coordinates.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face (1-based)
-- `v_global`   : Geometric vector in global coordinates
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face (1-based)
+- `v_global::StaticVector{3}`          : Geometric vector in global coordinates
 
 # Returns
-- Vector in local roughness model coordinates (scaled)
-- Original vector if the face has no roughness model
+- `SVector{3, Float64}` : Vector in local roughness model coordinates (scaled),
+                          or original vector if the face has no roughness model
 
 # Notes
 This function applies both rotation and scaling, suitable for geometric vectors
@@ -674,13 +661,13 @@ end
 Transform a geometric vector from local to global coordinates.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face (1-based)
-- `v_local`    : Geometric vector in local roughness model coordinates
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face (1-based)
+- `v_local::StaticVector{3}`           : Geometric vector in local roughness model coordinates
 
 # Returns
-- Vector in global coordinates (scaled)
-- Original vector if the face has no roughness model
+- `SVector{3, Float64}` : Vector in global coordinates (scaled),
+                          or original vector if the face has no roughness model
 
 # Notes
 Inverse transformation of `transform_geometric_vector_global_to_local`.
@@ -723,12 +710,13 @@ Transform a physical vector (e.g., force, torque, angular velocity) from global 
 Physical vectors are only rotated, not scaled, preserving their physical magnitude.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face
-- `v_global`   : Physical vector in global coordinates
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face
+- `v_global::StaticVector{3}`          : Physical vector in global coordinates
 
 # Returns
-- Physical vector in local coordinate frame
+- `SVector{3, Float64}` : Physical vector in local coordinate frame (not scaled),
+                          or original vector if the face has no roughness model
 
 # Note
 Use this for quantities where the physical magnitude must be preserved:
@@ -772,12 +760,13 @@ Transform a physical vector (e.g., force, torque, angular velocity) from local t
 Physical vectors are only rotated, not scaled, preserving their physical magnitude.
 
 # Arguments
-- `hier_shape` : The hierarchical shape model
-- `face_idx`   : Index of the face
-- `v_local`    : Physical vector in local coordinates
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face
+- `v_local::StaticVector{3}`           : Physical vector in local coordinates
 
 # Returns
-- Physical vector in global coordinate frame
+- `SVector{3, Float64}` : Physical vector in global coordinate frame (not scaled),
+                          or original vector if the face has no roughness model
 
 # Note
 Use this for quantities where the physical magnitude must be preserved:
