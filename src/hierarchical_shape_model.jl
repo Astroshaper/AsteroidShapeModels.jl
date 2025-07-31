@@ -300,7 +300,7 @@ Add the same surface roughness model to all faces of the hierarchical shape mode
 # Notes
 - This function applies the roughness model to ALL faces, overwriting any existing assignments.
 - All faces will share the same ShapeModel instance, making this memory-efficient.
-- Appropriate transformations are automatically computed for each face using [`compute_face_roughness_transform`](@ref).
+- Appropriate transformations are automatically computed for each face using `compute_face_roughness_transform`.
 - Use the face-specific version `add_roughness_models!(hier_shape, roughness_model, face_idx; scale, transform)`
   to selectively apply different models to individual faces or to provide custom transformations.
 """
@@ -350,7 +350,7 @@ Add a surface roughness model to a specific face of the hierarchical shape model
 - `transform::Union{Nothing, AFFINE_MAP_TYPE}` :
         Affine transformation from global to local coordinates (optional).
         If `nothing` (default), automatically computes an appropriate transformation
-        using [`compute_face_roughness_transform`](@ref)
+        using `compute_face_roughness_transform`
 
 # Notes
 - If the face already has a roughness model, it will be replaced.
