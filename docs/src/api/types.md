@@ -7,7 +7,9 @@ CurrentModule = AsteroidShapeModels
 ## Core Types
 
 ```@docs
+AbstractShapeModel
 ShapeModel
+HierarchicalShapeModel
 Ray
 Sphere
 ```

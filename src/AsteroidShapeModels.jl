@@ -8,7 +8,9 @@ including loading from OBJ files, computing geometric properties, ray-shape inte
 visibility analysis, and surface roughness modeling.
 
 # Main Types
+- `AbstractShapeModel`: Abstract base type for all shape models
 - `ShapeModel`: Core data structure for polyhedral shapes
+- `HierarchicalShapeModel`: Multi-scale shape model with surface roughness
 - `Ray`: Ray for ray casting operations
 - `FaceVisibilityGraph`: CSR-style data structure for face-to-face visibility
 
@@ -36,6 +38,7 @@ See the documentation for detailed usage examples and API reference.
 """
 module AsteroidShapeModels
 
+using CoordinateTransformations
 using FileIO
 using LinearAlgebra
 using StaticArrays
@@ -52,7 +55,15 @@ export Ray, Sphere
 export RayTriangleIntersectionResult, RayShapeIntersectionResult, RaySphereIntersectionResult
 
 include("shape_model.jl")
-export ShapeModel, build_bvh!
+export AbstractShapeModel, ShapeModel, build_bvh!
+
+include("hierarchical_shape_model.jl")
+export HierarchicalShapeModel
+export has_roughness_model, get_roughness_model, get_roughness_model_scale, get_roughness_model_transform
+export clear_roughness_models!, add_roughness_models!
+export transform_point_global_to_local, transform_point_local_to_global
+export transform_geometric_vector_global_to_local, transform_geometric_vector_local_to_global
+export transform_physical_vector_global_to_local, transform_physical_vector_local_to_global
 
 include("face_visibility_graph.jl")
 export FaceVisibilityGraph, build_face_visibility_graph!, view_factor

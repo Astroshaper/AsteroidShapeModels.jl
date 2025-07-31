@@ -4,6 +4,7 @@ authors = ["Masanori Kanamaru <kanamaru-masanori@hotmail.co.jp>"]
 version = "0.4.2"
 
 [deps]
+CoordinateTransformations = "150eb455-5306-5404-9cee-2592286d6298"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
 ImplicitBVH = "932a18dc-bb55-4cd5-bdd6-1368ec9cea29"
@@ -13,6 +14,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 BenchmarkTools = "1.6.0"
+CoordinateTransformations = "0.6"
 FileIO = "1"
 GeometryBasics = "0.5"
 ImplicitBVH = "0.6.0"
