@@ -70,12 +70,11 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 
 ---
 
-## Version 0.5.0 - Advanced Surface Modeling (Target: September 2025)
+## Version 0.5.0 - Surface Roughness Modeling (Target: September 2025)
 
 ### Major Features
-- **Hierarchical Surface Roughness Model**
-  - [ ] Support nested shape models for multi-scale surface representation
-  - [ ] Implement efficient traversal algorithms for nested structures
+- **Hierarchical Shape Model**
+  - [ ] Support nested shape models for surface roughness representation
   
 - **Complete Roughness Module**
   - [ ] Implement parallel sinusoidal trench generation
