@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.4.2] - 2025-01-21
+## [0.4.2] - 2025-07-21
 
 ### Added
 - **Face maximum elevation optimization for faster illumination calculations** (#46)
@@ -101,7 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.4.0] - 2025-07-07
+## [0.4.0] - 2025-07-08
 
 ### Breaking Changes
 - **BVH must be pre-built for ray intersection** (04d2937, 5355dbc)
