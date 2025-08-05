@@ -125,6 +125,52 @@ mutable struct HierarchicalShapeModel <: AbstractShapeModel
     end
 end
 
+"""
+    HierarchicalShapeModel(
+        nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}};
+        with_face_visibility=false, with_bvh=false,
+    ) -> HierarchicalShapeModel
+
+Construct a `HierarchicalShapeModel` from nodes and faces, automatically computing face properties.
+This constructor creates a `HierarchicalShapeModel` with an empty roughness model collection.
+
+# Arguments
+- `nodes` : Vector of vertex positions
+- `faces` : Vector of triangular face definitions (vertex indices)
+
+# Keyword Arguments
+- `with_face_visibility::Bool=false` : Whether to compute `face_visibility_graph` and `face_max_elevations`
+- `with_bvh::Bool=false`             : Whether to build BVH for accelerated ray tracing
+
+# Returns
+- `HierarchicalShapeModel`: Hierarchical shape model with computed face properties and empty roughness models
+
+# Examples
+```julia
+# Create a simple hierarchical model
+nodes = [SA[0,0,0], SA[1,0,0], SA[0,1,0], SA[0,0,1]]
+faces = [SA[1,2,3], SA[1,2,4], SA[1,3,4], SA[2,3,4]]
+hier_shape = HierarchicalShapeModel(nodes, faces)
+
+# Create with visibility computation
+hier_shape = HierarchicalShapeModel(nodes, faces, with_face_visibility=true)
+
+# Add roughness models later for all faces of the global shape
+roughness_model = ShapeModel(roughness_nodes, roughness_faces)
+add_roughness_models!(hier_shape, roughness_model; scale=0.01)
+```
+"""
+function HierarchicalShapeModel(
+    nodes::Vector{<:StaticVector{3}}, faces::Vector{<:StaticVector{3}};
+    with_face_visibility=false, with_bvh=false,
+)
+    # Create the base ShapeModel
+    global_shape = ShapeModel(nodes, faces; with_face_visibility, with_bvh)
+    
+    # Create HierarchicalShapeModel from the base shape
+    return HierarchicalShapeModel(global_shape)
+end
+
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                      Display Functions                            ║
 # ╚═══════════════════════════════════════════════════════════════════╝
@@ -146,6 +192,68 @@ function Base.show(io::IO, hier_shape::HierarchicalShapeModel)
     print(io, "Faces with roughness    : $(nfaces_with_roughness)\n")
     print(io, "Unique roughness models : $(length(hier_shape.roughness_models))")
 end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                        Method Forwarding                          ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+# Forward methods to the global_shape for compatibility with ShapeModel interface
+# These methods delegate to the global shape model, ignoring local roughness
+
+#### From `shape_operations.jl` ####
+
+# Shape metric functions
+polyhedron_volume(hier_shape::HierarchicalShapeModel) = polyhedron_volume(hier_shape.global_shape)
+equivalent_radius(hier_shape::HierarchicalShapeModel) = equivalent_radius(hier_shape.global_shape)
+maximum_radius(hier_shape::HierarchicalShapeModel) = maximum_radius(hier_shape.global_shape)
+minimum_radius(hier_shape::HierarchicalShapeModel) = minimum_radius(hier_shape.global_shape)
+
+# Face properties
+get_face_nodes(hier_shape::HierarchicalShapeModel, face_idx::Int) = get_face_nodes(hier_shape.global_shape, face_idx)
+
+#### From `ray_intersection.jl` ####
+
+# Ray-triangle intersection (single face)
+intersect_ray_triangle(ray::Ray, hier_shape::HierarchicalShapeModel, face_idx::Integer) =
+    intersect_ray_triangle(ray, hier_shape.global_shape, face_idx)
+
+# Ray-shape intersection (rays' origins and directions as matrices)
+intersect_ray_shape(hier_shape::HierarchicalShapeModel, origins::AbstractMatrix{<:Real}, directions::AbstractMatrix{<:Real}) = 
+    intersect_ray_shape(hier_shape.global_shape, origins, directions)
+
+# Ray-shape intersection (single ray)
+intersect_ray_shape(ray::Ray, hier_shape::HierarchicalShapeModel) = intersect_ray_shape(ray, hier_shape.global_shape)
+
+# Ray-shape intersection (vector of rays)
+intersect_ray_shape(rays::AbstractVector{Ray}, hier_shape::HierarchicalShapeModel) = intersect_ray_shape(rays, hier_shape.global_shape)
+
+# Ray-shape intersection (matrix of rays)
+intersect_ray_shape(rays::AbstractMatrix{Ray}, hier_shape::HierarchicalShapeModel) = intersect_ray_shape(rays, hier_shape.global_shape)
+
+#### From `illumination.jl` ####
+
+# Illumination check for a single face
+isilluminated(hier_shape::HierarchicalShapeModel, r☉::StaticVector{3}, face_idx::Integer; with_self_shadowing::Bool) =
+    isilluminated(hier_shape.global_shape, r☉, face_idx; with_self_shadowing)
+
+# Batch illumination update
+update_illumination!(illuminated_faces::AbstractVector{Bool}, hier_shape::HierarchicalShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool) =
+    update_illumination!(illuminated_faces, hier_shape.global_shape, r☉; with_self_shadowing)
+
+#### From `face_visibility_graph.jl` ####
+
+# Face visibility graph
+build_face_visibility_graph!(hier_shape::HierarchicalShapeModel) = build_face_visibility_graph!(hier_shape.global_shape)
+
+#### From `face_max_elevations.jl` ####
+
+# Face max elevations
+compute_face_max_elevations!(hier_shape::HierarchicalShapeModel) = compute_face_max_elevations!(hier_shape.global_shape)
+
+#### From `shape_model.jl` ####
+
+# BVH construction
+build_bvh!(hier_shape::HierarchicalShapeModel) = build_bvh!(hier_shape.global_shape)
 
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                   Roughness Model Accessors                       ║
@@ -309,6 +417,8 @@ function add_roughness_models!(
     roughness_model ::ShapeModel;
     scale           ::Float64 = 1.0,
 )
+    scale > 0 || throw(ArgumentError("scale must be positive, got $scale"))
+    
     # Clear all existing roughness models first
     clear_roughness_models!(hier_shape)
     
@@ -365,6 +475,7 @@ function add_roughness_models!(
     transform       ::Union{Nothing, AFFINE_MAP_TYPE} = nothing,
 )
     @assert 1 ≤ face_idx ≤ length(hier_shape.global_shape.faces) "Invalid face index"
+    scale > 0 || throw(ArgumentError("scale must be positive, got $scale"))
     
     # Find or add the roughness model
     # `something` uses lazy evaluation: the second argument (begin...end block) is only
