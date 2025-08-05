@@ -6,13 +6,13 @@ loading shape models from various sources, computing geometric properties
 such as volume and radii, and converting between different representations.
 
 Exported Functions:
-- `load_shape_obj`: Load a shape model from an OBJ file
-- `load_shape_grid`: Convert a regular grid to a shape model
-- `grid_to_faces`: Convert grid data to triangular faces
-- `polyhedron_volume`: Calculate the volume of a polyhedron
-- `equivalent_radius`: Calculate the radius of an equivalent sphere
-- `maximum_radius`: Find the maximum distance from origin
-- `minimum_radius`: Find the minimum distance from origin
+- `load_shape_obj`    : Load a shape model from an OBJ file
+- `load_shape_grid`   : Convert a regular grid to a shape model
+- `grid_to_faces`     : Convert grid data to triangular faces
+- `polyhedron_volume` : Calculate the volume of a polyhedron
+- `equivalent_radius` : Calculate the radius of an equivalent sphere
+- `maximum_radius`    : Find the maximum distance from origin
+- `minimum_radius`    : Find the minimum distance from origin
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -20,7 +20,12 @@ Exported Functions:
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    load_shape_obj(shapepath; scale=1.0, with_face_visibility=false, with_bvh=false) -> ShapeModel
+    load_shape_obj(shapepath;
+        scale = 1.0,
+        with_face_visibility = false,
+        with_bvh = false,
+        as_hierarchical = false,
+    ) -> Union{ShapeModel, HierarchicalShapeModel}
 
 Load a shape model from a Wavefront OBJ file.
 
@@ -31,27 +36,42 @@ Load a shape model from a Wavefront OBJ file.
 - `scale::Real=1.0`                  : Scale factor for node coordinates (e.g., 1000 to convert km to m)
 - `with_face_visibility::Bool=false` : Whether to build face-to-face visibility graph for illumination and thermophysical modeling
 - `with_bvh::Bool=false`             : Whether to build BVH for ray tracing (required for `intersect_ray_shape` and `apply_eclipse_shadowing!`)
+- `as_hierarchical::Bool=false`      : Whether to return a `HierarchicalShapeModel` instead of a `ShapeModel`
 
 # Returns
-- `ShapeModel`: Loaded shape model with computed geometric properties
+- `ShapeModel` or `HierarchicalShapeModel`: Loaded shape model with computed geometric properties
 
 # Examples
 ```julia
 # Load a shape model
-shape = load_shape_obj("asteroid.obj")
+shape = load_shape_obj("path/to/shape.obj")
 
 # Load with scaling and visibility computation
-shape = load_shape_obj("asteroid_km.obj"; scale=1000, with_face_visibility=true)
+shape = load_shape_obj("path/to/shape_km.obj"; scale=1000)
 
-# Load with all features for comprehensive analysis
-shape = load_shape_obj("asteroid.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
+# Load with face visibility graph and BVH construction
+shape = load_shape_obj("path/to/shape_km.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
+
+# Load as hierarchical shape model for surface roughness modeling
+hier_shape = load_shape_obj("path/to/shape_km.obj"; scale=1000, with_face_visibility=true, with_bvh=true, as_hierarchical=true)
 ```
 
-See also: [`load_shape_grid`](@ref), [`load_obj`](@ref)
+See also: [`load_shape_grid`](@ref), [`load_obj`](@ref), [`HierarchicalShapeModel`](@ref)
 """
-function load_shape_obj(shapepath; scale=1.0, with_face_visibility=false, with_bvh=false)
+function load_shape_obj(shapepath;
+    scale = 1.0,
+    with_face_visibility = false,
+    with_bvh = false,
+    as_hierarchical = false,
+)::Union{ShapeModel, HierarchicalShapeModel}
+    
     nodes, faces = load_obj(shapepath; scale)
-    return ShapeModel(nodes, faces; with_face_visibility, with_bvh)
+    
+    if as_hierarchical
+        return HierarchicalShapeModel(nodes, faces; with_face_visibility, with_bvh)
+    else
+        return ShapeModel(nodes, faces; with_face_visibility, with_bvh)
+    end
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -118,7 +138,12 @@ function grid_to_faces(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatri
 end
 
 """
-    load_shape_grid(xs, ys, zs; scale=1.0, with_face_visibility=false, with_bvh=false) -> ShapeModel
+    load_shape_grid(xs, ys, zs;
+        scale = 1.0,
+        with_face_visibility = false,
+        with_bvh = false,
+        as_hierarchical = false,
+    ) -> Union{ShapeModel, HierarchicalShapeModel}
 
 Convert a regular grid (x, y) with z-values to a shape model.
 
@@ -131,9 +156,10 @@ Convert a regular grid (x, y) with z-values to a shape model.
 - `scale::Real=1.0`                  : Scale factor to apply to all coordinates
 - `with_face_visibility::Bool=false` : Whether to build face-to-face visibility graph for illumination and thermophysical modeling
 - `with_bvh::Bool=false`             : Whether to build BVH for ray tracing (required for `intersect_ray_shape` and `apply_eclipse_shadowing!`)
+- `as_hierarchical::Bool=false`      : Whether to return a `HierarchicalShapeModel` instead of a `ShapeModel`
 
 # Returns
-- `ShapeModel`: Shape model with computed geometric properties
+- `ShapeModel` or `HierarchicalShapeModel`: Shape model with computed geometric properties
 
 # Examples
 ```julia
@@ -144,19 +170,32 @@ zs = [exp(-(x^2 + y^2)/10) for x in xs, y in ys]  # Gaussian surface
 shape = load_shape_grid(xs, ys, zs)
 
 # With scaling and visibility
-shape = load_shape_grid(xs, ys, zs, scale=1000, with_face_visibility=true)
+shape = load_shape_grid(xs, ys, zs; scale=1000, with_face_visibility=true)
 
 # With BVH acceleration (experimental)
 shape = load_shape_grid(xs, ys, zs; with_bvh=true)
+
+# As hierarchical shape model
+hier_shape = load_shape_grid(xs, ys, zs; scale=1000, as_hierarchical=true)
 ```
 
 See also: [`load_shape_obj`](@ref), [`grid_to_faces`](@ref)
 """
-function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix; scale=1.0, with_face_visibility=false, with_bvh=false)
+function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix;
+    scale = 1.0,
+    with_face_visibility = false,
+    with_bvh = false,
+    as_hierarchical = false,
+)::Union{ShapeModel, HierarchicalShapeModel}
+    
     nodes, faces = grid_to_faces(xs, ys, zs)
     nodes .*= scale
     
-    return ShapeModel(nodes, faces; with_face_visibility, with_bvh)
+    if as_hierarchical
+        return HierarchicalShapeModel(nodes, faces; with_face_visibility, with_bvh)
+    else
+        return ShapeModel(nodes, faces; with_face_visibility, with_bvh)
+    end
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
