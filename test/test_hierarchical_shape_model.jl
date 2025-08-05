@@ -173,10 +173,13 @@ Tests cover:
         end
         
         @testset "Transformations without roughness model" begin
-            # Test face without roughness model
+            # Test face without roughness model - should throw ArgumentError
             @test_throws ArgumentError transform_point_global_to_local(hier_shape, 4, SVector(0.0, 0.0, 0.0))
             @test_throws ArgumentError transform_geometric_vector_global_to_local(hier_shape, 4, SVector(1.0, 0.0, 0.0))
             @test_throws ArgumentError transform_physical_vector_global_to_local(hier_shape, 4, SVector(1.0, 0.0, 0.0))
+            @test_throws ArgumentError transform_point_local_to_global(hier_shape, 4, SVector(0.0, 0.0, 0.0))
+            @test_throws ArgumentError transform_geometric_vector_local_to_global(hier_shape, 4, SVector(1.0, 0.0, 0.0))
+            @test_throws ArgumentError transform_physical_vector_local_to_global(hier_shape, 4, SVector(1.0, 0.0, 0.0))
         end
     end
     
@@ -254,18 +257,20 @@ Tests cover:
     end
     
     @testset "Integration with ShapeModel interface" begin
-        hier_shape = HierarchicalShapeModel(base_shape)
+        # Create base shape with BVH for ray intersection tests
+        base_shape_with_bvh = ShapeModel(tetra_nodes, tetra_faces, with_bvh=true)
+        hier_shape = HierarchicalShapeModel(base_shape_with_bvh)
         
         # Test that HierarchicalShapeModel works with existing functions
-        @test equivalent_radius(hier_shape) ≈ equivalent_radius(base_shape)
-        @test maximum_radius(hier_shape) ≈ maximum_radius(base_shape)
-        @test minimum_radius(hier_shape) ≈ minimum_radius(base_shape)
-        @test polyhedron_volume(hier_shape) ≈ polyhedron_volume(base_shape)
+        @test equivalent_radius(hier_shape) ≈ equivalent_radius(base_shape_with_bvh)
+        @test maximum_radius(hier_shape) ≈ maximum_radius(base_shape_with_bvh)
+        @test minimum_radius(hier_shape) ≈ minimum_radius(base_shape_with_bvh)
+        @test polyhedron_volume(hier_shape) ≈ polyhedron_volume(base_shape_with_bvh)
         
         # Test ray intersection
         ray = Ray(SVector(2.0, 0.0, 0.0), SVector(-1.0, 0.0, 0.0))
         result_hier = intersect_ray_shape(ray, hier_shape)
-        result_base = intersect_ray_shape(ray, base_shape)
+        result_base = intersect_ray_shape(ray, base_shape_with_bvh)
         @test result_hier.hit == result_base.hit
         if result_hier.hit
             @test result_hier.distance ≈ result_base.distance
