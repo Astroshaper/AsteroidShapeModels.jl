@@ -235,9 +235,9 @@ The roughness_models array is emptied to free memory.
 """
 function clear_roughness_models!(hier_shape::HierarchicalShapeModel)
     
-    hier_shape.face_roughness_indices .= 0                       # Reset all face indices to 0 (no roughness)
-    hier_shape.face_roughness_scales .= 1.0                      # Reset all scales to 1.0 (identity)
-    hier_shape.face_roughness_transforms .= IDENTITY_AFFINE_MAP  # Reset all transforms to identity
+    hier_shape.face_roughness_indices    .= 0                         # Reset all face indices to 0 (no roughness)
+    hier_shape.face_roughness_scales     .= 1.0                       # Reset all scales to 1.0 (identity)
+    hier_shape.face_roughness_transforms .= Ref(IDENTITY_AFFINE_MAP)  # Reset all transforms to identity
     
     empty!(hier_shape.roughness_models)  # Clear the roughness models array
     
@@ -264,8 +264,8 @@ function clear_roughness_models!(hier_shape::HierarchicalShapeModel, face_idx::I
     roughness_idx = hier_shape.face_roughness_indices[face_idx]
     
     # Clear the face's roughness assignment
-    hier_shape.face_roughness_indices[face_idx] = 0                       # Reset to no roughness
-    hier_shape.face_roughness_scales[face_idx] = 1.0                      # Reset to identity scale
+    hier_shape.face_roughness_indices[face_idx]    = 0                    # Reset to no roughness
+    hier_shape.face_roughness_scales[face_idx]     = 1.0                  # Reset to identity scale
     hier_shape.face_roughness_transforms[face_idx] = IDENTITY_AFFINE_MAP  # Reset transform to identity
     
     # Check if this model is still used by other faces
