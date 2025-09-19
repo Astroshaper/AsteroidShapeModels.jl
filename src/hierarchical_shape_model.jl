@@ -625,9 +625,9 @@ function compute_face_roughness_transform(hier_shape::HierarchicalShapeModel, fa
     # Compose "active local-to-global" transformation (applied right to left)
     active_local_to_global = translate_to_face_center ∘ rotate_to_global ∘ scale_transform ∘ offset_from_uv_center
 
-    # "active local-to-global" transformation is equivalent to "passive global-to-local" transformation
-    # (No inverse needed due to active/passive equivalence)
-    passive_global_to_local = active_local_to_global
+    # We need a passive global→local transformation.
+    # This is obtained by inverting the active local→global transformation.
+    passive_global_to_local = inv(active_local_to_global)
     
     return passive_global_to_local
 end
