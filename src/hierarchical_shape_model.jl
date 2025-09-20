@@ -586,10 +586,9 @@ is intended to be stored in the `hier_shape.face_roughness_transforms` field.
 - `AFFINE_MAP_TYPE` : The affine transformation from global to local coordinates
 
 # Implementation Note
-This function leverages the equivalence between active and passive transformations:
-- Builds an active local-to-global transformation
-- Returns it as the passive global-to-local transformation (they are equivalent)
-- No inverse computation is needed
+This function constructs the desired passive global→local transformation:
+- First, build the active local→global transform
+- Then, take its inverse to obtain the passive global→local transform
 
 The transformation pipeline (as active local-to-global):
 - 1. Offset from UV center (0.5, 0.5, 0.0) to local origin
@@ -601,8 +600,9 @@ function compute_face_roughness_transform(hier_shape::HierarchicalShapeModel, fa
     # Get local coordinate system
     origin, ê_x, ê_y, ê_z = compute_local_coordinate_system(hier_shape, face_idx)
     
-    # Build "active local-to-global" transformation using CoordinateTransformations.jl,
-    # which is equivalent to "passive global-to-local" transformation to be returned.
+    # Build the active local→global transformation using CoordinateTransformations.jl.
+    # The desired passive global→local transformation is obtained by inverting this
+    # active transform (see below).
     
     # 1. Offset from UV center to local origin
     offset_from_uv_center = Translation(-LOCAL_CENTER_OFFSET)
@@ -622,7 +622,7 @@ function compute_face_roughness_transform(hier_shape::HierarchicalShapeModel, fa
     # 4. Translation from local origin to face center
     translate_to_face_center = Translation(origin)
     
-    # Compose "active local-to-global" transformation (applied right to left)
+    # Compose active local→global transformation (applied right to left)
     active_local_to_global = translate_to_face_center ∘ rotate_to_global ∘ scale_transform ∘ offset_from_uv_center
 
     # We need a passive global→local transformation.
