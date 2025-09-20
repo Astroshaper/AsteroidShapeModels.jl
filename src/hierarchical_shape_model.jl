@@ -611,11 +611,11 @@ function compute_face_roughness_transform(hier_shape::HierarchicalShapeModel, fa
     scale_transform = LinearMap(UniformScaling(scale))
     
     # 3. Rotation from local to global coordinates
-    # Columns are local basis vectors for the active transformation
+    # Columns are local basis vectors for the active transformation (column-major)
     R = SMatrix{3,3}(
-        ê_x[1], ê_y[1], ê_z[1],  # Column 1: ê_x
-        ê_x[2], ê_y[2], ê_z[2],  # Column 2: ê_y
-        ê_x[3], ê_y[3], ê_z[3]   # Column 3: ê_z
+        ê_x[1], ê_x[2], ê_x[3],  # Column 1: ê_x
+        ê_y[1], ê_y[2], ê_y[3],  # Column 2: ê_y
+        ê_z[1], ê_z[2], ê_z[3]   # Column 3: ê_z
     )
     rotate_to_global = LinearMap(R)
     
