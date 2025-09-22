@@ -121,22 +121,32 @@ Tests cover:
         @testset "Point transformations" begin
             # Test point at face center
             face_center_global = hier_shape.global_shape.face_centers[1]
-            local_point = transform_point_global_to_local(hier_shape, 1, face_center_global)
+            face_center_local = transform_point_global_to_local(hier_shape, 1, face_center_global)
             
             # Face center should map to (0.5, 0.5, 0.0) in local coordinates
-            @test local_point[1] ≈ 0.5 atol=1e-10
-            @test local_point[2] ≈ 0.5 atol=1e-10
-            @test local_point[3] ≈ 0.0 atol=1e-10
+            @test face_center_local[1] ≈ 0.5 atol=1e-10
+            @test face_center_local[2] ≈ 0.5 atol=1e-10
+            @test face_center_local[3] ≈ 0.0 atol=1e-10
             
-            # Test round-trip transformation
-            global_point_back = transform_point_local_to_global(hier_shape, 1, local_point)
-            @test global_point_back ≈ face_center_global
+            # Test round-trip transformation of face-1's center
+            @test transform_point_local_to_global(hier_shape, 1, face_center_local) ≈ face_center_global
             
-            # Test arbitrary point
-            test_point = SVector(0.2, 0.3, 0.4)
-            local_test = transform_point_global_to_local(hier_shape, 1, test_point)
-            global_test = transform_point_local_to_global(hier_shape, 1, local_test)
-            @test global_test ≈ test_point
+            # Test round-trip transformation of arbitrary point
+            p_global = SVector(0.2, 0.3, 0.4)
+            p_local = transform_point_global_to_local(hier_shape, 1, p_global)
+            @test transform_point_local_to_global(hier_shape, 1, p_local) ≈ p_global
+
+            # Test point slightly offset along face normal
+            face_center_global = hier_shape.global_shape.face_centers[1]
+            face_normal_global = hier_shape.global_shape.face_normals[1]
+            offset = 0.1
+            p_global = face_center_global + offset * face_normal_global
+            p_local = transform_point_global_to_local(hier_shape, 1, p_global)
+            # x,y stay at UV center; z reflects elevation scaled by 1/scale
+            scale = get_roughness_model_scale(hier_shape, 1)
+            @test p_local[1] ≈ 0.5 atol=1e-10
+            @test p_local[2] ≈ 0.5 atol=1e-10
+            @test p_local[3] ≈ (offset / scale) atol=1e-10
         end
         
         @testset "Geometric vector transformations" begin
