@@ -124,9 +124,7 @@ Tests cover:
             face_center_local = transform_point_global_to_local(hier_shape, 1, face_center_global)
             
             # Face center should map to (0.5, 0.5, 0.0) in local coordinates
-            @test face_center_local[1] ≈ 0.5 atol=1e-10
-            @test face_center_local[2] ≈ 0.5 atol=1e-10
-            @test face_center_local[3] ≈ 0.0 atol=1e-10
+            @test face_center_local ≈ [0.5, 0.5, 0.0]
             
             # Test round-trip transformation of face-1's center
             @test transform_point_local_to_global(hier_shape, 1, face_center_local) ≈ face_center_global
@@ -144,9 +142,7 @@ Tests cover:
             p_local = transform_point_global_to_local(hier_shape, 1, p_global)
             # x,y stay at UV center; z reflects elevation scaled by 1/scale
             scale = get_roughness_model_scale(hier_shape, 1)
-            @test p_local[1] ≈ 0.5 atol=1e-10
-            @test p_local[2] ≈ 0.5 atol=1e-10
-            @test p_local[3] ≈ (offset / scale) atol=1e-10
+            @test p_local ≈ [0.5, 0.5, offset / scale]
         end
         
         @testset "Geometric vector transformations" begin
