@@ -166,16 +166,15 @@ Tests cover:
         end
         
         @testset "Physical vector transformations" begin
-            # Physical vectors should scale with the roughness scale
-            test_phys_vec = SVector(1.0, 0.0, 0.0)
-            local_phys = transform_physical_vector_global_to_local(hier_shape, 1, test_phys_vec)
+            # Test with arbitrary physical vector
+            v_global = SVector(1.0, 2.0, 3.0)
+            v_local = transform_physical_vector_global_to_local(hier_shape, 1, v_global)
             
-            # Should be scaled by 1/scale = 1/0.1 = 10
-            @test norm(local_phys) ≈ 10.0 * norm(test_phys_vec)
+            # Physical vectors should not scaled with the roughness scale
+            @test norm(v_local) ≈ norm(v_global)
             
             # Test round-trip
-            global_phys_back = transform_physical_vector_local_to_global(hier_shape, 1, local_phys)
-            @test global_phys_back ≈ test_phys_vec
+            @test transform_physical_vector_local_to_global(hier_shape, 1, v_local) ≈ v_global
         end
         
         @testset "Transformations without roughness model" begin
