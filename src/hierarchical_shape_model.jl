@@ -947,11 +947,11 @@ function transform_physical_vector_global_to_local(
     # Get global-to-local transformation
     transform = get_roughness_model_transform(hier_shape, face_idx)
     
-    # Extract rotation part from the linear transformation
-    # The linear part includes both rotation and scale, so we need to remove the scale
-    # Since transform.linear = rotation * scale, we divide by scale to extract pure rotation
+    # Extract pure rotation from the linear transformation.
+    # Since `transform.linear = (1/scale) * R'` (global→local),
+    # multiply by `scale` to recover `R'` for rotation-only mapping.
     scale = hier_shape.face_roughness_scales[face_idx]
-    rotation = transform.linear / scale  # Extract pure rotation
+    rotation = transform.linear * scale  # Extract pure rotation (R')
     v_local = rotation * v_global        # Apply pure rotation
     
     return v_local
@@ -1017,11 +1017,11 @@ function transform_physical_vector_local_to_global(
     # Get global-to-local transformation
     transform = get_roughness_model_transform(hier_shape, face_idx)
     
-    # Extract rotation part from the linear transformation
-    # Since transform.linear = rotation * scale, we divide by scale to extract pure rotation
+    # Extract pure rotation from the linear transformation.
+    # With `transform.linear = (1/scale) * R'`, recover `R'` via multiplication by `scale`.
     scale = hier_shape.face_roughness_scales[face_idx]
-    rotation = transform.linear / scale  # Extract pure rotation
-    v_global = rotation' * v_local       # Apply inverse rotation (transpose for orthogonal matrix)
+    rotation = transform.linear * scale  # Extract pure rotation (R')
+    v_global = rotation' * v_local       # Apply inverse rotation (R)
     
     return v_global
 end
