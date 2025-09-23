@@ -147,22 +147,22 @@ Tests cover:
         
         @testset "Geometric vector transformations" begin
             # Test with face normal
+            scale = get_roughness_model_scale(hier_shape, 1)
             face_normal_global = hier_shape.global_shape.face_normals[1]
-            local_normal = transform_geometric_vector_global_to_local(hier_shape, 1, face_normal_global)
+            face_normal_local = transform_geometric_vector_global_to_local(hier_shape, 1, face_normal_global)
             
             # Face normal should point in +z direction in local coordinates
-            @test abs(local_normal[1]) < 1e-10
-            @test abs(local_normal[2]) < 1e-10
-            @test local_normal[3] ≈ 1.0
+            @test abs(face_normal_local[1]) < 1e-10
+            @test abs(face_normal_local[2]) < 1e-10
+            @test face_normal_local[3] ≈ 1.0 / scale
             
             # Test round-trip
-            global_normal_back = transform_geometric_vector_local_to_global(hier_shape, 1, local_normal)
-            @test global_normal_back ≈ face_normal_global
+            @test transform_geometric_vector_local_to_global(hier_shape, 1, face_normal_local) ≈ face_normal_global
             
-            # Test that length is preserved
-            test_vec = normalize(SVector(1.0, 2.0, 3.0))
-            local_vec = transform_geometric_vector_global_to_local(hier_shape, 1, test_vec)
-            @test norm(local_vec) ≈ norm(test_vec)
+            # Test if geometric vector length is scaled
+            v_global = normalize(SVector(1.0, 2.0, 3.0))
+            v_local = transform_geometric_vector_global_to_local(hier_shape, 1, v_global)
+            @test norm(v_local) ≈ norm(v_global) / scale
         end
         
         @testset "Physical vector transformations" begin
