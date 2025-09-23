@@ -15,14 +15,11 @@ Tests cover:
     ║                   Test: HierarchicalShapeModel                    ║
     ╚═══════════════════════════════════════════════════════════════════╝
     """
-    println(msg)
-    
-    # Use helper function to create test shapes
-    tetra_nodes, tetra_faces = create_regular_tetrahedron()
-    base_shape = ShapeModel(tetra_nodes, tetra_faces)
+    println(msg)    
     
     @testset "Construction and Basic Properties" begin
-        # Test basic construction
+        tetra_nodes, tetra_faces = create_regular_tetrahedron()
+        base_shape = ShapeModel(tetra_nodes, tetra_faces)
         hier_shape = HierarchicalShapeModel(base_shape)
         
         @test hier_shape isa HierarchicalShapeModel
@@ -45,6 +42,8 @@ Tests cover:
     end
     
     @testset "Roughness Model Management" begin
+        tetra_nodes, tetra_faces = create_regular_tetrahedron()
+        base_shape = ShapeModel(tetra_nodes, tetra_faces)
         hier_shape = HierarchicalShapeModel(base_shape)
         
         # Create a simple roughness model (2x2 grid)
@@ -109,6 +108,8 @@ Tests cover:
     end
     
     @testset "Coordinate Transformations" begin
+        tetra_nodes, tetra_faces = create_regular_tetrahedron()
+        base_shape = ShapeModel(tetra_nodes, tetra_faces)
         hier_shape = HierarchicalShapeModel(base_shape)
         
         # Create roughness model and add to face 1
@@ -169,7 +170,7 @@ Tests cover:
             # Test with arbitrary physical vector
             v_global = SVector(1.0, 2.0, 3.0)
             v_local = transform_physical_vector_global_to_local(hier_shape, 1, v_global)
-            
+
             # Physical vectors should not scaled with the roughness scale
             @test norm(v_local) ≈ norm(v_global)
             
@@ -191,15 +192,15 @@ Tests cover:
     @testset "Local Coordinate System" begin
         # Use helper function to create cube for testing different face orientations
         cube_nodes, cube_faces = create_unit_cube()
-        cube_shape = ShapeModel(cube_nodes, cube_faces)
-        hier_cube = HierarchicalShapeModel(cube_shape)
-        
+        base_shape = ShapeModel(cube_nodes, cube_faces)
+        hier_shape = HierarchicalShapeModel(base_shape)
+
         @testset "Coordinate system properties" begin
             for face_idx in 1:size(cube_faces, 2)
-                origin, e_x, e_y, e_z = AsteroidShapeModels.compute_local_coordinate_system(hier_cube, face_idx)
-                
+                origin, e_x, e_y, e_z = AsteroidShapeModels.compute_local_coordinate_system(hier_shape, face_idx)
+
                 # Origin should be at face center
-                @test origin ≈ cube_shape.face_centers[face_idx]
+                @test origin ≈ base_shape.face_centers[face_idx]
                 
                 # Coordinate system should be orthonormal
                 @test norm(e_x) ≈ 1.0
@@ -210,8 +211,8 @@ Tests cover:
                 @test abs(dot(e_y, e_z)) < 1e-10
                 
                 # e_z should align with face normal
-                @test e_z ≈ cube_shape.face_normals[face_idx]
-                
+                @test e_z ≈ base_shape.face_normals[face_idx]
+
                 # Right-handed system
                 @test cross(e_x, e_y) ≈ e_z
             end
@@ -234,6 +235,8 @@ Tests cover:
     end
     
     @testset "compute_face_roughness_transform" begin
+        tetra_nodes, tetra_faces = create_regular_tetrahedron()
+        base_shape = ShapeModel(tetra_nodes, tetra_faces)
         hier_shape = HierarchicalShapeModel(base_shape)
         
         # Test transform computation
@@ -263,7 +266,8 @@ Tests cover:
     
     @testset "Integration with ShapeModel interface" begin
         # Create base shape with BVH for ray intersection tests
-        base_shape_with_bvh = ShapeModel(tetra_nodes, tetra_faces, with_bvh=true)
+        tetra_nodes, tetra_faces = create_regular_tetrahedron()
+        base_shape_with_bvh = ShapeModel(tetra_nodes, tetra_faces; with_bvh=true)
         hier_shape = HierarchicalShapeModel(base_shape_with_bvh)
         
         # Test that HierarchicalShapeModel works with existing functions
