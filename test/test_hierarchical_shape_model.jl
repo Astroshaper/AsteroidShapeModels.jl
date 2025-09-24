@@ -194,11 +194,11 @@ Tests cover:
         cube_nodes, cube_faces = create_unit_cube()
         base_shape = ShapeModel(cube_nodes, cube_faces)
         hier_shape = HierarchicalShapeModel(base_shape)
-
+        
         @testset "Coordinate system properties" begin
-            for face_idx in 1:size(cube_faces, 2)
+            for face_idx in eachindex(cube_faces)
                 origin, e_x, e_y, e_z = AsteroidShapeModels.compute_local_coordinate_system(hier_shape, face_idx)
-
+                
                 # Origin should be at face center
                 @test origin ≈ base_shape.face_centers[face_idx]
                 
@@ -212,7 +212,7 @@ Tests cover:
                 
                 # e_z should align with face normal
                 @test e_z ≈ base_shape.face_normals[face_idx]
-
+                
                 # Right-handed system
                 @test cross(e_x, e_y) ≈ e_z
             end
