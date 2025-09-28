@@ -134,7 +134,7 @@ Tests cover:
             p_global = SVector(0.2, 0.3, 0.4)
             p_local = transform_point_global_to_local(hier_shape, 1, p_global)
             @test transform_point_local_to_global(hier_shape, 1, p_local) ≈ p_global
-
+            
             # Test point slightly offset along face normal
             face_center_global = hier_shape.global_shape.face_centers[1]
             face_normal_global = hier_shape.global_shape.face_normals[1]
@@ -170,7 +170,7 @@ Tests cover:
             # Test with arbitrary physical vector
             v_global = SVector(1.0, 2.0, 3.0)
             v_local = transform_physical_vector_global_to_local(hier_shape, 1, v_global)
-
+            
             # Physical vectors should not scaled with the roughness scale
             @test norm(v_local) ≈ norm(v_global)
             
@@ -220,10 +220,10 @@ Tests cover:
         
         @testset "North alignment for horizontal faces" begin
             # Find faces that are roughly horizontal (normal pointing up or down)
-            for face_idx in 1:size(cube_faces, 2)
-                normal = cube_shape.face_normals[face_idx]
-                if abs(normal[3]) > 0.9  # Nearly horizontal
-                    origin, e_x, e_y, e_z = AsteroidShapeModels.compute_local_coordinate_system(hier_cube, face_idx)
+            for face_idx in eachindex(cube_faces)
+                n̂ = base_shape.face_normals[face_idx]
+                if abs(n̂[3]) > 0.9  # Nearly horizontal
+                    origin, e_x, e_y, e_z = AsteroidShapeModels.compute_local_coordinate_system(hier_shape, face_idx)
                     
                     # e_x should point north (positive y direction in global frame)
                     @test e_x[2] > 0.9
