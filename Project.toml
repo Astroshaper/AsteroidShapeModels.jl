@@ -1,7 +1,7 @@
 name = "AsteroidShapeModels"
 uuid = "a7943d8e-5d65-4248-ae23-0082f5115a05"
-authors = ["Masanori Kanamaru <kanamaru-masanori@hotmail.co.jp>"]
 version = "0.4.2"
+authors = ["Masanori Kanamaru <kanamaru-masanori@hotmail.co.jp>"]
 
 [deps]
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
@@ -15,7 +15,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 BenchmarkTools = "1.6.0"
 FileIO = "1"
 GeometryBasics = "0.5"
-ImplicitBVH = "0.6.0"
+ImplicitBVH = "0.6.0, 0.7"
 LinearAlgebra = "1"
 MeshIO = "0.5"
 StaticArrays = "1"
