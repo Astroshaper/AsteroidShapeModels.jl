@@ -10,6 +10,18 @@ managing temporary files, and performing common assertions.
 # ║                      Common Shape Generators                      ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
+# TODO:
+# - Ensure that generated test shapes (e.g., regular tetrahedron, unit cube)
+#   produce outward-facing face normals consistently. Depending on vertex
+#   ordering, some faces may end up with inward-facing normals, which can make
+#   assumptions in tests (such as "local z ≈ +1" after transforming the global
+#   face normal) fragile.
+# - Consider either (1) adjusting vertex orderings here to enforce outward
+#   orientation for all faces, or (2) adding a small preprocessing utility that
+#   orients faces outward based on a reference point (e.g., shape centroid).
+# - Optionally add a validation helper to check orientation (e.g., centroid·normal
+#   has the expected sign) and use it in tests for clarity.
+
 """
     create_xy_triangle() -> (nodes, faces)
 
