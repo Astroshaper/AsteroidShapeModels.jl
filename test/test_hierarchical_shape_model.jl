@@ -139,13 +139,18 @@ Tests cover:
             # Find faces that are roughly horizontal (normal pointing up or down)
             for face_idx in eachindex(cube_faces)
                 n̂ = base_shape.face_normals[face_idx]
-                if abs(n̂[3]) > 0.9  # Nearly horizontal
+                if abs(n̂[3]) > 0.99  # Nearly horizontal plane
                     origin, e_x, e_y, e_z = AsteroidShapeModels.compute_local_coordinate_system(hier_shape, face_idx)
 
-                    # e_x should point north (positive y direction in global frame)
-                    @test e_x[2] > 0.9
-                    @test abs(e_x[1]) < 0.1
+                    # e_x should point east (±x direction; sign flips for downward faces)
+                    @test abs(e_x[1]) > 0.9
+                    @test abs(e_x[2]) < 0.1
                     @test abs(e_x[3]) < 0.1
+
+                    # e_y should point north (positive y-direction in global frame)
+                    @test abs(e_y[1]) < 0.1
+                    @test e_y[2] > 0.9
+                    @test abs(e_y[3]) < 0.1
                 end
             end
         end
