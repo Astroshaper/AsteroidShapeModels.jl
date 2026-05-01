@@ -6,6 +6,8 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeModels.jl/issues) for current tasks and discussions.
 
+---
+
 ## Version 0.4.0 - BVH Integration and Optimization (Released: 2025-07-08)
 
 ### Major Changes (Breaking Changes)
@@ -30,6 +32,8 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 - [x] Add comprehensive BVH usage documentation
 - [x] Update examples for new APIs
 
+---
+
 ## Version 0.4.1 - API Improvements (Released: 2025-07-10)
 
 ### Completed
@@ -44,6 +48,8 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
     - This caused false TOTAL_ECLIPSE detections when shape2 was actually behind shape1
     - Now correctly recovers shape2's position using `r₁₂ = -R₁₂' * t₁₂`
   - [x] Fixed sun position transformation in eclipse shadowing (include rotation + translation)
+
+---
 
 ## Version 0.4.2 - Performance Optimizations (Released: 2025-07-21)
 
@@ -62,12 +68,13 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
   - [x] Extract ray-sphere intersection tests into dedicated reusable functions (#45)
   - [x] Ensure consistency in results with previous implementation (#45)
 
-## Version 0.5.0 - Advanced Surface Modeling (Target: September 2025)
+---
+
+## Version 0.5.0 - Surface Roughness Modeling (Target: September 2025)
 
 ### Major Features
-- **Hierarchical Surface Roughness Model**
-  - [ ] Support nested shape models for multi-scale surface representation
-  - [ ] Implement efficient traversal algorithms for nested structures
+- **Hierarchical Shape Model**
+  - [ ] Support nested shape models for surface roughness representation
   
 - **Complete Roughness Module**
   - [ ] Implement parallel sinusoidal trench generation
@@ -94,6 +101,8 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
   - Ensure zero allocations during runtime after initial buffer creation
 - [ ] Add basic multi-threading support using `Threads.jl`
 
+---
+
 ## Version 0.6.0 - High-Performance Computing Support (Target: October 2025)
 
 ### Major Features
@@ -112,6 +121,8 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 - [ ] Support for extremely large models (3M faces)
 - [ ] Memory-efficient algorithms for resource-constrained environments
 - [ ] Streaming processing for models that don't fit in memory
+
+---
 
 ## Future Considerations (Beyond v0.6.0)
 
