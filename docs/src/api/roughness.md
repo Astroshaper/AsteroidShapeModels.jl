@@ -17,17 +17,6 @@ add_roughness_models!
 clear_roughness_models!
 ```
 
-### Coordinate Transformations
-
-```@docs
-transform_point_global_to_local
-transform_point_local_to_global
-transform_geometric_vector_global_to_local
-transform_geometric_vector_local_to_global
-transform_physical_vector_global_to_local
-transform_physical_vector_local_to_global
-```
-
 ## Crater Modeling
 
 ```@docs
