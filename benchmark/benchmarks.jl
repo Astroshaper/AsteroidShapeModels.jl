@@ -44,11 +44,17 @@ SUITE["visibility"] = BenchmarkGroup()
 let view_dir = SA[1.0, 0.0, 0.0]
     # Single face query
     SUITE["visibility"]["single_face"] = @benchmarkable isilluminated($SHAPE_VIS, $view_dir, 1; with_self_shadowing=true)
-    
+    SUITE["visibility"]["pseudo_convex_single_face"] = @benchmarkable isilluminated($SHAPE, $view_dir, 1; with_self_shadowing=false)
+
     # Batch queries
     SUITE["visibility"]["batch_100_faces"] = @benchmarkable begin
         for idx in 1:100
             isilluminated($SHAPE_VIS, $view_dir, idx; with_self_shadowing=true)
+        end
+    end
+    SUITE["visibility"]["pseudo_convex_batch_100"] = @benchmarkable begin
+        for idx in 1:100
+            isilluminated($SHAPE, $view_dir, idx; with_self_shadowing=false)
         end
     end
     

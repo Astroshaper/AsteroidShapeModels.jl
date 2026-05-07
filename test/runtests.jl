@@ -14,11 +14,10 @@ Test Categories:
 - Visibility analysis
 - Edge cases and error handling
 - Integration tests with SPICE
-- Performance benchmarks
+- Ryugu shape model correctness tests
 =#
 
 using AsteroidShapeModels
-using BenchmarkTools
 using Downloads
 using LinearAlgebra
 using Random
