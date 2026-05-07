@@ -83,12 +83,12 @@ All tests include correctness verification and performance benchmarks.
         
         test_ray = rays[1]
         
-        time_single = @belapsed intersect_ray_shape($test_ray, $shape)
+        time_single = @elapsed intersect_ray_shape(test_ray, shape)
         println("  Single ray: $(round(time_single * 1e6, digits=2)) μs")
-        
+
         # Batch rays
-        time_batch = @belapsed for ray in $rays
-            intersect_ray_shape(ray, $shape)
+        time_batch = @elapsed for ray in rays
+            intersect_ray_shape(ray, shape)
         end
         println("\n  Batch ($n_test_rays rays): $(round(time_batch * 1000, digits=2)) ms")
         println("  Average per ray: $(round(time_batch / n_test_rays * 1e6, digits=2)) μs")
@@ -160,18 +160,17 @@ All tests include correctness verification and performance benchmarks.
         # Sample faces for detailed timing
         sample_faces = collect(1:min(100, n_faces))
         
-        # Use setup parameter to avoid scope issues with @belapsed
-        time_per_face_with_vis = @belapsed begin
+        time_per_face_with_vis = @elapsed(begin
             for i in sample_faces
                 isilluminated(shape_with_vis, r☉, i; with_self_shadowing=true)
             end
-        end setup=(sample_faces=$sample_faces; shape_with_vis=$shape_with_vis; r☉=$r☉) / length(sample_faces)
-        
-        time_per_face_pseudo_convex = @belapsed begin
+        end) / length(sample_faces)
+
+        time_per_face_pseudo_convex = @elapsed(begin
             for i in sample_faces
                 isilluminated(shape_no_vis, r☉, i; with_self_shadowing=false)
             end
-        end setup=(sample_faces=$sample_faces; shape_no_vis=$shape_no_vis; r☉=$r☉) / length(sample_faces)
+        end) / length(sample_faces)
         
         println("  Average time per face:")
         println("    Full occlusion model : $(round(time_per_face_with_vis * 1e6, digits=2)) μs")
