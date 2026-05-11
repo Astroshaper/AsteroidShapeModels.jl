@@ -106,6 +106,80 @@ Tests cover:
         end
     end
 
+    @testset "Coordinate Transformations" begin
+        tetra_nodes, tetra_faces = create_regular_tetrahedron()
+        base_shape = ShapeModel(tetra_nodes, tetra_faces)
+        hier_shape = HierarchicalShapeModel(base_shape)
+
+        roughness_model = ShapeModel(
+            [SA[0.0, 0.0, 0.0], SA[1.0, 0.0, 0.0], SA[0.0, 1.0, 0.0], SA[1.0, 1.0, 0.0]],
+            [SA[1, 2, 3], SA[2, 4, 3]],
+        )
+        add_roughness_models!(hier_shape, roughness_model, 1, scale=0.1)
+
+        @testset "Point transformations" begin
+            face_center_global = hier_shape.global_shape.face_centers[1]
+            face_center_local  = transform_point_global_to_local(hier_shape, 1, face_center_global)
+
+            # Face center maps to UV center (0.5, 0.5, 0.0)
+            @test face_center_local ≈ [0.5, 0.5, 0.0]
+
+            # Round-trip: face center
+            @test transform_point_local_to_global(hier_shape, 1, face_center_local) ≈ face_center_global
+
+            # Round-trip: arbitrary point
+            p_global = SVector(0.2, 0.3, 0.4)
+            p_local  = transform_point_global_to_local(hier_shape, 1, p_global)
+            @test transform_point_local_to_global(hier_shape, 1, p_local) ≈ p_global
+
+            # Point offset along face normal: z-component reflects elevation / scale
+            face_normal_global = hier_shape.global_shape.face_normals[1]
+            offset  = 0.1
+            p_global = face_center_global + offset * face_normal_global
+            p_local  = transform_point_global_to_local(hier_shape, 1, p_global)
+            scale    = get_roughness_model_scale(hier_shape, 1)
+            @test p_local ≈ [0.5, 0.5, offset / scale]
+        end
+
+        @testset "Geometric vector transformations" begin
+            scale              = get_roughness_model_scale(hier_shape, 1)
+            face_normal_global = hier_shape.global_shape.face_normals[1]
+            face_normal_local  = transform_geometric_vector_global_to_local(hier_shape, 1, face_normal_global)
+
+            # Face normal should point in +z in local coordinates (scaled by 1/scale)
+            @test abs(face_normal_local[1]) < 1e-10
+            @test abs(face_normal_local[2]) < 1e-10
+            @test face_normal_local[3] ≈ 1.0 / scale
+
+            # Round-trip
+            @test transform_geometric_vector_local_to_global(hier_shape, 1, face_normal_local) ≈ face_normal_global
+
+            # Length is scaled
+            v_global = normalize(SVector(1.0, 2.0, 3.0))
+            v_local  = transform_geometric_vector_global_to_local(hier_shape, 1, v_global)
+            @test norm(v_local) ≈ norm(v_global) / scale
+        end
+
+        @testset "Physical vector transformations" begin
+            # Magnitude is preserved (rotation only, no scaling)
+            v_global = SVector(1.0, 2.0, 3.0)
+            v_local  = transform_physical_vector_global_to_local(hier_shape, 1, v_global)
+            @test norm(v_local) ≈ norm(v_global)
+
+            # Round-trip
+            @test transform_physical_vector_local_to_global(hier_shape, 1, v_local) ≈ v_global
+        end
+
+        @testset "Transformations without roughness model" begin
+            @test_throws ArgumentError transform_point_global_to_local(hier_shape, 4, SVector(0.0, 0.0, 0.0))
+            @test_throws ArgumentError transform_point_local_to_global(hier_shape, 4, SVector(0.0, 0.0, 0.0))
+            @test_throws ArgumentError transform_geometric_vector_global_to_local(hier_shape, 4, SVector(1.0, 0.0, 0.0))
+            @test_throws ArgumentError transform_geometric_vector_local_to_global(hier_shape, 4, SVector(1.0, 0.0, 0.0))
+            @test_throws ArgumentError transform_physical_vector_global_to_local(hier_shape, 4, SVector(1.0, 0.0, 0.0))
+            @test_throws ArgumentError transform_physical_vector_local_to_global(hier_shape, 4, SVector(1.0, 0.0, 0.0))
+        end
+    end
+
     @testset "Local Coordinate System" begin
         # Use helper function to create cube for testing different face orientations
         cube_nodes, cube_faces = create_unit_cube()
