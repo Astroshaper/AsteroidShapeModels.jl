@@ -61,6 +61,9 @@ include("hierarchical_shape_model.jl")
 export HierarchicalShapeModel
 export has_roughness_model, get_roughness_model, get_roughness_model_scale, get_roughness_model_transform
 export clear_roughness_models!, add_roughness_models!
+export transform_point_global_to_local, transform_point_local_to_global
+export transform_geometric_vector_global_to_local, transform_geometric_vector_local_to_global
+export transform_physical_vector_global_to_local, transform_physical_vector_local_to_global
 
 include("face_visibility_graph.jl")
 export FaceVisibilityGraph, build_face_visibility_graph!, view_factor
