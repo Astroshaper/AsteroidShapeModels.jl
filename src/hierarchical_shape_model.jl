@@ -8,18 +8,17 @@ added to base shape models while maintaining computational efficiency.
 The hierarchical structure uses:
 - Base shape model (ShapeModel) for global geometry
 - Surface roughness models (ShapeModel) attached to global shape's faces
-- Per-face scale factors and affine transformations
+- Per-face affine transformations
 
 ## Implementation Considerations
 
 ### Coordinate Transformations
-The implementation now uses CoordinateTransformations.jl's `AffineMap` type for per-face
-transformations, along with separate scale factors (`face_roughness_scales`).
+The implementation uses CoordinateTransformations.jl's `AffineMap` type for per-face
+transformations. Each face stores a complete global-to-local AffineMap in
+`face_roughness_transforms`, which encodes rotation, scaling, and translation.
 
-The coordinate transformation approach:
-- Each face stores a complete global-to-local AffineMap in `face_roughness_transforms`
-- The AffineMap includes rotation, scaling, and translation in a single transformation
-- Scale factors are stored separately in `face_roughness_scales` for efficient access
+The scale factor for a face can be recovered on demand from the transform's linear part:
+`scale = 1 / norm(transform.linear[:, 1])`, since `transform.linear = (1/scale) * R'`.
 
 Note: `face_roughness_transforms` stores the global-to-local transformation for each face,
 allowing custom positioning and orientation of roughness models.
@@ -51,7 +50,6 @@ A shape model that supports multi-scale surface representation through surface r
 # Fields
 - `global_shape`              : `ShapeModel` to represent the global shape of the asteroid
 - `face_roughness_indices`    : Mapping from face index to roughness model index (0 = no roughness)
-- `face_roughness_scales`     : Vector of scale factors for each face (1.0 = no roughness/identity)
 - `face_roughness_transforms` : Vector of affine transformations (global to local) for each face (identity = no roughness)
 - `roughness_models`          : Vector of `ShapeModel` objects representing surface roughness
 
@@ -103,22 +101,17 @@ See also: [`AbstractShapeModel`](@ref), [`ShapeModel`](@ref)
 mutable struct HierarchicalShapeModel <: AbstractShapeModel
     global_shape                ::ShapeModel
     face_roughness_indices      ::Vector{Int}
-    face_roughness_scales       ::Vector{Float64}
     face_roughness_transforms   ::Vector{AFFINE_MAP_TYPE}
     roughness_models            ::Vector{ShapeModel}
-    
+
     function HierarchicalShapeModel(global_shape::ShapeModel)
         nfaces = length(global_shape.faces)
-        face_roughness_indices = zeros(Int, nfaces)    # Initialize with 0 (no roughness)
-        face_roughness_scales = ones(Float64, nfaces)  # Initialize with 1.0 (no scaling)
-
-        # Initialize with identity transformations
+        face_roughness_indices    = zeros(Int, nfaces)
         face_roughness_transforms = [IDENTITY_AFFINE_MAP for _ in 1:nfaces]
-        
+
         return new(
             global_shape,
             face_roughness_indices,
-            face_roughness_scales,
             face_roughness_transforms,
             ShapeModel[]
         )
@@ -306,7 +299,8 @@ Get the scale factor for the roughness model on a specific face.
 - `Float64` : The scale factor for the roughness model (1.0 if no roughness model)
 """
 function get_roughness_model_scale(hier_shape::HierarchicalShapeModel, face_idx::Int)::Float64
-    return hier_shape.face_roughness_scales[face_idx]
+    # Recover scale from transform: transform.linear = (1/scale) * R', so ‖column‖ = 1/scale
+    return 1.0 / norm(hier_shape.face_roughness_transforms[face_idx].linear[:, 1])
 end
 
 """
@@ -344,7 +338,6 @@ The roughness_models array is emptied to free memory.
 function clear_roughness_models!(hier_shape::HierarchicalShapeModel)
     
     hier_shape.face_roughness_indices    .= 0                         # Reset all face indices to 0 (no roughness)
-    hier_shape.face_roughness_scales     .= 1.0                       # Reset all scales to 1.0 (identity)
     hier_shape.face_roughness_transforms .= Ref(IDENTITY_AFFINE_MAP)  # Reset all transforms to identity
     
     empty!(hier_shape.roughness_models)  # Clear the roughness models array
@@ -373,7 +366,6 @@ function clear_roughness_models!(hier_shape::HierarchicalShapeModel, face_idx::I
     
     # Clear the face's roughness assignment
     hier_shape.face_roughness_indices[face_idx]    = 0                    # Reset to no roughness
-    hier_shape.face_roughness_scales[face_idx]     = 1.0                  # Reset to identity scale
     hier_shape.face_roughness_transforms[face_idx] = IDENTITY_AFFINE_MAP  # Reset transform to identity
     
     # Check if this model is still used by other faces
@@ -428,7 +420,6 @@ function add_roughness_models!(
     
     # Apply to all faces
     hier_shape.face_roughness_indices .= roughness_idx
-    hier_shape.face_roughness_scales .= scale
     
     # Automatically compute appropriate transformation for each face
     for face_idx in eachindex(hier_shape.global_shape.faces)
@@ -488,9 +479,8 @@ function add_roughness_models!(
         end
     )
     
-    # Update the face-to-roughness mapping and scale
+    # Update the face-to-roughness mapping
     hier_shape.face_roughness_indices[face_idx] = roughness_idx
-    hier_shape.face_roughness_scales[face_idx] = scale
     
     # If no transform is provided, compute the default transformation.
     if isnothing(transform)
@@ -879,7 +869,7 @@ function transform_physical_vector_global_to_local(
         throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform to local coordinates."))
     transform = get_roughness_model_transform(hier_shape, face_idx)
     # transform.linear = (1/scale) * R'; multiply by scale to recover pure rotation R'
-    scale = hier_shape.face_roughness_scales[face_idx]
+    scale = get_roughness_model_scale(hier_shape, face_idx)
     rotation = transform.linear * scale
     return rotation * v_global
 end
@@ -931,7 +921,7 @@ function transform_physical_vector_local_to_global(
         throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform from local coordinates."))
     transform = get_roughness_model_transform(hier_shape, face_idx)
     # transform.linear = (1/scale) * R'; multiply by scale to recover pure rotation R'
-    scale = hier_shape.face_roughness_scales[face_idx]
+    scale = get_roughness_model_scale(hier_shape, face_idx)
     rotation = transform.linear * scale
     return rotation' * v_local
 end
