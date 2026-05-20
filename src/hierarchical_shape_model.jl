@@ -624,6 +624,314 @@ function compute_face_roughness_transform(hier_shape::HierarchicalShapeModel, fa
 
     # 6. Invert this to get passive global→local transformation
     passive_global_to_local = inv(active_local_to_global)
-    
+
     return passive_global_to_local
+end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                  Geometric Point Transformations                  ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    transform_point_global_to_local(
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        p_global   ::StaticVector{3}
+    ) -> SVector{3, Float64}
+
+Transform a point from global to local coordinates.
+
+# Arguments
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face (1-based)
+- `p_global::StaticVector{3}`          : Point in global coordinates
+
+# Returns
+- `SVector{3, Float64}` : Point in local roughness model coordinates [0,1]×[0,1]×ℝ
+
+# Throws
+- `ArgumentError` : If the specified face has no roughness model
+- `BoundsError`   : If `face_idx` is out of bounds
+
+# Notes
+The local coordinate system has its origin at the face center, with:
+- X-axis pointing east
+- Y-axis pointing north
+- Z-axis pointing up (along face normal)
+The UV coordinates [0,1]×[0,1] are centered at (0.5, 0.5).
+
+!!! warning "Requires roughness model"
+    This function requires the face to have an assigned roughness model.
+    Always check with `has_roughness_model(hier_shape, face_idx)` before calling.
+
+# Usage
+```julia
+if has_roughness_model(hier_shape, face_idx)
+    p_local = transform_point_global_to_local(hier_shape, face_idx, p_global)
+end
+```
+"""
+function transform_point_global_to_local(
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    p_global   ::StaticVector{3}
+)::SVector{3, Float64}
+    !has_roughness_model(hier_shape, face_idx) &&
+        throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform to local coordinates."))
+    transform = get_roughness_model_transform(hier_shape, face_idx)
+    return transform(p_global)
+end
+
+"""
+    transform_point_local_to_global(
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        p_local    ::StaticVector{3}
+    ) -> SVector{3, Float64}
+
+Transform a point from local to global coordinates.
+
+# Arguments
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face (1-based)
+- `p_local::StaticVector{3}`           : Point in local roughness model coordinates [0,1]×[0,1]×ℝ
+
+# Returns
+- `SVector{3, Float64}` : Point in global coordinates
+
+# Throws
+- `ArgumentError` : If the specified face has no roughness model
+- `BoundsError`   : If face_idx is out of bounds
+
+# Notes
+Inverse transformation of `transform_point_global_to_local`.
+
+!!! warning "Requires roughness model"
+    This function requires the face to have an assigned roughness model.
+    Always check with `has_roughness_model(hier_shape, face_idx)` before calling.
+
+# Usage
+```julia
+if has_roughness_model(hier_shape, face_idx)
+    p_global = transform_point_local_to_global(hier_shape, face_idx, p_local)
+end
+```
+"""
+function transform_point_local_to_global(
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    p_local    ::StaticVector{3}
+)::SVector{3, Float64}
+    !has_roughness_model(hier_shape, face_idx) &&
+        throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform from local coordinates."))
+    transform = get_roughness_model_transform(hier_shape, face_idx)
+    return inv(transform)(p_local)
+end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                  Geometric Vector Transformations                 ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    transform_geometric_vector_global_to_local(
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        v_global   ::StaticVector{3}
+    ) -> SVector{3, Float64}
+
+Transform a geometric vector (displacement, velocity) from global to local coordinates.
+Applies both rotation and scaling.
+
+# Arguments
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face (1-based)
+- `v_global::StaticVector{3}`          : Geometric vector in global coordinates
+
+# Returns
+- `SVector{3, Float64}` : Vector in local roughness model coordinates (scaled)
+
+# Throws
+- `ArgumentError` : If the specified face has no roughness model
+- `BoundsError`   : If face_idx is out of bounds
+
+# Notes
+For physical vectors (forces, torques) that should preserve magnitude,
+use `transform_physical_vector_global_to_local` instead.
+
+!!! warning "Requires roughness model"
+    This function requires the face to have an assigned roughness model.
+    Always check with `has_roughness_model(hier_shape, face_idx)` before calling.
+
+# Usage
+```julia
+if has_roughness_model(hier_shape, face_idx)
+    v_local = transform_geometric_vector_global_to_local(hier_shape, face_idx, v_global)
+end
+```
+"""
+function transform_geometric_vector_global_to_local(
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    v_global   ::StaticVector{3}
+)::SVector{3, Float64}
+    !has_roughness_model(hier_shape, face_idx) &&
+        throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform to local coordinates."))
+    transform = get_roughness_model_transform(hier_shape, face_idx)
+    return transform.linear * v_global
+end
+
+"""
+    transform_geometric_vector_local_to_global(
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        v_local    ::StaticVector{3}
+    ) -> SVector{3, Float64}
+
+Transform a geometric vector (displacement, velocity) from local to global coordinates.
+Applies both rotation and scaling.
+
+# Arguments
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face (1-based)
+- `v_local::StaticVector{3}`           : Geometric vector in local roughness model coordinates
+
+# Returns
+- `SVector{3, Float64}` : Vector in global coordinates (scaled)
+
+# Throws
+- `ArgumentError` : If the specified face has no roughness model
+- `BoundsError`   : If face_idx is out of bounds
+
+# Notes
+For physical vectors (forces, torques) that should preserve magnitude,
+use `transform_physical_vector_local_to_global` instead.
+
+!!! warning "Requires roughness model"
+    This function requires the face to have an assigned roughness model.
+    Always check with `has_roughness_model(hier_shape, face_idx)` before calling.
+
+# Usage
+```julia
+if has_roughness_model(hier_shape, face_idx)
+    v_global = transform_geometric_vector_local_to_global(hier_shape, face_idx, v_local)
+end
+```
+"""
+function transform_geometric_vector_local_to_global(
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    v_local    ::StaticVector{3}
+)::SVector{3, Float64}
+    !has_roughness_model(hier_shape, face_idx) &&
+        throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform from local coordinates."))
+    transform = get_roughness_model_transform(hier_shape, face_idx)
+    return inv(transform.linear) * v_local
+end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                    Physical Vector Transformations                ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    transform_physical_vector_global_to_local(
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        v_global   ::StaticVector{3}
+    ) -> SVector{3, Float64}
+
+Transform a physical vector (force, torque, angular velocity) from global to local
+coordinates. Physical vectors are only rotated, not scaled, preserving their magnitude.
+
+# Arguments
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face
+- `v_global::StaticVector{3}`          : Physical vector in global coordinates
+
+# Returns
+- `SVector{3, Float64}` : Physical vector in local coordinate frame (not scaled)
+
+# Throws
+- `ArgumentError` : If the specified face has no roughness model
+- `BoundsError`   : If face_idx is out of bounds
+
+# Notes
+Use this for quantities where physical magnitude must be preserved (forces, torques,
+angular velocities, magnetic fields). For geometric vectors use
+`transform_geometric_vector_global_to_local` instead.
+
+!!! warning "Requires roughness model"
+    This function requires the face to have an assigned roughness model.
+    Always check with `has_roughness_model(hier_shape, face_idx)` before calling.
+
+# Usage
+```julia
+if has_roughness_model(hier_shape, face_idx)
+    v_local = transform_physical_vector_global_to_local(hier_shape, face_idx, v_global)
+end
+```
+"""
+function transform_physical_vector_global_to_local(
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    v_global   ::StaticVector{3}
+)::SVector{3, Float64}
+    !has_roughness_model(hier_shape, face_idx) &&
+        throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform to local coordinates."))
+    transform = get_roughness_model_transform(hier_shape, face_idx)
+    # transform.linear = (1/scale) * R'; multiply by scale to recover pure rotation R'
+    scale = hier_shape.face_roughness_scales[face_idx]
+    rotation = transform.linear * scale
+    return rotation * v_global
+end
+
+"""
+    transform_physical_vector_local_to_global(
+        hier_shape ::HierarchicalShapeModel,
+        face_idx   ::Int,
+        v_local    ::StaticVector{3}
+    ) -> SVector{3, Float64}
+
+Transform a physical vector (force, torque, angular velocity) from local to global
+coordinates. Physical vectors are only rotated, not scaled, preserving their magnitude.
+
+# Arguments
+- `hier_shape::HierarchicalShapeModel` : The hierarchical shape model
+- `face_idx::Int`                      : Index of the face
+- `v_local::StaticVector{3}`           : Physical vector in local coordinates
+
+# Returns
+- `SVector{3, Float64}` : Physical vector in global coordinate frame (not scaled)
+
+# Throws
+- `ArgumentError` : If the specified face has no roughness model
+- `BoundsError`   : If face_idx is out of bounds
+
+# Notes
+Use this for quantities where physical magnitude must be preserved (forces, torques,
+angular velocities, magnetic fields). For geometric vectors use
+`transform_geometric_vector_local_to_global` instead.
+
+!!! warning "Requires roughness model"
+    This function requires the face to have an assigned roughness model.
+    Always check with `has_roughness_model(hier_shape, face_idx)` before calling.
+
+# Usage
+```julia
+if has_roughness_model(hier_shape, face_idx)
+    v_global = transform_physical_vector_local_to_global(hier_shape, face_idx, v_local)
+end
+```
+"""
+function transform_physical_vector_local_to_global(
+    hier_shape ::HierarchicalShapeModel,
+    face_idx   ::Int,
+    v_local    ::StaticVector{3}
+)::SVector{3, Float64}
+    !has_roughness_model(hier_shape, face_idx) &&
+        throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform from local coordinates."))
+    transform = get_roughness_model_transform(hier_shape, face_idx)
+    # transform.linear = (1/scale) * R'; multiply by scale to recover pure rotation R'
+    scale = hier_shape.face_roughness_scales[face_idx]
+    rotation = transform.linear * scale
+    return rotation' * v_local
 end
