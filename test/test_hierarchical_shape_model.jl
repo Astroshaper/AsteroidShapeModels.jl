@@ -25,13 +25,11 @@ Tests cover:
         @test hier_shape isa AbstractShapeModel
         @test hier_shape.global_shape === base_shape
         @test length(hier_shape.face_roughness_indices) == 4
-        @test length(hier_shape.face_roughness_scales) == 4
         @test length(hier_shape.face_roughness_transforms) == 4
         @test length(hier_shape.roughness_models) == 0
 
         # All indices should be 0 initially (no roughness)
         @test all(==(0), hier_shape.face_roughness_indices)
-        @test all(==(1.0), hier_shape.face_roughness_scales)
         @test all(==(AsteroidShapeModels.IDENTITY_AFFINE_MAP), hier_shape.face_roughness_transforms)
 
         # Test property access through global_shape
@@ -66,8 +64,8 @@ Tests cover:
             @test has_roughness_model(hier_shape, 2) == false
             @test get_roughness_model(hier_shape, 1) === roughness_model
             @test get_roughness_model(hier_shape, 2) === nothing
-            @test get_roughness_model_scale(hier_shape, 1) == 0.1
-            @test get_roughness_model_scale(hier_shape, 2) == 1.0  # Default scale for faces without roughness
+            @test get_roughness_model_scale(hier_shape, 1) ≈ 0.1
+            @test get_roughness_model_scale(hier_shape, 2) ≈ 1.0  # Default scale for faces without roughness
             @test get_roughness_model_transform(hier_shape, 1) != AsteroidShapeModels.IDENTITY_AFFINE_MAP
             @test get_roughness_model_transform(hier_shape, 2) == AsteroidShapeModels.IDENTITY_AFFINE_MAP  # Default transform
         end
@@ -79,8 +77,8 @@ Tests cover:
 
             @test has_roughness_model(hier_shape, 2) == true
             @test has_roughness_model(hier_shape, 3) == true
-            @test get_roughness_model_scale(hier_shape, 2) == 0.05
-            @test get_roughness_model_scale(hier_shape, 3) == 0.05
+            @test get_roughness_model_scale(hier_shape, 2) ≈ 0.05
+            @test get_roughness_model_scale(hier_shape, 3) ≈ 0.05
         end
 
         @testset "clear_roughness_models!" begin

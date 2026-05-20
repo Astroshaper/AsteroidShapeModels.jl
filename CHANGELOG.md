@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Hierarchical shape models for multi-scale surface representation** (#55, #58)
+- **Hierarchical shape models for multi-scale surface representation** (#55, #58, #59)
   - New `HierarchicalShapeModel` type that supports adding surface roughness to a base shape model
   - Roughness model management functions:
     - `has_roughness_model` - Check if a face has associated roughness
@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Memory-efficient design allowing multiple faces to share the same roughness model
   - Automatic north-aligned local coordinate system for each face
   - Support for custom affine transformations per face
+  - Scale factor is encoded in the affine transform (no redundant storage); `get_roughness_model_scale` recovers it on demand via `1 / ‖column‖` (#59)
 
 ### Breaking Changes
 - **Removed deprecated `apply_eclipse_shadowing!` signature** (#51)
