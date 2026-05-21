@@ -233,6 +233,17 @@ isilluminated(hier_shape::HierarchicalShapeModel, r☉::StaticVector{3}, face_id
 update_illumination!(illuminated_faces::AbstractVector{Bool}, hier_shape::HierarchicalShapeModel, r☉::StaticVector{3}; with_self_shadowing::Bool) =
     update_illumination!(illuminated_faces, hier_shape.global_shape, r☉; with_self_shadowing)
 
+#### From `eclipse_shadowing.jl` ####
+
+apply_eclipse_shadowing!(illuminated_faces::AbstractVector{Bool}, hier::HierarchicalShapeModel, shape2::ShapeModel, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3}) =
+    apply_eclipse_shadowing!(illuminated_faces, hier.global_shape, shape2, r☉₁, r₁₂, R₁₂)
+
+apply_eclipse_shadowing!(illuminated_faces::AbstractVector{Bool}, shape1::ShapeModel, hier::HierarchicalShapeModel, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3}) =
+    apply_eclipse_shadowing!(illuminated_faces, shape1, hier.global_shape, r☉₁, r₁₂, R₁₂)
+
+apply_eclipse_shadowing!(illuminated_faces::AbstractVector{Bool}, hier1::HierarchicalShapeModel, hier2::HierarchicalShapeModel, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3}) =
+    apply_eclipse_shadowing!(illuminated_faces, hier1.global_shape, hier2.global_shape, r☉₁, r₁₂, R₁₂)
+
 #### From `face_visibility_graph.jl` ####
 
 # Face visibility graph
