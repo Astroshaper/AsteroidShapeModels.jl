@@ -281,4 +281,36 @@ Tests cover:
             @test result_hier.face_idx == result_base.face_idx
         end
     end
+
+    @testset "Eclipse shadowing with HierarchicalShapeModel" begin
+        tetra_nodes, tetra_faces = create_regular_tetrahedron()
+        shape1 = ShapeModel(tetra_nodes, tetra_faces; with_bvh=true)
+        shape2 = ShapeModel(tetra_nodes, tetra_faces; with_bvh=true)
+        hier1  = HierarchicalShapeModel(shape1)
+        hier2  = HierarchicalShapeModel(shape2)
+
+        # shape2 is placed along +x, sun is in the +x direction
+        r☉₁ = SVector(1.0, 0.0, 0.0)
+        r₁₂ = SVector(5.0, 0.0, 0.0)
+        R₁₂ = SMatrix{3,3,Float64}(I)
+
+        nfaces = length(tetra_faces)
+        illuminated_ref    = trues(nfaces)
+        illuminated_hier1  = trues(nfaces)
+        illuminated_hier2  = trues(nfaces)
+        illuminated_hier12 = trues(nfaces)
+
+        status_ref    = apply_eclipse_shadowing!(illuminated_ref,    shape1, shape2, r☉₁, r₁₂, R₁₂)
+        status_hier1  = apply_eclipse_shadowing!(illuminated_hier1,  hier1,  shape2, r☉₁, r₁₂, R₁₂)
+        status_hier2  = apply_eclipse_shadowing!(illuminated_hier2,  shape1, hier2,  r☉₁, r₁₂, R₁₂)
+        status_hier12 = apply_eclipse_shadowing!(illuminated_hier12, hier1,  hier2,  r☉₁, r₁₂, R₁₂)
+
+        # All combinations should produce identical results
+        @test status_hier1  == status_ref
+        @test status_hier2  == status_ref
+        @test status_hier12 == status_ref
+        @test illuminated_hier1  == illuminated_ref
+        @test illuminated_hier2  == illuminated_ref
+        @test illuminated_hier12 == illuminated_ref
+    end
 end
