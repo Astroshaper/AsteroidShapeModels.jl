@@ -70,17 +70,11 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 
 ---
 
-## Version 0.5.0 - Surface Roughness Modeling (Target: September 2025)
+## Version 0.5.0 - Surface Roughness Modeling
 
 ### Major Features
 - **Hierarchical Shape Model**
-  - [ ] Support nested shape models for surface roughness representation
-  
-- **Complete Roughness Module**
-  - [ ] Implement parallel sinusoidal trench generation
-  - [ ] Implement Random Gaussian surface generation
-  - [ ] Implement Fractal surface generation
-  - [ ] Add comprehensive test coverage for roughness features
+  - [x] Support nested shape models for surface roughness representation (#55, #58, #59, #60)
 
 ### API Improvements
 - [x] Remove deprecated `apply_eclipse_shadowing!` signature that uses `t₁₂` parameter
@@ -88,22 +82,30 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
   - Keep only the new signature with `r₁₂` parameter introduced in v0.4.1
 - [x] Remove `use_elevation_optimization` parameter from illumination APIs
   - Make face maximum elevation optimization the default implementation
-- [ ] Unify parameter naming conventions across the package
-- [ ] Create configuration structs for complex operations
-- [ ] Improve error messages and validation
-
-### Performance Enhancements
-- [ ] **Optimize `apply_eclipse_shadowing!` memory allocations**
-  - Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call
-  - Implement true batch ray tracing with pre-allocated buffers for mutual shadowing
-  - Design `EclipseShadowingBuffer` struct to hold reusable arrays
-  - Implement filtering that preserves early-out optimizations
-  - Ensure zero allocations during runtime after initial buffer creation
-- [ ] Add basic multi-threading support using `Threads.jl`
 
 ---
 
-## Version 0.6.0 - High-Performance Computing Support (Target: October 2025)
+## Version 0.5.x - Patch Releases
+
+### Roughness Module Enhancements
+- [ ] Implement parallel sinusoidal trench generation
+- [ ] Implement Random Gaussian surface generation
+- [ ] Implement Fractal surface generation
+- [ ] Add comprehensive test coverage for roughness features
+
+### API Improvements
+- [ ] Improve error messages and validation
+
+### Dependency Maintenance
+- [ ] **Upgrade `ImplicitBVH` compat to v0.7** (deferred from #54)
+  - CompatHelper detected v0.7 release in November 2025, but CI failed on all platforms
+  - v0.7 breaking changes: default node type changed to `BBox{Float32}`, `BVH.order` removed, `BVHTraversal` cache type is now algorithm-dependent
+  - Need to audit `build_bvh!` and `intersect_ray_shape` for API compatibility
+  - Current compat: `"0.6.0"`; target: `"0.6, 0.7"`
+
+---
+
+## Version 0.6.0 - High-Performance Computing Support
 
 ### Major Features
 - **GPU Acceleration (Optional)**
@@ -116,6 +118,19 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
   - [ ] Add distributed computing support via Distributed.jl
   - [ ] Implement efficient work distribution for large models
   - [ ] Add benchmarks for parallel performance
+
+### API Improvements
+- [ ] Unify parameter naming conventions across the package
+- [ ] Create configuration structs for complex operations
+
+### Performance Enhancements
+- [ ] **Optimize `apply_eclipse_shadowing!` memory allocations**
+  - Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call
+  - Implement true batch ray tracing with pre-allocated buffers for mutual shadowing
+  - Design `EclipseShadowingBuffer` struct to hold reusable arrays
+  - Implement filtering that preserves early-out optimizations
+  - Ensure zero allocations during runtime after initial buffer creation
+- [ ] Add basic multi-threading support using `Threads.jl`
 
 ### Scalability
 - [ ] Support for extremely large models (3M faces)
