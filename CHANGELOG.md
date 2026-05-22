@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic north-aligned local coordinate system for each face
   - Support for custom affine transformations per face
   - Scale factor is encoded in the affine transform (no redundant storage); `get_roughness_model_scale` recovers it on demand via `1 / ‖column‖` (#59)
+  - `apply_eclipse_shadowing!` now accepts `HierarchicalShapeModel` for either or both shape arguments, delegating to `global_shape` (#60)
 
 ### Breaking Changes
 - **Removed deprecated `apply_eclipse_shadowing!` signature** (#51)
