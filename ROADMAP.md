@@ -83,14 +83,6 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 - [x] Remove `use_elevation_optimization` parameter from illumination APIs
   - Make face maximum elevation optimization the default implementation
 
-### Dependency Maintenance
-
-- [ ] **Upgrade `ImplicitBVH` compat to v0.7** (deferred from #54)
-  - CompatHelper detected v0.7 release in November 2025, but CI failed on all platforms
-  - v0.7 breaking changes: default node type changed to `BBox{Float32}`, `BVH.order` removed, `BVHTraversal` cache type is now algorithm-dependent
-  - Need to audit `build_bvh!` and `intersect_ray_shape` for API compatibility
-  - Current compat: `"0.6.0"`; target: `"0.6, 0.7"`
-
 ---
 
 ## Version 0.5.x - Patch Releases
@@ -103,6 +95,13 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 
 ### API Improvements
 - [ ] Improve error messages and validation
+
+### Dependency Maintenance
+- [ ] **Upgrade `ImplicitBVH` compat to v0.7** (deferred from #54)
+  - CompatHelper detected v0.7 release in November 2025, but CI failed on all platforms
+  - v0.7 breaking changes: default node type changed to `BBox{Float32}`, `BVH.order` removed, `BVHTraversal` cache type is now algorithm-dependent
+  - Need to audit `build_bvh!` and `intersect_ray_shape` for API compatibility
+  - Current compat: `"0.6.0"`; target: `"0.6, 0.7"`
 
 ---
 
