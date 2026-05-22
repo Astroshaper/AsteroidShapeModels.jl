@@ -1,7 +1,7 @@
 name = "AsteroidShapeModels"
 uuid = "a7943d8e-5d65-4248-ae23-0082f5115a05"
 authors = ["Masanori Kanamaru <kanamaru-masanori@hotmail.co.jp>"]
-version = "0.4.2"
+version = "0.5.0"
 
 [deps]
 CoordinateTransformations = "150eb455-5306-5404-9cee-2592286d6298"
