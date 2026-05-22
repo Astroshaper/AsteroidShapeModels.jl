@@ -50,11 +50,6 @@ This is the recommended API as of v0.4.1, with more intuitive parameter ordering
     As of v0.4.0, `shape2` must have BVH pre-built before calling this function.
     Use either `with_bvh=true` when loading or call `build_bvh!(shape2)` explicitly.
 
-!!! tip "New in v0.4.1"
-    This function signature directly accepts `r₁₂` (shape2's position in shape1's frame),
-    which is more intuitive when working with SPICE data. The older signature using `t₁₂`
-    is maintained for backward compatibility but will be removed in v0.5.0.
-
 !!! warning "OPTIMIZE"
     Current implementation calls `intersect_ray_shape` per face, causing ~200 allocations per call.
     For binary asteroid thermophysical simulations, this results in ~200 allocations × 2 bodies × 
