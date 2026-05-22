@@ -101,6 +101,14 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
   - Ensure zero allocations during runtime after initial buffer creation
 - [ ] Add basic multi-threading support using `Threads.jl`
 
+### Dependency Maintenance
+
+- [ ] **Upgrade `ImplicitBVH` compat to v0.7** (deferred from #54)
+  - CompatHelper detected v0.7 release in November 2025, but CI failed on all platforms
+  - v0.7 breaking changes: default node type changed to `BBox{Float32}`, `BVH.order` removed, `BVHTraversal` cache type is now algorithm-dependent
+  - Need to audit `build_bvh!` and `intersect_ray_shape` for API compatibility
+  - Current compat: `"0.6.0"`; target: `"0.6, 0.7"`
+
 ---
 
 ## Version 0.6.0 - High-Performance Computing Support (Target: October 2025)
