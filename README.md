@@ -33,12 +33,16 @@ For future development plans, see our [Development Roadmap](ROADMAP.md).
   - Pseudo-convex model for fast computation (only face orientation check)
   - Self-shadowing model for accurate shading (considers occlusions from other faces)
   - Mutual shadowing (eclipse) detection for a binary asteroid
+- **Hierarchical Shape Models**: Multi-scale surface representation with configurable surface roughness
+  - `HierarchicalShapeModel` type that adds roughness models to a base shape
+  - Coordinate transformation functions between global and local face coordinate systems
+  - Memory-efficient design allowing multiple faces to share the same roughness model
 
-## What's New in v0.4.2
+## What's New in v0.5.0
 
-- **Performance Optimization**: Face maximum elevation pre-computation provides ~2.5x speedup for illumination calculations with self-shadowing
-- **Enhanced Eclipse Detection**: More accurate total eclipse detection for non-spherical shapes
-- **Ray-Sphere Utilities**: New geometric utilities for cleaner eclipse calculations
+- **Hierarchical Shape Models**: New `HierarchicalShapeModel` type for multi-scale surface representation with surface roughness
+- **Coordinate Transformations**: New functions for transforming points and vectors between global and local face coordinate systems (`transform_point_global_to_local`, `transform_physical_vector_local_to_global`, etc.)
+- **API Cleanup**: Removed deprecated `apply_eclipse_shadowing!` signature with `t₁₂` parameter; removed `use_elevation_optimization` parameter (elevation optimization is now always applied)
 
 For detailed migration instructions between versions, see the [Migration Guide](https://astroshaper.github.io/AsteroidShapeModels.jl/dev/guides/migration/).
 
