@@ -12,9 +12,9 @@ If you encounter issues during migration:
 
 ## Future Deprecations
 
-No planned deprecations at this time.
+No planned deprecations at this time for v0.5.x.
 
-## Migrating to v0.5.0 (Unreleased)
+## Migrating to v0.5.0
 
 ### New Features
 
