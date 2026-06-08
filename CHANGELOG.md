@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.1] - 2026-06-08
+
+### Added
+- **`create_shape_crater` function for concave spherical crater modeling** (#64)
+  - New high-level wrapper combining `concave_spherical_segment` and `load_shape_grid`
+  - Keyword arguments: `xc`, `yc` (crater center), `Nx`, `Ny` (grid resolution), `scale`, `with_face_visibility`, `with_bvh`, `as_hierarchical`
+  - Returns `ShapeModel` or `HierarchicalShapeModel` depending on `as_hierarchical`
+
+---
+
 ## [0.5.0] - 2026-05-22
 
 ### Added
