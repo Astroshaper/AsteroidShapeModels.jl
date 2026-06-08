@@ -85,13 +85,19 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 
 ---
 
+## Version 0.5.1 - Crater Shape Generation (Released: 2026-06-08)
+
+### Added
+- **`create_shape_crater` function** (#64): High-level API to create a crater `ShapeModel` directly from geometry parameters, intended for use as roughness models in `HierarchicalShapeModel`
+
+---
+
 ## Version 0.5.x - Patch Releases
 
 ### Roughness Module Enhancements
 - [ ] Implement parallel sinusoidal trench generation
 - [ ] Implement Random Gaussian surface generation
 - [ ] Implement Fractal surface generation
-- [ ] Add comprehensive test coverage for roughness features
 
 ### API Improvements
 - [ ] Improve error messages and validation
