@@ -38,11 +38,12 @@ For future development plans, see our [Development Roadmap](ROADMAP.md).
   - Coordinate transformation functions between global and local face coordinate systems
   - Memory-efficient design allowing multiple faces to share the same roughness model
 
-## What's New in v0.5.0
+## What's New in v0.5.1
 
-- **Hierarchical Shape Models**: New `HierarchicalShapeModel` type for multi-scale surface representation with surface roughness
-- **Coordinate Transformations**: New functions for transforming points and vectors between global and local face coordinate systems (`transform_point_global_to_local`, `transform_physical_vector_local_to_global`, etc.)
-- **API Cleanup**: Removed deprecated `apply_eclipse_shadowing!` signature with `t₁₂` parameter; removed `use_elevation_optimization` parameter (elevation optimization is now always applied)
+- **Crater Shape Generation**: New `create_shape_crater` function creates a crater `ShapeModel` directly from geometry parameters, ready to use as roughness models in `HierarchicalShapeModel`
+- **Hierarchical Shape Models**: New `HierarchicalShapeModel` type for multi-scale surface representation with surface roughness (v0.5.0)
+- **Coordinate Transformations**: New functions for transforming points and vectors between global and local face coordinate systems (`transform_point_global_to_local`, `transform_physical_vector_local_to_global`, etc.) (v0.5.0)
+- **API Cleanup**: Removed deprecated `apply_eclipse_shadowing!` signature with `t₁₂` parameter; removed `use_elevation_optimization` parameter (v0.5.0)
 
 For detailed migration instructions between versions, see the [Migration Guide](https://astroshaper.github.io/AsteroidShapeModels.jl/dev/guides/migration/).
 
