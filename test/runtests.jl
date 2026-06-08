@@ -68,4 +68,7 @@ include("test_helpers.jl")
     
     # Hierarchical shape model tests
     include("test_hierarchical_shape_model.jl")
+
+    # Roughness geometry tests
+    include("test_roughness.jl")
 end

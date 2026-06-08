@@ -96,6 +96,6 @@ include("geometry_utils.jl")
 export angle_rad, angle_deg, solar_phase_angle, solar_elongation_angle
 
 include("roughness.jl")
-export crater_curvature_radius, concave_spherical_segment
+export crater_curvature_radius, concave_spherical_segment, create_shape_crater
 
 end # module AsteroidShapeModels

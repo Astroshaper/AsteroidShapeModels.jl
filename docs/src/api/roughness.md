@@ -31,6 +31,7 @@ transform_physical_vector_local_to_global
 ## Crater Modeling
 
 ```@docs
+create_shape_crater
 crater_curvature_radius
 concave_spherical_segment
 ```

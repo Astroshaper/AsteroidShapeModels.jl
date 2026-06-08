@@ -122,6 +122,10 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 ### API Improvements
 - [ ] Unify parameter naming conventions across the package
 - [ ] Create configuration structs for complex operations
+- [ ] **Roughness API cleanup** (breaking changes deferred from v0.5.1)
+  - Rename `concave_spherical_segment(r, h, xc, yc, x, y)` → `concave_spherical_segment_depth`
+  - Rename `concave_spherical_segment(r, h; ...)` → `concave_spherical_segment_grid`
+  - Reduce exports: only export `create_shape_crater`; make `crater_curvature_radius`, `concave_spherical_segment_depth`, `concave_spherical_segment_grid` internal
 
 ### Performance Enhancements
 - [ ] **Optimize `apply_eclipse_shadowing!` memory allocations**
