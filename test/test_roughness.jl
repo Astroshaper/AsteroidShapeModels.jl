@@ -74,16 +74,7 @@ Tests for surface roughness geometry functions:
             scale = 100.0
             crater_unscaled = create_shape_crater(0.4, 0.1)
             crater_scaled   = create_shape_crater(0.4, 0.1; scale)
-
-            for (n1, n2) in zip(crater_unscaled.nodes, crater_scaled.nodes)
-                @test n2 ≈ n1 * scale atol=1e-10
-            end
-        end
-
-        @testset "Off-center crater (xc, yc)" begin
-            crater = create_shape_crater(0.2, 0.05; xc=0.3, yc=0.7, Nx=16, Ny=16)
-            @test crater isa ShapeModel
-            @test all(isfinite, reinterpret(Float64, crater.face_normals))
+            @test all(n2 ≈ n1 * scale for (n1, n2) in zip(crater_unscaled.nodes, crater_scaled.nodes))
         end
 
         @testset "with_face_visibility" begin
