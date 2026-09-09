@@ -38,12 +38,12 @@ For future development plans, see our [Development Roadmap](ROADMAP.md).
   - Coordinate transformation functions between global and local face coordinate systems
   - Memory-efficient design allowing multiple faces to share the same roughness model
 
-## What's New in v0.5.1
+## What's New in v0.6.0
 
-- **Crater Shape Generation**: New `create_shape_crater` function creates a crater `ShapeModel` directly from geometry parameters, ready to use as a roughness model (v0.5.1)
-- **Surface Roughness Modeling**: Multi-scale surface representation with surface roughness models attached to faces (v0.5.0; unified into `ShapeModel` in v0.6.0)
-- **Coordinate Transformations**: New functions for transforming points and vectors between global and local face coordinate systems (`transform_point_global_to_local`, `transform_physical_vector_local_to_global`, etc.) (v0.5.0)
-- **API Cleanup**: Removed deprecated `apply_eclipse_shadowing!` signature with `t₁₂` parameter; removed `use_elevation_optimization` parameter (v0.5.0)
+- **Unified Shape Model (Breaking)**: `HierarchicalShapeModel` has been removed; surface roughness is now an optional `roughness` field (`SurfaceRoughness`) of `ShapeModel`, so one type covers both smooth and rough surfaces
+- **Roughness Statistics**: New `rms_slope` and `projected_area` functions following Rozitis & Green (2011), for characterizing roughness patches
+- **Optional-Field Predicates**: New `has_roughness`, `has_face_visibility_graph`, `has_face_max_elevations`, and `has_bvh` for readable checks of optional shape data
+- **API Cleanup (Breaking)**: Crater geometry helpers internalized (use `create_shape_crater`); input validation now throws `ArgumentError`/`DimensionMismatch`; `num_visible_faces` renamed to `n_visible_faces`
 
 For detailed migration instructions between versions, see the [Migration Guide](https://astroshaper.github.io/AsteroidShapeModels.jl/dev/guides/migration/).
 

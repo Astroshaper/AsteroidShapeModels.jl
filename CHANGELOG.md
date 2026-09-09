@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - 2026-09-09
+
+See the [Migration Guide](https://astroshaper.github.io/AsteroidShapeModels.jl/stable/guides/migration/) for step-by-step instructions.
+
+### Breaking Changes
+- **Unified `HierarchicalShapeModel` into `ShapeModel`** (#68)
+  - `HierarchicalShapeModel` (type, constructors, 24 delegation methods) is removed
+  - Surface roughness is now an optional `roughness::Union{Nothing, SurfaceRoughness{ShapeModel}}` field of `ShapeModel` (default `nothing`)
+  - Roughness management and coordinate transformation functions take `ShapeModel` as the first argument (names unchanged)
+  - `has_roughness_model(hier, i)` is replaced by the overload `has_roughness(shape, i)`
+  - Removed `as_hierarchical` keyword from `load_shape_obj`, `load_shape_grid`, and `create_shape_crater`
+  - Nested roughness (a roughness model that itself has roughness) throws `ArgumentError`
+- **Internalized crater geometry helpers** (#70)
+  - `concave_spherical_segment(r, h, xc, yc, x, y)` → `concave_spherical_segment_depth` (internal, unexported)
+  - `concave_spherical_segment(r, h; ...)` → `concave_spherical_segment_grid` (internal, unexported)
+  - `crater_curvature_radius` is no longer exported (name unchanged)
+  - Use `create_shape_crater` to build crater shape models
+- **Input validation exceptions** (#71)
+  - User-facing precondition checks now throw `ArgumentError` (missing prerequisite data, invalid constructor arguments) or `DimensionMismatch` (vector length mismatches) instead of `AssertionError`
+  - Affected: `isilluminated`, `update_illumination!`, `apply_eclipse_shadowing!`, `compute_face_max_elevations!`, and the `FaceVisibilityGraph` constructor
+- **Renamed `num_visible_faces` to `n_visible_faces`** (#72), matching Julia's `n`-prefix convention for count-returning functions
+
+### Added
+- **`SurfaceRoughness{Sh}` type** storing per-face roughness models, shared across faces (#68)
+- **`has_roughness(shape)` / `has_roughness(shape, face_idx)`** — whole-shape and per-face roughness checks (#68)
+- **Roughness statistics** (#67), following Rozitis & Green (2011):
+  - `rms_slope(shape)` — RMS slope weighted by projected face area (Eq. 36), in radians
+  - `projected_area(shape)` — area projected along the local z-axis
+- **Predicates for the optional fields of `ShapeModel`** (#69): `has_face_visibility_graph`, `has_face_max_elevations`, `has_bvh`
+
+### Fixed
+- `add_roughness_models!` no longer pushes an unused duplicate into `roughness_models` when the same model is added to another face (#68)
+
+---
+
 ## [0.5.1] - 2026-06-08
 
 ### Added

@@ -16,11 +16,10 @@ No planned deprecations at this time.
 
 ## Migrating to v0.6.0
 
-!!! note
-    This section is a skeleton for the upcoming v0.6.0 release and will be completed before the release.
-
 v0.6.0 unifies `HierarchicalShapeModel` into `ShapeModel`: surface roughness is now an optional
 `roughness` field (`SurfaceRoughness`) of `ShapeModel`, and `HierarchicalShapeModel` has been removed.
+It also reduces the exported crater-geometry API, changes the exception types used for input
+validation, and renames `num_visible_faces`.
 
 ### API replacement table
 
@@ -36,6 +35,11 @@ v0.6.0 unifies `HierarchicalShapeModel` into `ShapeModel`: surface roughness is 
 | — | **New**: `has_roughness(shape)::Bool` | Whole-shape roughness check |
 | `transform_point_*` / `transform_geometric_vector_*` / `transform_physical_vector_*` | First argument is a `ShapeModel` | Names unchanged |
 | Delegation methods (`build_face_visibility_graph!(hier)` etc.) | Not needed; call the `ShapeModel` methods directly | Removed |
+| `concave_spherical_segment(r, h, xc, yc, x, y)` | Internal: `AsteroidShapeModels.concave_spherical_segment_depth` | Use `create_shape_crater` instead |
+| `concave_spherical_segment(r, h; ...)` | Internal: `AsteroidShapeModels.concave_spherical_segment_grid` | Use `create_shape_crater` instead |
+| `crater_curvature_radius` | Internal: `AsteroidShapeModels.crater_curvature_radius` | Unexported, name unchanged |
+| `num_visible_faces(graph, i)` | `n_visible_faces(graph, i)` | Renamed; behavior unchanged |
+| `catch AssertionError` around illumination/eclipse/visibility-graph calls | Catch `ArgumentError` (missing prerequisite data, invalid arguments) or `DimensionMismatch` (length mismatches) | Error messages unchanged |
 
 ### Code example
 

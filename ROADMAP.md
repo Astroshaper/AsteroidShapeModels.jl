@@ -92,15 +92,45 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 
 ---
 
-## Version 0.5.x - Patch Releases
+## Version 0.6.0 - Shape Model Unification and Roughness Statistics (Released: 2026-09-09)
+
+### Major Changes (Breaking Changes)
+- [x] **Unify `HierarchicalShapeModel` into `ShapeModel`** (#68)
+  - Surface roughness is now an optional `roughness::Union{Nothing, SurfaceRoughness{ShapeModel}}` field
+  - Removed `as_hierarchical` keyword and 24 delegation methods
+  - `has_roughness_model` merged into `has_roughness(shape, face_idx)`
+- [x] **Roughness API cleanup** (deferred from v0.5.1) (#70)
+  - Internalized `concave_spherical_segment_depth` / `concave_spherical_segment_grid` / `crater_curvature_radius`
+- [x] **Improve error messages and validation** (#71)
+  - Input validation throws `ArgumentError` / `DimensionMismatch` instead of `AssertionError`
+- [x] Rename `num_visible_faces` → `n_visible_faces` (#72)
+
+### Added
+- [x] Roughness statistics `rms_slope` / `projected_area` (Rozitis & Green 2011) (#67)
+- [x] Optional-field predicates `has_face_visibility_graph` / `has_face_max_elevations` / `has_bvh` (#69)
+
+---
+
+## Version 0.6.1 - Fractal Surfaces and Staggered Lattice (Planned)
+
+Non-breaking feature additions, deferred from the v0.6.0 plan to release the breaking changes early.
+
+### Roughness Module Enhancements
+- [ ] Implement Fractal surface generation (random midpoint displacement; σ, H, n, k0 parameters)
+- [ ] Add staggered lattice `load_shape_lattice` (near-equilateral triangles) and a generic 1→4 midpoint refinement
+- [ ] Add `lattice = :square | :staggered` keyword to `create_shape_crater` / `create_shape_fractal` (default `:square`)
+
+---
+
+## Version 0.6.x / Later - Deferred Items
 
 ### Roughness Module Enhancements
 - [ ] Implement parallel sinusoidal trench generation
 - [ ] Implement Random Gaussian surface generation
-- [ ] Implement Fractal surface generation
 
 ### API Improvements
-- [ ] Improve error messages and validation
+- [ ] Distinguish closed shapes from open surface patches in `Base.show` and volume-based metrics (#73)
+- [ ] Consider switching the default patch lattice to `:staggered` (breaking; after beaming-curve comparison)
 
 ### Dependency Maintenance
 - [ ] **Upgrade `ImplicitBVH` compat to v0.7** (deferred from #54)
@@ -111,7 +141,7 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
 
 ---
 
-## Version 0.6.0 - High-Performance Computing Support
+## Version 0.7+ - High-Performance Computing Support
 
 ### Major Features
 - **GPU Acceleration (Optional)**
@@ -126,12 +156,8 @@ Please check our [GitHub Issues](https://github.com/Astroshaper/AsteroidShapeMod
   - [ ] Add benchmarks for parallel performance
 
 ### API Improvements
-- [ ] Unify parameter naming conventions across the package
+- [ ] Unify parameter naming conventions across the package (e.g., reconsider the `get_` prefix of accessor functions)
 - [ ] Create configuration structs for complex operations
-- [ ] **Roughness API cleanup** (breaking changes deferred from v0.5.1)
-  - Rename `concave_spherical_segment(r, h, xc, yc, x, y)` → `concave_spherical_segment_depth`
-  - Rename `concave_spherical_segment(r, h; ...)` → `concave_spherical_segment_grid`
-  - Reduce exports: only export `create_shape_crater`; make `crater_curvature_radius`, `concave_spherical_segment_depth`, `concave_spherical_segment_grid` internal
 
 ### Performance Enhancements
 - [ ] **Optimize `apply_eclipse_shadowing!` memory allocations**
