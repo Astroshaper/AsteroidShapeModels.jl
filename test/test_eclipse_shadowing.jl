@@ -136,7 +136,7 @@ they produce identical results.
             
             illuminated_faces = fill(true, 10)  # Wrong size
             
-            @test_throws AssertionError apply_eclipse_shadowing!(
+            @test_throws DimensionMismatch apply_eclipse_shadowing!(
                 illuminated_faces, shape1, shape2, r☉₁, r₁₂, R₁₂
             )
         end
