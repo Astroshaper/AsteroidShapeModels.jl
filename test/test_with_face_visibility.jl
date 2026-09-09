@@ -80,7 +80,7 @@ Ported from AsteroidThermoPhysicalModels.jl
     println("========  Concave spherical segment (crater)  ========")
     
     # Generate crater shape using imported roughness function
-    xs, ys, zs = concave_spherical_segment(0.4, 0.2; Nx=2^5, Ny=2^5, xc=0.5, yc=0.5)
+    xs, ys, zs = AsteroidShapeModels.concave_spherical_segment_grid(0.4, 0.2; Nx=2^5, Ny=2^5, xc=0.5, yc=0.5)
     shape = load_shape_grid(xs, ys, zs; scale=1.0, with_face_visibility=true)
     
     # Check visibility from crater center (face index 992 for this grid)
