@@ -56,6 +56,7 @@ export RayTriangleIntersectionResult, RayShapeIntersectionResult, RaySphereInter
 
 include("shape_model.jl")
 export AbstractShapeModel, ShapeModel, SurfaceRoughness, build_bvh!
+export has_face_visibility_graph, has_face_max_elevations, has_bvh
 
 include("surface_roughness.jl")
 export has_roughness, get_roughness_model, get_roughness_model_scale, get_roughness_model_transform

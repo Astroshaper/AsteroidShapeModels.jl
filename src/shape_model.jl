@@ -233,6 +233,47 @@ function Base.show(io::IO, shape::ShapeModel)
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
+# ║                    Optional-Field Predicates                      ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+# Predicates for the optional fields of `ShapeModel`, complementing
+# `has_roughness` (defined in surface_roughness.jl). Downstream code should
+# prefer these over checking the fields against `nothing` directly.
+
+"""
+    has_face_visibility_graph(shape::ShapeModel) -> Bool
+
+Check if the shape model has a face-to-face visibility graph
+(i.e., `shape.face_visibility_graph !== nothing`).
+Build it with [`build_face_visibility_graph!`](@ref).
+
+See also: [`has_face_max_elevations`](@ref), [`has_bvh`](@ref), [`has_roughness`](@ref)
+"""
+has_face_visibility_graph(shape::ShapeModel)::Bool = !isnothing(shape.face_visibility_graph)
+
+"""
+    has_face_max_elevations(shape::ShapeModel) -> Bool
+
+Check if the shape model has maximum elevation angles of the surrounding
+terrain for each face (i.e., `shape.face_max_elevations !== nothing`).
+Build them with [`compute_face_max_elevations!`](@ref).
+
+See also: [`has_face_visibility_graph`](@ref), [`has_bvh`](@ref), [`has_roughness`](@ref)
+"""
+has_face_max_elevations(shape::ShapeModel)::Bool = !isnothing(shape.face_max_elevations)
+
+"""
+    has_bvh(shape::ShapeModel) -> Bool
+
+Check if the shape model has a Bounding Volume Hierarchy for accelerated
+ray tracing (i.e., `shape.bvh !== nothing`).
+Build it with [`build_bvh!`](@ref).
+
+See also: [`has_face_visibility_graph`](@ref), [`has_face_max_elevations`](@ref), [`has_roughness`](@ref)
+"""
+has_bvh(shape::ShapeModel)::Bool = !isnothing(shape.bvh)
+
+# ╔═══════════════════════════════════════════════════════════════════╗
 # ║                    BVH Construction Functions                     ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 

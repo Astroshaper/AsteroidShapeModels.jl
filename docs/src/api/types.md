@@ -28,6 +28,14 @@ RaySphereIntersectionResult
 FaceVisibilityGraph
 ```
 
+## Optional-Field Predicates
+
+```@docs
+has_face_visibility_graph
+has_face_max_elevations
+has_bvh
+```
+
 ## Functions to accelerate ray tracing
 
 ```@docs

@@ -58,8 +58,8 @@ function isilluminated(
     with_self_shadowing::Bool
 )
     if with_self_shadowing
-        @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
-        @assert !isnothing(shape.face_max_elevations) "face_max_elevations is required for self-shadowing. Build it using `compute_face_max_elevations!(shape)`."
+        @assert has_face_visibility_graph(shape) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
+        @assert has_face_max_elevations(shape) "face_max_elevations is required for self-shadowing. Build it using `compute_face_max_elevations!(shape)`."
         return isilluminated_with_self_shadowing(shape, r☉, face_idx)
     else
         return isilluminated_pseudo_convex(shape, r☉, face_idx)
@@ -114,8 +114,8 @@ If `face_visibility_graph` is not available, this function will throw an error.
 - `false` if the face is facing away from the sun or is in shadow
 """
 function isilluminated_with_self_shadowing(shape::ShapeModel, r☉::StaticVector{3}, face_idx::Integer)::Bool
-    @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
-    @assert !isnothing(shape.face_max_elevations) "face_max_elevations is required for self-shadowing. Build it using `compute_face_max_elevations!(shape)`."
+    @assert has_face_visibility_graph(shape) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
+    @assert has_face_max_elevations(shape) "face_max_elevations is required for self-shadowing. Build it using `compute_face_max_elevations!(shape)`."
     
     cᵢ = shape.face_centers[face_idx]
     n̂ᵢ = shape.face_normals[face_idx]
@@ -193,8 +193,8 @@ function update_illumination!(
     with_self_shadowing::Bool
 )
     if with_self_shadowing
-        @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
-        @assert !isnothing(shape.face_max_elevations) "face_max_elevations is required for self-shadowing. Build it using `compute_face_max_elevations!(shape)`."
+        @assert has_face_visibility_graph(shape) "face_visibility_graph is required for self-shadowing. Build it using `build_face_visibility_graph!(shape)`."
+        @assert has_face_max_elevations(shape) "face_max_elevations is required for self-shadowing. Build it using `compute_face_max_elevations!(shape)`."
         update_illumination_with_self_shadowing!(illuminated_faces, shape, r☉)
     else
         update_illumination_pseudo_convex!(illuminated_faces, shape, r☉)
@@ -273,8 +273,8 @@ update_illumination_with_self_shadowing!(illuminated_faces, shape, sun_position)
 """
 function update_illumination_with_self_shadowing!(illuminated_faces::AbstractVector{Bool}, shape::ShapeModel, r☉::StaticVector{3})
     @assert length(illuminated_faces) == length(shape.faces) "illuminated_faces vector must have same length as number of faces."
-    @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required for self-shadowing. Build it using build_face_visibility_graph!(shape)."
-    @assert !isnothing(shape.face_max_elevations) "face_max_elevations is required for self-shadowing. Build it using compute_face_max_elevations!(shape)."
+    @assert has_face_visibility_graph(shape) "face_visibility_graph is required for self-shadowing. Build it using build_face_visibility_graph!(shape)."
+    @assert has_face_max_elevations(shape) "face_max_elevations is required for self-shadowing. Build it using compute_face_max_elevations!(shape)."
     
     @inbounds for i in eachindex(shape.faces)
         illuminated_faces[i] = isilluminated_with_self_shadowing(shape, r☉, i)
