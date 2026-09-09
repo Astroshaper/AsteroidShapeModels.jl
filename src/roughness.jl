@@ -7,11 +7,14 @@ thermal properties, light scattering, and radar reflection characteristics of
 asteroid surfaces.
 
 Exported Functions:
-- `crater_curvature_radius`: Calculate the curvature radius of a concave spherical segment
-- `concave_spherical_segment`: Generate crater geometry as a concave spherical segment
 - `create_shape_crater`: Create a ShapeModel of a concave spherical crater
 - `projected_area`: Area of a surface patch projected along the local z-axis
 - `rms_slope`: RMS slope of a surface patch (Rozitis & Green 2011, Eq. 36)
+
+Internal helpers (not exported):
+- `crater_curvature_radius`         : Curvature radius of a concave spherical segment
+- `concave_spherical_segment_depth` : Crater depth at a point
+- `concave_spherical_segment_grid`  : Crater geometry on a regular grid
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -21,10 +24,8 @@ Exported Functions:
 """
     crater_curvature_radius(r, h) -> R
 
-!!! note "TODO (v0.6.0)"
-    This function will be made internal (unexported) in v0.6.0.
-
 Calculate the curvature radius of a concave spherical segment.
+Internal function (not exported).
 
 # Arguments
 - `r::Real`: Crater radius (same units as h)
@@ -46,17 +47,15 @@ R = crater_curvature_radius(100.0, 10.0)  # Returns 505.0 m
 R = crater_curvature_radius(100.0, 50.0)  # Returns 125.0 m
 ```
 
-See also: [`concave_spherical_segment`](@ref)
+See also: [`concave_spherical_segment_depth`](@ref)
 """
 crater_curvature_radius(r::Real, h::Real) = (r^2 + h^2) / 2h
 
 """
-    concave_spherical_segment(r, h, xc, yc, x, y) -> z
-
-!!! note "TODO (v0.6.0)"
-    This function will be renamed to `concave_spherical_segment_depth` and made internal (unexported) in v0.6.0.
+    concave_spherical_segment_depth(r, h, xc, yc, x, y) -> z
 
 Calculate the z-coordinate (depth) of a concave spherical segment at a given (x,y) position.
+Internal function (not exported).
 
 # Arguments
 - `r::Real`  : Crater radius
@@ -77,14 +76,14 @@ Calculate the z-coordinate (depth) of a concave spherical segment at a given (x,
 # Example
 ```julia
 # Crater at origin with 10m radius and 2m depth
-z_center = concave_spherical_segment(10.0, 2.0, 0.0, 0.0, 0.0, 0.0)   # Returns -2.0
-z_edge   = concave_spherical_segment(10.0, 2.0, 0.0, 0.0, 10.0, 0.0)  # Returns 0.0
-z_mid    = concave_spherical_segment(10.0, 2.0, 0.0, 0.0, 5.0, 0.0)   # Returns ~-0.6
+z_center = concave_spherical_segment_depth(10.0, 2.0, 0.0, 0.0, 0.0, 0.0)   # Returns -2.0
+z_edge   = concave_spherical_segment_depth(10.0, 2.0, 0.0, 0.0, 10.0, 0.0)  # Returns 0.0
+z_mid    = concave_spherical_segment_depth(10.0, 2.0, 0.0, 0.0, 5.0, 0.0)   # Returns ~-0.6
 ```
 
 See also: [`crater_curvature_radius`](@ref)
 """
-function concave_spherical_segment(r::Real, h::Real, xc::Real, yc::Real, x::Real, y::Real)
+function concave_spherical_segment_depth(r::Real, h::Real, xc::Real, yc::Real, x::Real, y::Real)
     d² = (x - xc)^2 + (y - yc)^2
     d = √d²  # Distance from the crater center
 
@@ -98,12 +97,10 @@ function concave_spherical_segment(r::Real, h::Real, xc::Real, yc::Real, x::Real
 end
 
 """
-    concave_spherical_segment(r, h; xc=0.5, yc=0.5, Nx=2^5, Ny=2^5) -> xs, ys, zs
-
-!!! note "TODO (v0.6.0)"
-    This function will be renamed to `concave_spherical_segment_grid` and made internal (unexported) in v0.6.0.
+    concave_spherical_segment_grid(r, h; xc=0.5, yc=0.5, Nx=2^5, Ny=2^5) -> xs, ys, zs
 
 Generate a grid representation of a concave spherical segment (crater).
+Internal function (not exported).
 
 # Arguments
 - `r::Real` : Crater radius (in normalized units, typically 0-1)
@@ -128,21 +125,21 @@ Generate a grid representation of a concave spherical segment (crater).
 # Example
 ```julia
 # Generate a crater covering 40% of the domain, 0.1 units deep
-xs, ys, zs = concave_spherical_segment(0.4, 0.1; Nx=64, Ny=64)
+xs, ys, zs = concave_spherical_segment_grid(0.4, 0.1; Nx=64, Ny=64)
 
 # Convert to shape model
 shape = load_shape_grid(xs, ys, zs)
 
 # Off-center crater
-xs, ys, zs = concave_spherical_segment(0.3, 0.05; xc=0.3, yc=0.7)
+xs, ys, zs = concave_spherical_segment_grid(0.3, 0.05; xc=0.3, yc=0.7)
 ```
 
 See also: [`load_shape_grid`](@ref), [`grid_to_faces`](@ref)
 """
-function concave_spherical_segment(r::Real, h::Real; xc::Real=0.5, yc::Real=0.5, Nx::Integer=2^5, Ny::Integer=2^5)
+function concave_spherical_segment_grid(r::Real, h::Real; xc::Real=0.5, yc::Real=0.5, Nx::Integer=2^5, Ny::Integer=2^5)
     xs = LinRange(0, 1, Nx + 1)
     ys = LinRange(0, 1, Ny + 1)
-    zs = [concave_spherical_segment(r, h, xc, yc, x, y) for x in xs, y in ys]
+    zs = [concave_spherical_segment_depth(r, h, xc, yc, x, y) for x in xs, y in ys]
 
     xs, ys, zs
 end
@@ -160,8 +157,8 @@ end
 
 Create a shape model representing a concave spherical crater.
 
-This is a convenience wrapper that combines [`concave_spherical_segment`](@ref) and
-[`load_shape_grid`](@ref). The crater sits on a unit square [0,1]×[0,1].
+This is a convenience wrapper that combines an internal crater-geometry helper
+(`concave_spherical_segment_grid`) and [`load_shape_grid`](@ref). The crater sits on a unit square [0,1]×[0,1].
 
 # Arguments
 - `r::Real`: Crater radius in normalized units (0–1). A value of 0.5 fills the unit square.
@@ -192,7 +189,7 @@ shape = load_shape_obj("path/to/shape.obj")
 add_roughness_models!(shape, crater; scale=0.1)
 ```
 
-See also: [`concave_spherical_segment`](@ref), [`load_shape_grid`](@ref)
+See also: [`load_shape_grid`](@ref)
 """
 function create_shape_crater(r::Real, h::Real;
     xc::Real = 0.5,
@@ -203,7 +200,7 @@ function create_shape_crater(r::Real, h::Real;
     with_face_visibility::Bool = false,
     with_bvh::Bool = false,
 )::ShapeModel
-    xs, ys, zs = concave_spherical_segment(r, h; xc, yc, Nx, Ny)
+    xs, ys, zs = concave_spherical_segment_grid(r, h; xc, yc, Nx, Ny)
     load_shape_grid(xs, ys, zs; scale, with_face_visibility, with_bvh)
 end
 

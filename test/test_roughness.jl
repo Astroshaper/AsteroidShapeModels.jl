@@ -2,8 +2,8 @@
     test_roughness.jl
 
 Tests for surface roughness geometry functions:
-- crater_curvature_radius: curvature radius formula
-- concave_spherical_segment: z-depth at a point and full grid generation
+- crater_curvature_radius (internal): curvature radius formula
+- concave_spherical_segment_depth / _grid (internal): z-depth at a point and full grid generation
 - create_shape_crater: ShapeModel construction from crater geometry
 - projected_area, rms_slope: roughness statistics (Rozitis & Green 2011)
 =#
@@ -15,33 +15,33 @@ Tests for surface roughness geometry functions:
     # ╚═══════════════════════════════════════════════════════════════════╝
 
     @testset "crater_curvature_radius" begin
-        @test crater_curvature_radius(100.0, 10.0) ≈ (100^2 + 10^2) / (2 * 10)
-        @test crater_curvature_radius(100.0, 50.0) ≈ 125.0
+        @test AsteroidShapeModels.crater_curvature_radius(100.0, 10.0) ≈ (100^2 + 10^2) / (2 * 10)
+        @test AsteroidShapeModels.crater_curvature_radius(100.0, 50.0) ≈ 125.0
         # Hemisphere: h == r → R == r
-        @test crater_curvature_radius(1.0, 1.0) ≈ 1.0
+        @test AsteroidShapeModels.crater_curvature_radius(1.0, 1.0) ≈ 1.0
     end
 
     # ╔═══════════════════════════════════════════════════════════════════╗
-    # ║                  concave_spherical_segment                        ║
+    # ║               concave_spherical_segment_depth / _grid             ║
     # ╚═══════════════════════════════════════════════════════════════════╝
 
-    @testset "concave_spherical_segment (point)" begin
+    @testset "concave_spherical_segment_depth (point)" begin
         r, h = 0.4, 0.1
 
         # Center should be at maximum depth -h
-        @test concave_spherical_segment(r, h, 0.5, 0.5, 0.5, 0.5) ≈ -h
+        @test AsteroidShapeModels.concave_spherical_segment_depth(r, h, 0.5, 0.5, 0.5, 0.5) ≈ -h
 
         # Edge of crater (distance == r) should be 0
-        @test concave_spherical_segment(r, h, 0.5, 0.5, 0.5 + r, 0.5) ≈ 0.0 atol=1e-10
+        @test AsteroidShapeModels.concave_spherical_segment_depth(r, h, 0.5, 0.5, 0.5 + r, 0.5) ≈ 0.0 atol=1e-10
 
         # Outside crater should be 0
-        @test concave_spherical_segment(r, h, 0.5, 0.5, 1.0, 1.0) == 0.0
+        @test AsteroidShapeModels.concave_spherical_segment_depth(r, h, 0.5, 0.5, 1.0, 1.0) == 0.0
     end
 
-    @testset "concave_spherical_segment (grid)" begin
+    @testset "concave_spherical_segment_grid (grid)" begin
         r, h = 0.4, 0.1
         Nx, Ny = 16, 16
-        xs, ys, zs = concave_spherical_segment(r, h; Nx, Ny)
+        xs, ys, zs = AsteroidShapeModels.concave_spherical_segment_grid(r, h; Nx, Ny)
 
         @test length(xs) == Nx + 1
         @test length(ys) == Ny + 1
