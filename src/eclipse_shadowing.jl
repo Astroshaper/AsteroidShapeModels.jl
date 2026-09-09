@@ -119,7 +119,7 @@ function apply_eclipse_shadowing!(
     r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3}
 )::EclipseStatus
     @assert length(illuminated_faces) == length(shape1.faces) "illuminated_faces vector must have same length as number of faces."
-    isnothing(shape2.bvh) && throw(ArgumentError("Occluding shape model (`shape2`) must have BVH built before checking eclipse shadowing. Call `build_bvh!(shape2)` first."))
+    !has_bvh(shape2) && throw(ArgumentError("Occluding shape model (`shape2`) must have BVH built before checking eclipse shadowing. Call `build_bvh!(shape2)` first."))
     
     # Compute transformation parameter t₁₂ for coordinate transformation
     # p_shape2 = R₁₂ * p_shape1 + t₁₂, where shape2's origin is at r₁₂ in shape1's frame

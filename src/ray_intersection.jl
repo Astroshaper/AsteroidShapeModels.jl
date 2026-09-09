@@ -205,7 +205,7 @@ results = intersect_ray_shape(shape, origins, directions)
 """
 function intersect_ray_shape(shape::ShapeModel, origins::AbstractMatrix{<:Real}, directions::AbstractMatrix{<:Real})::Vector{RayShapeIntersectionResult}
     # Require BVH to be built before ray intersection
-    isnothing(shape.bvh) && throw(ArgumentError("BVH must be built before ray intersection. Call build_bvh!(shape) first."))
+    !has_bvh(shape) && throw(ArgumentError("BVH must be built before ray intersection. Call build_bvh!(shape) first."))
     
     # Validate input dimensions
     size(origins, 1) == 3 || throw(ArgumentError("`origins` must have 3 rows."))

@@ -153,12 +153,12 @@ For each face i:
 3. Store the maximum elevation angle found
 """
 function compute_face_max_elevations!(shape::ShapeModel)
-    @assert !isnothing(shape.face_visibility_graph) "face_visibility_graph is required. Build it using build_face_visibility_graph!(shape)."
+    @assert has_face_visibility_graph(shape) "face_visibility_graph is required. Build it using build_face_visibility_graph!(shape)."
     
     nfaces = length(shape.faces)
     
     # Initialize face_max_elevations if not present
-    if isnothing(shape.face_max_elevations)
+    if !has_face_max_elevations(shape)
         shape.face_max_elevations = zeros(Float64, nfaces)
     end
     

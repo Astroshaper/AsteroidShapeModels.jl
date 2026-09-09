@@ -227,4 +227,40 @@ This file tests fundamental shape operations and calculations:
             @test nodes[5] ≈ SA[1.0, 1.0, 4.0]  # zs[2,2] = 2+2 = 4
         end
     end
+
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                    Optional-Field Predicates                      ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
+
+    @testset "Optional-field predicates" begin
+        xs = LinRange(0, 1, 5)
+        ys = LinRange(0, 1, 5)
+        zs = zeros(5, 5)
+
+        @testset "Bare shape has none of the optional data" begin
+            shape = load_shape_grid(xs, ys, zs)
+            @test has_face_visibility_graph(shape) == false
+            @test has_face_max_elevations(shape) == false
+            @test has_bvh(shape) == false
+            @test has_roughness(shape) == false
+        end
+
+        @testset "Predicates reflect built data" begin
+            shape = load_shape_grid(xs, ys, zs; with_face_visibility=true, with_bvh=true)
+            # with_face_visibility=true builds both the graph and face_max_elevations
+            @test has_face_visibility_graph(shape) == true
+            @test has_face_max_elevations(shape) == true
+            @test has_bvh(shape) == true
+        end
+
+        @testset "Predicates after explicit builders" begin
+            shape = load_shape_grid(xs, ys, zs)
+            build_bvh!(shape)
+            @test has_bvh(shape) == true
+            build_face_visibility_graph!(shape)
+            @test has_face_visibility_graph(shape) == true
+            compute_face_max_elevations!(shape)
+            @test has_face_max_elevations(shape) == true
+        end
+    end
 end
