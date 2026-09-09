@@ -68,7 +68,7 @@ export transform_physical_vector_global_to_local, transform_physical_vector_loca
 include("face_visibility_graph.jl")
 export FaceVisibilityGraph, build_face_visibility_graph!, view_factor
 export get_visible_face_indices, get_view_factors, get_visible_face_distances, get_visible_face_directions
-export get_visible_face_data, num_visible_faces
+export get_visible_face_data, n_visible_faces
 
 include("obj_io.jl")
 export load_obj, isobj

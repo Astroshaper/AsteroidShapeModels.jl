@@ -274,7 +274,7 @@ Use the provided API functions instead of direct field access:
 - `get_visible_face_distances(graph, face_idx)` - Get distances to visible faces
 - `get_visible_face_directions(graph, face_idx)` - Get direction vectors to visible faces
 - `get_visible_face_data(graph, face_idx, idx)` - Get all data for a specific visible face
-- `num_visible_faces(graph, face_idx)` - Get number of visible faces
+- `n_visible_faces(graph, face_idx)` - Get number of visible faces
 
 # Example
 If face 1 sees faces [2,3] and face 2 sees faces [1,3,4]:

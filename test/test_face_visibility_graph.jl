@@ -82,10 +82,10 @@
         @test collect(get_visible_face_directions(graph, 1))[1] ≈ SA[1.0, 0.0, 0.0]
         @test collect(get_visible_face_directions(graph, 1))[2] ≈ SA[0.0, 1.0, 0.0]
         
-        # num_visible_faces
-        @test num_visible_faces(graph, 1) == 2
-        @test num_visible_faces(graph, 2) == 2
-        @test num_visible_faces(graph, 3) == 0
+        # n_visible_faces
+        @test n_visible_faces(graph, 1) == 2
+        @test n_visible_faces(graph, 2) == 2
+        @test n_visible_faces(graph, 3) == 0
         
         # get_visible_face_data
         data = get_visible_face_data(graph, 1, 1)
@@ -144,7 +144,7 @@
         @test_throws BoundsError get_visible_face_indices(graph, 0)
         @test_throws BoundsError get_visible_face_indices(graph, 4)
         @test_throws BoundsError get_view_factors(graph, 0)
-        @test_throws BoundsError num_visible_faces(graph, 4)
+        @test_throws BoundsError n_visible_faces(graph, 4)
     end
 end
 
@@ -172,7 +172,7 @@ end
         for i in 1:length(faces)
             visible_faces = get_visible_face_indices(shape.face_visibility_graph, i)
             @test length(visible_faces) == 0
-            @test num_visible_faces(shape.face_visibility_graph, i) == 0
+            @test n_visible_faces(shape.face_visibility_graph, i) == 0
         end
     end
     

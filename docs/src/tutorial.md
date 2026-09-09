@@ -60,7 +60,7 @@ build_face_visibility_graph!(shape)
 face_id = 100
 visible_faces = get_visible_face_indices(shape.face_visibility_graph, face_id)
 view_factors = get_view_factors(shape.face_visibility_graph, face_id)
-num_visible = num_visible_faces(shape.face_visibility_graph, face_id)
+num_visible = n_visible_faces(shape.face_visibility_graph, face_id)
 
 println("Face $face_id can see $num_visible other faces.")
 println("Total view factor: ", sum(view_factors))

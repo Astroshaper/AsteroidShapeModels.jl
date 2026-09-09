@@ -85,8 +85,8 @@ Ported from AsteroidThermoPhysicalModels.jl
     
     # Check visibility from crater center (face index 992 for this grid)
     # This face is at the bottom of the crater and should see many faces
-    println("Number of faces visible from the crater center: ", num_visible_faces(shape.face_visibility_graph, 992))
-    @test num_visible_faces(shape.face_visibility_graph, 992) == 1053  # Expected visibility count
+    println("Number of faces visible from the crater center: ", n_visible_faces(shape.face_visibility_graph, 992))
+    @test n_visible_faces(shape.face_visibility_graph, 992) == 1053  # Expected visibility count
 
     println()
     
