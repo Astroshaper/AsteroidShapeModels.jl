@@ -56,8 +56,15 @@ See also: [`add_roughness_models!`](@ref), [`get_roughness_model`](@ref)
 has_roughness(shape::ShapeModel)::Bool = !isnothing(shape.roughness)
 
 function has_roughness(shape::ShapeModel, face_idx::Int)::Bool
-    isnothing(shape.roughness) && return false
+    !has_roughness(shape) && return false
     return shape.roughness.face_roughness_indices[face_idx] != 0
+end
+
+# Internal: throw unless the shape carries roughness data
+function _require_roughness(shape::ShapeModel)
+    has_roughness(shape) ||
+        throw(ArgumentError("Shape has no surface roughness data. Add roughness models with `add_roughness_models!` first."))
+    return nothing
 end
 
 """
@@ -94,8 +101,7 @@ Get the scale factor for the roughness model on a specific face.
 - `ArgumentError` : If the shape has no roughness data at all (`shape.roughness === nothing`)
 """
 function get_roughness_model_scale(shape::ShapeModel, face_idx::Int)::Float64
-    isnothing(shape.roughness) &&
-        throw(ArgumentError("Shape has no surface roughness data. Add roughness models with `add_roughness_models!` first."))
+    _require_roughness(shape)
     # Recover scale from transform: transform.linear = (1/scale) * R', so ‖column‖ = 1/scale
     return 1.0 / norm(shape.roughness.face_roughness_transforms[face_idx].linear[:, 1])
 end
@@ -116,8 +122,7 @@ Get the affine transformation (global to local) for the roughness model on a spe
 - `ArgumentError` : If the shape has no roughness data at all (`shape.roughness === nothing`)
 """
 function get_roughness_model_transform(shape::ShapeModel, face_idx::Int)::AFFINE_MAP_TYPE
-    isnothing(shape.roughness) &&
-        throw(ArgumentError("Shape has no surface roughness data. Add roughness models with `add_roughness_models!` first."))
+    _require_roughness(shape)
     return shape.roughness.face_roughness_transforms[face_idx]
 end
 
@@ -156,7 +161,7 @@ Remove the roughness model from a specific face.
 """
 function clear_roughness_models!(shape::ShapeModel, face_idx::Int)
     1 ≤ face_idx ≤ length(shape.faces) || throw(BoundsError(shape.faces, face_idx))
-    isnothing(shape.roughness) && return nothing
+    !has_roughness(shape) && return nothing
     roughness = shape.roughness
 
     # Get the model index before clearing
@@ -286,7 +291,7 @@ function add_roughness_models!(
         throw(ArgumentError("Roughness model must be a smooth `ShapeModel` (its `roughness` field must be `nothing`). Nested roughness is not supported."))
 
     # Construct the roughness data on first use
-    if isnothing(shape.roughness)
+    if !has_roughness(shape)
         shape.roughness = SurfaceRoughness{ShapeModel}(length(shape.faces))
     end
     roughness = shape.roughness

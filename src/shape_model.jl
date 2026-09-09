@@ -226,7 +226,7 @@ function Base.show(io::IO, shape::ShapeModel)
     print(io, "Equivalent radius : $(equivalent_radius(shape))\n")
     print(io, "Maximum radius    : $(maximum_radius(shape))\n")
     print(io, "Minimum radius    : $(minimum_radius(shape))\n")
-    if !isnothing(shape.roughness)
+    if has_roughness(shape)
         nfaces_with_roughness = count(!=(0), shape.roughness.face_roughness_indices)
         print(io, "Surface roughness : $(length(shape.roughness.roughness_models)) model(s) on $(nfaces_with_roughness) face(s)\n")
     end
