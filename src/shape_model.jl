@@ -51,7 +51,7 @@ abstract type AbstractShapeModel end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    SurfaceRoughness{S}
+    SurfaceRoughness{Sh}
 
 Container for surface roughness models attached to the faces of a shape model.
 Stored in the `roughness` field of a [`ShapeModel`](@ref) (as `SurfaceRoughness{ShapeModel}`).
@@ -98,23 +98,23 @@ The scale factor for a face can be recovered on demand from the transform's line
 
 See also: [`ShapeModel`](@ref), [`has_roughness`](@ref), [`add_roughness_models!`](@ref)
 """
-struct SurfaceRoughness{S}
+struct SurfaceRoughness{Sh}
     face_roughness_indices    ::Vector{Int}
     face_roughness_transforms ::Vector{AFFINE_MAP_TYPE}
-    roughness_models          ::Vector{S}
+    roughness_models          ::Vector{Sh}
 end
 
 """
-    SurfaceRoughness{S}(nfaces::Integer) where S
+    SurfaceRoughness{Sh}(nfaces::Integer) where Sh
 
 Construct an empty `SurfaceRoughness` for a shape with `nfaces` faces:
 all indices are 0 (no roughness) and all transforms are the identity.
 """
-function SurfaceRoughness{S}(nfaces::Integer) where S
-    return SurfaceRoughness{S}(
+function SurfaceRoughness{Sh}(nfaces::Integer) where Sh
+    return SurfaceRoughness{Sh}(
         zeros(Int, nfaces),
         [IDENTITY_AFFINE_MAP for _ in 1:nfaces],
-        S[],
+        Sh[],
     )
 end
 
