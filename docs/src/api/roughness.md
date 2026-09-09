@@ -4,11 +4,10 @@
 CurrentModule = AsteroidShapeModels
 ```
 
-## Hierarchical Shape Models
-
-### Roughness Model Management
+## Surface Roughness Management
 
 ```@docs
+has_roughness
 has_roughness_model
 get_roughness_model
 get_roughness_model_scale

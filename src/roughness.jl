@@ -156,8 +156,7 @@ end
         scale = 1.0,
         with_face_visibility = false,
         with_bvh = false,
-        as_hierarchical = false,
-    ) -> Union{ShapeModel, HierarchicalShapeModel}
+    ) -> ShapeModel
 
 Create a shape model representing a concave spherical crater.
 
@@ -176,10 +175,9 @@ This is a convenience wrapper that combines [`concave_spherical_segment`](@ref) 
 - `scale::Real=1.0`                  : Scale factor applied to all coordinates after grid generation
 - `with_face_visibility::Bool=false` : Whether to build face-to-face visibility graph
 - `with_bvh::Bool=false`             : Whether to build BVH for ray tracing
-- `as_hierarchical::Bool=false`      : Whether to return a `HierarchicalShapeModel` instead of a `ShapeModel`
 
 # Returns
-- `ShapeModel` or `HierarchicalShapeModel`: Shape model with computed geometric properties (centers, normals, areas)
+- `ShapeModel`: Shape model with computed geometric properties (centers, normals, areas)
 
 # Example
 ```julia
@@ -189,8 +187,9 @@ crater = create_shape_crater(0.4, 0.1; scale=100.0, with_face_visibility=true)
 # Off-center crater with higher resolution
 crater = create_shape_crater(0.3, 0.1; xc=0.3, yc=0.7, Nx=64, Ny=64)
 
-# As HierarchicalShapeModel
-crater = create_shape_crater(0.4, 0.1; as_hierarchical=true)
+# Use as a roughness model on another shape
+shape = load_shape_obj("path/to/shape.obj")
+add_roughness_models!(shape, crater; scale=0.1)
 ```
 
 See also: [`concave_spherical_segment`](@ref), [`load_shape_grid`](@ref)
@@ -203,10 +202,9 @@ function create_shape_crater(r::Real, h::Real;
     scale::Real = 1.0,
     with_face_visibility::Bool = false,
     with_bvh::Bool = false,
-    as_hierarchical::Bool = false,
-)::Union{ShapeModel, HierarchicalShapeModel}
+)::ShapeModel
     xs, ys, zs = concave_spherical_segment(r, h; xc, yc, Nx, Ny)
-    load_shape_grid(xs, ys, zs; scale, with_face_visibility, with_bvh, as_hierarchical)
+    load_shape_grid(xs, ys, zs; scale, with_face_visibility, with_bvh)
 end
 
 

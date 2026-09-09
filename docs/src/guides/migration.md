@@ -12,7 +12,48 @@ If you encounter issues during migration:
 
 ## Future Deprecations
 
-No planned deprecations at this time for v0.5.x.
+No planned deprecations at this time.
+
+## Migrating to v0.6.0
+
+!!! note
+    This section is a skeleton for the upcoming v0.6.0 release and will be completed before the release.
+
+v0.6.0 unifies `HierarchicalShapeModel` into `ShapeModel`: surface roughness is now an optional
+`roughness` field (`SurfaceRoughness`) of `ShapeModel`, and `HierarchicalShapeModel` has been removed.
+
+### API replacement table
+
+| v0.5.x | v0.6.0 | Notes |
+|---|---|---|
+| `HierarchicalShapeModel(shape)` / `HierarchicalShapeModel(nodes, faces; ...)` | Not needed; use `ShapeModel` directly | Removed |
+| `load_shape_obj(...; as_hierarchical=true)` / `load_shape_grid(...; as_hierarchical=true)` / `create_shape_crater(...; as_hierarchical=true)` | Remove the keyword | Removed |
+| `hier.global_shape` | The `shape` itself | Field no longer exists |
+| `hier.face_roughness_indices` / `hier.face_roughness_transforms` / `hier.roughness_models` | `shape.roughness.face_roughness_indices` etc. | `shape.roughness` may be `nothing` |
+| `add_roughness_models!(hier, ...)` / `clear_roughness_models!(hier, ...)` | First argument is a `ShapeModel` | Names unchanged; first `add_roughness_models!` call constructs `shape.roughness` |
+| `has_roughness_model(hier, i)` / `get_roughness_model(hier, i)` / `get_roughness_model_scale(hier, i)` / `get_roughness_model_transform(hier, i)` | First argument is a `ShapeModel` | If `shape.roughness === nothing`: `false` / `nothing` / error / error |
+| — | **New**: `has_roughness(shape)::Bool` | Whole-shape roughness check |
+| `transform_point_*` / `transform_geometric_vector_*` / `transform_physical_vector_*` | First argument is a `ShapeModel` | Names unchanged |
+| Delegation methods (`build_face_visibility_graph!(hier)` etc.) | Not needed; call the `ShapeModel` methods directly | Removed |
+
+### Code example
+
+```julia
+# v0.5.x
+hier   = load_shape_obj("shape.obj"; as_hierarchical=true, with_face_visibility=true)
+crater = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
+add_roughness_models!(hier, crater; scale=0.1)
+update_illumination!(illum, hier, r☉; with_self_shadowing=true)   # was delegated
+hier.global_shape.face_areas
+
+# v0.6.0
+shape  = load_shape_obj("shape.obj"; with_face_visibility=true)
+crater = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
+add_roughness_models!(shape, crater; scale=0.1)                    # shape.roughness is constructed
+update_illumination!(illum, shape, r☉; with_self_shadowing=true)   # unchanged
+shape.face_areas
+has_roughness(shape)                                               # true
+```
 
 ## Migrating to v0.5.0
 
