@@ -404,8 +404,8 @@ This file tests advanced visibility and illumination calculations:
             illuminated_error = Vector{Bool}(undef, nfaces)
             
             # Test that with_self_shadowing=true requires face_visibility_graph
-            @test_throws AssertionError isilluminated(shape_no_graph, sun_pos, 1; with_self_shadowing=true)
-            @test_throws AssertionError update_illumination!(illuminated_error, shape_no_graph, sun_pos; with_self_shadowing=true)
+            @test_throws ArgumentError isilluminated(shape_no_graph, sun_pos, 1; with_self_shadowing=true)
+            @test_throws ArgumentError update_illumination!(illuminated_error, shape_no_graph, sun_pos; with_self_shadowing=true)
             
             # Test that with_self_shadowing=false works without face_visibility_graph
             @test_nowarn isilluminated(shape_no_graph, sun_pos, 1; with_self_shadowing=false)

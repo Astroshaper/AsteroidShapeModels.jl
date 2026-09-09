@@ -305,12 +305,12 @@ struct FaceVisibilityGraph
         nnz = length(col_idx)
         
         # Validity checks
-        @assert row_ptr[1] == 1 "row_ptr must start with 1"
-        @assert row_ptr[end] == nnz + 1 "row_ptr[end] must equal nnz + 1"
-        @assert length(view_factors) == nnz "view_factors length must equal nnz"
-        @assert length(distances) == nnz "distances length must equal nnz"
-        @assert length(directions) == nnz "directions length must equal nnz"
-        @assert all(1 .<= col_idx .<= nfaces) "col_idx must be in range [1, nfaces]"
+        row_ptr[1] == 1 || throw(ArgumentError("row_ptr must start with 1"))
+        row_ptr[end] == nnz + 1 || throw(ArgumentError("row_ptr[end] must equal nnz + 1"))
+        length(view_factors) == nnz || throw(DimensionMismatch("view_factors length must equal nnz"))
+        length(distances) == nnz || throw(DimensionMismatch("distances length must equal nnz"))
+        length(directions) == nnz || throw(DimensionMismatch("directions length must equal nnz"))
+        all(1 .<= col_idx .<= nfaces) || throw(ArgumentError("col_idx must be in range [1, nfaces]"))
         
         new(row_ptr, col_idx, view_factors, distances, directions, nfaces, nnz)
     end
