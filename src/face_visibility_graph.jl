@@ -16,7 +16,7 @@ Exported Functions:
 - `get_visible_face_distances`: Get distances to visible faces
 - `get_visible_face_directions`: Get unit direction vectors to visible faces
 - `get_visible_face_data`: Get all visibility data for a specific visible face
-- `num_visible_faces`: Get number of faces visible from a given face
+- `n_visible_faces`: Get number of faces visible from a given face
 =#
 
 # Type FaceVisibilityGraph is defined in types.jl
@@ -304,7 +304,7 @@ function get_visible_face_data(graph::FaceVisibilityGraph, face_idx::Int, idx::I
 end
 
 """
-    num_visible_faces(graph::FaceVisibilityGraph, face_idx::Int) -> Int
+    n_visible_faces(graph::FaceVisibilityGraph, face_idx::Int) -> Int
 
 Get the number of visible faces for the specified face.
 
@@ -319,7 +319,7 @@ Get the number of visible faces for the specified face.
 ```julia
 # Count visible faces for each face
 for i in 1:graph.nfaces
-    n = num_visible_faces(graph, i)
+    n = n_visible_faces(graph, i)
     if n > 100
         println("Face \$i can see \$n other faces.")
     end
@@ -329,7 +329,7 @@ end
 max_visible = 0
 max_face = 0
 for i in 1:graph.nfaces
-    n = num_visible_faces(graph, i)
+    n = n_visible_faces(graph, i)
     if n > max_visible
         max_visible = n
         max_face = i
@@ -340,7 +340,7 @@ println("Face \$max_face has the most visible faces: \$max_visible")
 
 See also: [`get_visible_face_indices`](@ref), [`FaceVisibilityGraph`](@ref)
 """
-function num_visible_faces(graph::FaceVisibilityGraph, face_idx::Int)
+function n_visible_faces(graph::FaceVisibilityGraph, face_idx::Int)
     @boundscheck 1 ≤ face_idx ≤ graph.nfaces || throw(BoundsError(graph, face_idx))
     return graph.row_ptr[face_idx + 1] - graph.row_ptr[face_idx]
 end

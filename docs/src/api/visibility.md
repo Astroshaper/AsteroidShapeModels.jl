@@ -29,5 +29,5 @@ get_view_factors
 get_visible_face_distances
 get_visible_face_directions
 get_visible_face_data
-num_visible_faces
+n_visible_faces
 ```

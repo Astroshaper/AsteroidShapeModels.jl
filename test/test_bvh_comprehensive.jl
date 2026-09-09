@@ -228,7 +228,7 @@ All tests include correctness verification and performance benchmarks.
         println("\n3.4 Visibility distribution (sample faces):")
         for i in sample_faces
             if i <= n_test_faces
-                vis_count = num_visible_faces(shape_subset.face_visibility_graph, i)
+                vis_count = n_visible_faces(shape_subset.face_visibility_graph, i)
                 println("    Face $i: $vis_count visible faces")
             end
         end
