@@ -10,6 +10,8 @@ Exported Functions:
 - `crater_curvature_radius`: Calculate the curvature radius of a concave spherical segment
 - `concave_spherical_segment`: Generate crater geometry as a concave spherical segment
 - `create_shape_crater`: Create a ShapeModel of a concave spherical crater
+- `projected_area`: Area of a surface patch projected along the local z-axis
+- `rms_slope`: RMS slope of a surface patch (Rozitis & Green 2011, Eq. 36)
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -237,3 +239,107 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 # TODO: Functions to generate fractal surface will be implmented.
+
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                      Roughness statistics                         ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    projected_area(shape::ShapeModel) -> A_proj
+
+Compute the area of the shape projected onto the local xy-plane (i.e., along
+the local z-axis, which corresponds to the mean surface normal for a roughness
+patch):
+
+```math
+A_{\\mathrm{proj}} = \\sum_j a_j \\, (\\hat{n}_j \\cdot \\hat{z})^+
+```
+
+where ``a_j`` is the area of face ``j``, ``\\hat{n}_j`` its unit normal, and
+``(x)^+ = \\max(x, 0)`` so that faces tilted away from the z-axis (overhangs)
+do not contribute.
+
+For a roughness patch built on the unit square ``[0,1] \\times [0,1]`` (e.g.,
+[`create_shape_crater`](@ref)), the projected area equals 1 regardless of the
+roughness, since the z-projection of the surface covers the unit square exactly.
+This quantity is used to normalize energy fluxes of a representative roughness
+patch in thermophysical modeling.
+
+# Arguments
+- `shape::ShapeModel`: Shape model of a surface patch
+
+# Returns
+- `A_proj::Float64`: Projected area along the local z-axis
+
+See also: [`rms_slope`](@ref)
+"""
+function projected_area(shape::ShapeModel)
+    A_proj = 0.0
+    for (n̂, a) in zip(shape.face_normals, shape.face_areas)
+        A_proj += a * max(n̂[3], 0.0)
+    end
+    A_proj
+end
+
+"""
+    rms_slope(shape::ShapeModel) -> θ_RMS
+
+Compute the root-mean-square (RMS) slope of a surface patch, following the
+standard definition in thermal-infrared beaming studies
+(Spencer, 1990; Rozitis & Green, 2011, Eq. 36):
+
+```math
+\\theta_{\\mathrm{RMS}} = \\sqrt{\\frac{\\sum_j \\theta_j^2 \\, a_j \\cos\\theta_j}{\\sum_j a_j \\cos\\theta_j}},
+\\qquad \\theta_j = \\arccos(\\hat{n}_j \\cdot \\hat{z})
+```
+
+where ``\\theta_j`` is the slope angle of face ``j`` measured from the local
+z-axis, ``a_j`` its area, and the weight ``a_j \\cos\\theta_j`` is the projected
+(z-projected) area of the face. Faces tilted away from the z-axis
+(``\\cos\\theta_j \\le 0``) are excluded.
+
+# Arguments
+- `shape::ShapeModel`: Shape model of a surface patch
+
+# Returns
+- `θ_RMS::Float64`: RMS slope in radians (use `rad2deg` for degrees)
+
+# Notes
+- The statistic is taken over the **entire patch, including flat portions**.
+  For a crater patch built on the unit square (e.g., [`create_shape_crater`](@ref)),
+  the flat apron contributes zero slope but full weight, so the roughness
+  fraction ``\\sqrt{f_R}`` of Rozitis & Green (2011, Eq. 37) is automatically
+  included. To get the RMS slope of the cratered part alone, divide by the
+  square root of the projected areal coverage: `rms_slope(shape) / √(π * r^2)`
+  for a crater of normalized radius `r` (approximate on a discrete grid, where
+  the rim discretization makes the actual coverage slightly larger than `π * r^2`).
+- This is **not** Hapke's mean slope angle ``\\bar{\\theta}``, which uses a
+  different (tangent-based) definition.
+
+# References
+- Spencer, J. R. (1990), Icarus 83, 27
+- Rozitis, B. & Green, S. F. (2011), MNRAS 415, 2042, Eqs. (36)–(37)
+
+# Example
+```julia
+crater = create_shape_crater(0.4, 0.4; Nx=64, Ny=64)  # hemispherical crater
+rad2deg(rms_slope(crater))  # ≈ 36.5° (whole patch, flat apron included)
+```
+
+See also: [`projected_area`](@ref)
+"""
+function rms_slope(shape::ShapeModel)
+    num = 0.0
+    den = 0.0
+    for (n̂, a) in zip(shape.face_normals, shape.face_areas)
+        cosθ = clamp(n̂[3], -1.0, 1.0)
+        cosθ ≤ 0 && continue
+        θ = acos(cosθ)
+        w = a * cosθ
+        num += θ^2 * w
+        den += w
+    end
+    den == 0 && return 0.0
+    √(num / den)
+end

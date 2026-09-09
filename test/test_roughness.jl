@@ -5,6 +5,7 @@ Tests for surface roughness geometry functions:
 - crater_curvature_radius: curvature radius formula
 - concave_spherical_segment: z-depth at a point and full grid generation
 - create_shape_crater: ShapeModel construction from crater geometry
+- projected_area, rms_slope: roughness statistics (Rozitis & Green 2011)
 =#
 
 @testset "Roughness" begin
@@ -86,5 +87,50 @@ Tests for surface roughness geometry functions:
             crater = create_shape_crater(0.4, 0.1; as_hierarchical=true)
             @test crater isa HierarchicalShapeModel
         end
+    end
+
+    # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                      Roughness statistics                         ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
+
+    @testset "projected_area" begin
+        # Flat unit square: projected area == 1
+        xs = LinRange(0, 1, 17)
+        ys = LinRange(0, 1, 17)
+        zs = zeros(17, 17)
+        flat = load_shape_grid(xs, ys, zs)
+        @test projected_area(flat) ≈ 1.0
+
+        # Crater patch on the unit square: z-projection still covers the unit
+        # square exactly, so the projected area is unchanged.
+        crater = create_shape_crater(0.4, 0.1; Nx=64, Ny=64)
+        @test projected_area(crater) ≈ 1.0
+    end
+
+    @testset "rms_slope" begin
+        # Flat surface has zero RMS slope
+        xs = LinRange(0, 1, 17)
+        ys = LinRange(0, 1, 17)
+        zs = zeros(17, 17)
+        flat = load_shape_grid(xs, ys, zs)
+        @test rms_slope(flat) ≈ 0.0 atol=1e-12
+
+        # Shallow crater (r=0.4, h=0.1)
+        crater_shallow = create_shape_crater(0.4, 0.1; Nx=64, Ny=64)
+        @test rad2deg(rms_slope(crater_shallow)) ≈ 13.7 atol=0.2
+
+        # Hemispherical crater (r=0.4, h=0.4), whole patch including flat apron
+        crater_hemi = create_shape_crater(0.4, 0.4; Nx=64, Ny=64)
+        θ_patch = rms_slope(crater_hemi)
+        @test rad2deg(θ_patch) ≈ 36.5 atol=0.2
+
+        # Cratered part alone: divide by √(projected areal coverage of the
+        # sloped part). Analytically the coverage is π r², but on a discrete
+        # grid the rim discretization makes it slightly larger, so compute it
+        # from the flat faces. Compare with Rozitis & Green (2011), Table 1:
+        # 90° crater → 49.1–50.0°.
+        A_flat = sum(a for (n̂, a) in zip(crater_hemi.face_normals, crater_hemi.face_areas) if n̂[3] > 1 - 1e-12)
+        θ_crater = θ_patch / √(1 - A_flat)
+        @test rad2deg(θ_crater) ≈ 50.3 atol=0.3
     end
 end

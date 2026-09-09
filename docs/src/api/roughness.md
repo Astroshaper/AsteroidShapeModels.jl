@@ -35,3 +35,10 @@ create_shape_crater
 crater_curvature_radius
 concave_spherical_segment
 ```
+
+## Roughness Statistics
+
+```@docs
+projected_area
+rms_slope
+```
