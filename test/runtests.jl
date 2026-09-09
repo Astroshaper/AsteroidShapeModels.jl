@@ -66,8 +66,8 @@ include("test_helpers.jl")
     # Face max elevations optimization tests
     include("test_face_max_elevations.jl")
     
-    # Hierarchical shape model tests
-    include("test_hierarchical_shape_model.jl")
+    # Surface roughness management tests
+    include("test_surface_roughness.jl")
 
     # Roughness geometry tests
     include("test_roughness.jl")

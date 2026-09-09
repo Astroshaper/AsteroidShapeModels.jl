@@ -5,8 +5,8 @@ Defines the core shape model types for representing asteroid shapes.
 
 Type hierarchy:
 - `AbstractShapeModel` : Abstract base type for all shape models
-    - `ShapeModel`             : Concrete type for polyhedral shapes (triangular mesh)
-    - `HierarchicalShapeModel` : Concrete type for multi-scale shape with surface roughness models (defined in hierarchical_shape_model.jl)
+    - `ShapeModel` : Concrete type for polyhedral shapes (triangular mesh),
+                     optionally carrying surface roughness models (`SurfaceRoughness`)
 
 The ShapeModel encapsulates:
 - Vertex positions (nodes)
@@ -15,7 +15,22 @@ The ShapeModel encapsulates:
 - (Optional) Face-to-face visibility graph for thermophysical simulations
 - (Optional) Maximum elevation angles of surrounding terrain for each face
 - (Optional) Bounding volume hierarchy (BVH) for accelerated ray tracing
+- (Optional) Surface roughness models attached to faces (`SurfaceRoughness`)
 =#
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                          Constants                                ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+# Constants for transformations
+const IDENTITY_MATRIX_3x3 = SMatrix{3, 3, Float64}(I)
+const ZERO_VECTOR_3 = SVector{3, Float64}(0, 0, 0)
+const IDENTITY_AFFINE_MAP = AffineMap(IDENTITY_MATRIX_3x3, ZERO_VECTOR_3)
+
+const LOCAL_CENTER_OFFSET = SVector{3, Float64}(0.5, 0.5, 0.0)
+
+# Type alias for 3D affine transformations
+const AFFINE_MAP_TYPE = AffineMap{SMatrix{3, 3, Float64, 9}, SVector{3, Float64}}
 
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                      Abstract Type Definition                     ║
@@ -27,14 +42,81 @@ The ShapeModel encapsulates:
 Abstract base type for all shape models in AsteroidShapeModels.jl.
 
 Concrete subtypes include:
-- `ShapeModel`             : Standard polyhedral shape model using triangular mesh representation
-- `HierarchicalShapeModel` : Multi-scale shape model with localized surface roughness models
+- `ShapeModel` : Standard polyhedral shape model using triangular mesh representation
 """
 abstract type AbstractShapeModel end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
-# ║                        Type Definition                            ║
+# ║                        Type Definitions                           ║
 # ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    SurfaceRoughness{Sh}
+
+Container for surface roughness models attached to the faces of a shape model.
+Stored in the `roughness` field of a [`ShapeModel`](@ref) (as `SurfaceRoughness{ShapeModel}`).
+
+# Fields
+- `face_roughness_indices`    : Mapping from face index to roughness model index (0 = no roughness)
+- `face_roughness_transforms` : Affine transformations (global to local) for each face (identity = no roughness)
+- `roughness_models`          : Vector of shape models representing surface roughness (shared across faces)
+
+# Description
+This structure allows representing asteroid surfaces at two scales:
+1. **Global scale**: The overall asteroid shape (the `ShapeModel` itself)
+2. **Local scale**: Surface roughness models attached to individual faces (`roughness_models`)
+
+Each face can have at most one roughness model attached to it.
+The `face_roughness_indices` array provides O(1) access to roughness models for any face.
+Roughness models themselves must be smooth `ShapeModel`s (their `roughness` field must be
+`nothing`); nested roughness is not supported.
+
+# Coordinate System Convention
+
+The local coordinate system for each roughness model follows geographic conventions:
+
+1. **Origin**: Face center, corresponding to (0.5, 0.5) in the roughness model's UV coordinates
+2. **Z-axis**: Face normal (outward), representing "up" or elevation
+3. **Y-axis**: Points towards north (projected onto the face plane)
+4. **X-axis**: Points east (completing a right-handed coordinate system)
+
+This convention ensures that:
+- Roughness models have consistent north-aligned orientation across the surface
+- UV coordinates [0,1]×[0,1] map naturally to local coordinates with (0.5, 0.5) at origin
+- Height/elevation data in the roughness model corresponds to the local Z direction
+- Solar azimuth angles can be computed intuitively (north = 0°, east = 90°)
+
+# Implementation Notes
+
+The `face_roughness_transforms` field stores complete `AffineMap` transformations for each face,
+providing efficient O(1) access to coordinate transformations. Custom transformations can be
+provided via the `transform` parameter in `add_roughness_models!`, or they will be automatically
+computed to align with the face's local coordinate system.
+
+The scale factor for a face can be recovered on demand from the transform's linear part:
+`scale = 1 / norm(transform.linear[:, 1])`, since `transform.linear = (1/scale) * R'`.
+
+See also: [`ShapeModel`](@ref), [`has_roughness`](@ref), [`add_roughness_models!`](@ref)
+"""
+struct SurfaceRoughness{Sh}
+    face_roughness_indices    ::Vector{Int}
+    face_roughness_transforms ::Vector{AFFINE_MAP_TYPE}
+    roughness_models          ::Vector{Sh}
+end
+
+"""
+    SurfaceRoughness{Sh}(nfaces::Integer) where Sh
+
+Construct an empty `SurfaceRoughness` for a shape with `nfaces` faces:
+all indices are 0 (no roughness) and all transforms are the identity.
+"""
+function SurfaceRoughness{Sh}(nfaces::Integer) where Sh
+    return SurfaceRoughness{Sh}(
+        zeros(Int, nfaces),
+        [IDENTITY_AFFINE_MAP for _ in 1:nfaces],
+        Sh[],
+    )
+end
 
 """
     ShapeModel <: AbstractShapeModel
@@ -50,8 +132,9 @@ A polyhedral shape model of an asteroid using triangular mesh representation.
 - `face_visibility_graph` : `FaceVisibilityGraph` for efficient visibility queries
 - `face_max_elevations`   : Maximum elevation angle of the surrounding terrain from each face [rad]
 - `bvh`                   : Bounding Volume Hierarchy for accelerated ray tracing
+- `roughness`             : `SurfaceRoughness` with surface roughness models attached to faces (`nothing` = smooth surface)
 
-See also: [`AbstractShapeModel`](@ref), [`HierarchicalShapeModel`](@ref)
+See also: [`AbstractShapeModel`](@ref), [`SurfaceRoughness`](@ref)
 """
 mutable struct ShapeModel <: AbstractShapeModel
     nodes        ::Vector{SVector{3, Float64}}
@@ -64,6 +147,7 @@ mutable struct ShapeModel <: AbstractShapeModel
     face_visibility_graph ::Union{Nothing, FaceVisibilityGraph}
     face_max_elevations   ::Union{Nothing, Vector{Float64}}
     bvh                   ::Union{Nothing, ImplicitBVH.BVH}
+    roughness             ::Union{Nothing, SurfaceRoughness{ShapeModel}}
 end
 
 """
@@ -106,9 +190,9 @@ function ShapeModel(
     face_centers = [face_center(nodes[face]) for face in faces]
     face_normals = [face_normal(nodes[face]) for face in faces]
     face_areas   = [face_area(nodes[face])   for face in faces]
-    
-    # Initialize ShapeModel without face_visibilitygraph, face_max_elevations, or bvh
-    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, nothing, nothing, nothing)
+
+    # Initialize ShapeModel without face_visibility_graph, face_max_elevations, bvh, or roughness
+    shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, nothing, nothing, nothing, nothing)
     
     # Build face-to-face visibility graph and face_max_elevations if requested
     if with_face_visibility
@@ -131,6 +215,7 @@ Displays:
 - Number of nodes and faces
 - Volume and equivalent radius
 - Maximum and minimum radii
+- Surface roughness (number of models and faces with roughness), if present
 """
 function Base.show(io::IO, shape::ShapeModel)
     print(io, "Shape model\n")
@@ -141,6 +226,10 @@ function Base.show(io::IO, shape::ShapeModel)
     print(io, "Equivalent radius : $(equivalent_radius(shape))\n")
     print(io, "Maximum radius    : $(maximum_radius(shape))\n")
     print(io, "Minimum radius    : $(minimum_radius(shape))\n")
+    if has_roughness(shape)
+        nfaces_with_roughness = count(!=(0), shape.roughness.face_roughness_indices)
+        print(io, "Surface roughness : $(length(shape.roughness.roughness_models)) model(s) on $(nfaces_with_roughness) face(s)\n")
+    end
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗

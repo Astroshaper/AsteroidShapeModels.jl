@@ -24,8 +24,7 @@ Exported Functions:
         scale = 1.0,
         with_face_visibility = false,
         with_bvh = false,
-        as_hierarchical = false,
-    ) -> Union{ShapeModel, HierarchicalShapeModel}
+    ) -> ShapeModel
 
 Load a shape model from a Wavefront OBJ file.
 
@@ -36,10 +35,9 @@ Load a shape model from a Wavefront OBJ file.
 - `scale::Real=1.0`                  : Scale factor for node coordinates (e.g., 1000 to convert km to m)
 - `with_face_visibility::Bool=false` : Whether to build face-to-face visibility graph for illumination and thermophysical modeling
 - `with_bvh::Bool=false`             : Whether to build BVH for ray tracing (required for `intersect_ray_shape` and `apply_eclipse_shadowing!`)
-- `as_hierarchical::Bool=false`      : Whether to return a `HierarchicalShapeModel` instead of a `ShapeModel`
 
 # Returns
-- `ShapeModel` or `HierarchicalShapeModel`: Loaded shape model with computed geometric properties
+- `ShapeModel`: Loaded shape model with computed geometric properties
 
 # Examples
 ```julia
@@ -51,27 +49,19 @@ shape = load_shape_obj("path/to/shape_km.obj"; scale=1000)
 
 # Load with face visibility graph and BVH construction
 shape = load_shape_obj("path/to/shape_km.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
-
-# Load as hierarchical shape model for surface roughness modeling
-hier_shape = load_shape_obj("path/to/shape_km.obj"; scale=1000, with_face_visibility=true, with_bvh=true, as_hierarchical=true)
 ```
 
-See also: [`load_shape_grid`](@ref), [`load_obj`](@ref), [`HierarchicalShapeModel`](@ref)
+See also: [`load_shape_grid`](@ref), [`load_obj`](@ref)
 """
 function load_shape_obj(shapepath;
     scale = 1.0,
     with_face_visibility = false,
     with_bvh = false,
-    as_hierarchical = false,
-)::Union{ShapeModel, HierarchicalShapeModel}
-    
+)::ShapeModel
+
     nodes, faces = load_obj(shapepath; scale)
-    
-    if as_hierarchical
-        return HierarchicalShapeModel(nodes, faces; with_face_visibility, with_bvh)
-    else
-        return ShapeModel(nodes, faces; with_face_visibility, with_bvh)
-    end
+
+    return ShapeModel(nodes, faces; with_face_visibility, with_bvh)
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -142,8 +132,7 @@ end
         scale = 1.0,
         with_face_visibility = false,
         with_bvh = false,
-        as_hierarchical = false,
-    ) -> Union{ShapeModel, HierarchicalShapeModel}
+    ) -> ShapeModel
 
 Convert a regular grid (x, y) with z-values to a shape model.
 
@@ -156,10 +145,9 @@ Convert a regular grid (x, y) with z-values to a shape model.
 - `scale::Real=1.0`                  : Scale factor to apply to all coordinates
 - `with_face_visibility::Bool=false` : Whether to build face-to-face visibility graph for illumination and thermophysical modeling
 - `with_bvh::Bool=false`             : Whether to build BVH for ray tracing (required for `intersect_ray_shape` and `apply_eclipse_shadowing!`)
-- `as_hierarchical::Bool=false`      : Whether to return a `HierarchicalShapeModel` instead of a `ShapeModel`
 
 # Returns
-- `ShapeModel` or `HierarchicalShapeModel`: Shape model with computed geometric properties
+- `ShapeModel`: Shape model with computed geometric properties
 
 # Examples
 ```julia
@@ -174,9 +162,6 @@ shape = load_shape_grid(xs, ys, zs; scale=1000, with_face_visibility=true)
 
 # With BVH acceleration (experimental)
 shape = load_shape_grid(xs, ys, zs; with_bvh=true)
-
-# As hierarchical shape model
-hier_shape = load_shape_grid(xs, ys, zs; scale=1000, as_hierarchical=true)
 ```
 
 See also: [`load_shape_obj`](@ref), [`grid_to_faces`](@ref)
@@ -185,17 +170,12 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
     scale = 1.0,
     with_face_visibility = false,
     with_bvh = false,
-    as_hierarchical = false,
-)::Union{ShapeModel, HierarchicalShapeModel}
-    
+)::ShapeModel
+
     nodes, faces = grid_to_faces(xs, ys, zs)
     nodes .*= scale
-    
-    if as_hierarchical
-        return HierarchicalShapeModel(nodes, faces; with_face_visibility, with_bvh)
-    else
-        return ShapeModel(nodes, faces; with_face_visibility, with_bvh)
-    end
+
+    return ShapeModel(nodes, faces; with_face_visibility, with_bvh)
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗

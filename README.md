@@ -33,15 +33,15 @@ For future development plans, see our [Development Roadmap](ROADMAP.md).
   - Pseudo-convex model for fast computation (only face orientation check)
   - Self-shadowing model for accurate shading (considers occlusions from other faces)
   - Mutual shadowing (eclipse) detection for a binary asteroid
-- **Hierarchical Shape Models**: Multi-scale surface representation with configurable surface roughness
-  - `HierarchicalShapeModel` type that adds roughness models to a base shape
+- **Surface Roughness Modeling**: Multi-scale surface representation with configurable surface roughness
+  - Attach roughness models (e.g., craters) to faces of a `ShapeModel` via `add_roughness_models!`
   - Coordinate transformation functions between global and local face coordinate systems
   - Memory-efficient design allowing multiple faces to share the same roughness model
 
 ## What's New in v0.5.1
 
-- **Crater Shape Generation**: New `create_shape_crater` function creates a crater `ShapeModel` directly from geometry parameters, ready to use as roughness models in `HierarchicalShapeModel` (v0.5.1)
-- **Hierarchical Shape Models**: New `HierarchicalShapeModel` type for multi-scale surface representation with surface roughness (v0.5.0)
+- **Crater Shape Generation**: New `create_shape_crater` function creates a crater `ShapeModel` directly from geometry parameters, ready to use as a roughness model (v0.5.1)
+- **Surface Roughness Modeling**: Multi-scale surface representation with surface roughness models attached to faces (v0.5.0; unified into `ShapeModel` in v0.6.0)
 - **Coordinate Transformations**: New functions for transforming points and vectors between global and local face coordinate systems (`transform_point_global_to_local`, `transform_physical_vector_local_to_global`, etc.) (v0.5.0)
 - **API Cleanup**: Removed deprecated `apply_eclipse_shadowing!` signature with `t₁₂` parameter; removed `use_elevation_optimization` parameter (v0.5.0)
 

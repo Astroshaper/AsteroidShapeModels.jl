@@ -9,8 +9,8 @@ visibility analysis, and surface roughness modeling.
 
 # Main Types
 - `AbstractShapeModel`: Abstract base type for all shape models
-- `ShapeModel`: Core data structure for polyhedral shapes
-- `HierarchicalShapeModel`: Multi-scale shape model with surface roughness
+- `ShapeModel`: Core data structure for polyhedral shapes, optionally carrying surface roughness
+- `SurfaceRoughness`: Surface roughness models attached to faces of a `ShapeModel`
 - `Ray`: Ray for ray casting operations
 - `FaceVisibilityGraph`: CSR-style data structure for face-to-face visibility
 
@@ -55,11 +55,10 @@ export Ray, Sphere
 export RayTriangleIntersectionResult, RayShapeIntersectionResult, RaySphereIntersectionResult
 
 include("shape_model.jl")
-export AbstractShapeModel, ShapeModel, build_bvh!
+export AbstractShapeModel, ShapeModel, SurfaceRoughness, build_bvh!
 
-include("hierarchical_shape_model.jl")
-export HierarchicalShapeModel
-export has_roughness_model, get_roughness_model, get_roughness_model_scale, get_roughness_model_transform
+include("surface_roughness.jl")
+export has_roughness, get_roughness_model, get_roughness_model_scale, get_roughness_model_transform
 export clear_roughness_models!, add_roughness_models!
 export transform_point_global_to_local, transform_point_local_to_global
 export transform_geometric_vector_global_to_local, transform_geometric_vector_local_to_global

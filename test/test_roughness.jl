@@ -83,9 +83,10 @@ Tests for surface roughness geometry functions:
             @test crater.face_visibility_graph !== nothing
         end
 
-        @testset "as_hierarchical" begin
-            crater = create_shape_crater(0.4, 0.1; as_hierarchical=true)
-            @test crater isa HierarchicalShapeModel
+        @testset "No roughness by default" begin
+            crater = create_shape_crater(0.4, 0.1)
+            @test crater.roughness === nothing
+            @test has_roughness(crater) == false
         end
     end
 

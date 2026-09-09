@@ -9,7 +9,7 @@ CurrentModule = AsteroidShapeModels
 ```@docs
 AbstractShapeModel
 ShapeModel
-HierarchicalShapeModel
+SurfaceRoughness
 Ray
 Sphere
 ```
