@@ -35,33 +35,27 @@ allowing custom positioning and orientation of roughness models.
 
 """
     has_roughness(shape::ShapeModel) -> Bool
+    has_roughness(shape::ShapeModel, face_idx::Int) -> Bool
 
-Check if the shape model has any surface roughness data (i.e., `shape.roughness !== nothing`).
+Check for surface roughness on the shape model.
+
+- `has_roughness(shape)` checks if the shape carries any surface roughness data
+  (i.e., `shape.roughness !== nothing`).
+- `has_roughness(shape, face_idx)` checks if the specified face has an associated
+  roughness model (always `false` if the shape has no roughness data at all).
 
 # Arguments
 - `shape::ShapeModel` : The shape model to check
+- `face_idx::Int`     : Index of the face to check (optional)
 
 # Returns
-- `Bool` : `true` if the shape carries a `SurfaceRoughness` struct, `false` for a smooth surface
+- `Bool` : `true` if the shape (or the specified face) has surface roughness, `false` otherwise
 
-See also: [`has_roughness_model`](@ref), [`add_roughness_models!`](@ref)
+See also: [`add_roughness_models!`](@ref), [`get_roughness_model`](@ref)
 """
 has_roughness(shape::ShapeModel)::Bool = !isnothing(shape.roughness)
 
-"""
-    has_roughness_model(shape::ShapeModel, face_idx::Int) -> Bool
-
-Check if a face has an associated roughness model.
-
-# Arguments
-- `shape::ShapeModel` : The shape model
-- `face_idx::Int`     : Index of the face to check
-
-# Returns
-- `Bool` : `true` if the face has an associated roughness model, `false` otherwise
-           (always `false` if the shape has no roughness data at all)
-"""
-function has_roughness_model(shape::ShapeModel, face_idx::Int)::Bool
+function has_roughness(shape::ShapeModel, face_idx::Int)::Bool
     isnothing(shape.roughness) && return false
     return shape.roughness.face_roughness_indices[face_idx] != 0
 end
@@ -79,7 +73,7 @@ Get the roughness model associated with a specific face.
 - `Union{Nothing, ShapeModel}` : The roughness model for the specified face, or `nothing` if no roughness model is associated
 """
 function get_roughness_model(shape::ShapeModel, face_idx::Int)::Union{Nothing, ShapeModel}
-    !has_roughness_model(shape, face_idx) && return nothing
+    !has_roughness(shape, face_idx) && return nothing
     roughness_idx = shape.roughness.face_roughness_indices[face_idx]
     return shape.roughness.roughness_models[roughness_idx]
 end
@@ -477,11 +471,11 @@ The UV coordinates [0,1]×[0,1] are centered at (0.5, 0.5).
 
 !!! warning "Requires roughness model"
     This function requires the face to have an assigned roughness model.
-    Always check with `has_roughness_model(shape, face_idx)` before calling.
+    Always check with `has_roughness(shape, face_idx)` before calling.
 
 # Usage
 ```julia
-if has_roughness_model(shape, face_idx)
+if has_roughness(shape, face_idx)
     p_local = transform_point_global_to_local(shape, face_idx, p_global)
 end
 ```
@@ -491,7 +485,7 @@ function transform_point_global_to_local(
     face_idx ::Int,
     p_global ::StaticVector{3}
 )::SVector{3, Float64}
-    !has_roughness_model(shape, face_idx) &&
+    !has_roughness(shape, face_idx) &&
         throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform to local coordinates."))
     transform = get_roughness_model_transform(shape, face_idx)
     return transform(p_global)
@@ -523,11 +517,11 @@ Inverse transformation of `transform_point_global_to_local`.
 
 !!! warning "Requires roughness model"
     This function requires the face to have an assigned roughness model.
-    Always check with `has_roughness_model(shape, face_idx)` before calling.
+    Always check with `has_roughness(shape, face_idx)` before calling.
 
 # Usage
 ```julia
-if has_roughness_model(shape, face_idx)
+if has_roughness(shape, face_idx)
     p_global = transform_point_local_to_global(shape, face_idx, p_local)
 end
 ```
@@ -537,7 +531,7 @@ function transform_point_local_to_global(
     face_idx ::Int,
     p_local  ::StaticVector{3}
 )::SVector{3, Float64}
-    !has_roughness_model(shape, face_idx) &&
+    !has_roughness(shape, face_idx) &&
         throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform from local coordinates."))
     transform = get_roughness_model_transform(shape, face_idx)
     return inv(transform)(p_local)
@@ -575,11 +569,11 @@ use `transform_physical_vector_global_to_local` instead.
 
 !!! warning "Requires roughness model"
     This function requires the face to have an assigned roughness model.
-    Always check with `has_roughness_model(shape, face_idx)` before calling.
+    Always check with `has_roughness(shape, face_idx)` before calling.
 
 # Usage
 ```julia
-if has_roughness_model(shape, face_idx)
+if has_roughness(shape, face_idx)
     v_local = transform_geometric_vector_global_to_local(shape, face_idx, v_global)
 end
 ```
@@ -589,7 +583,7 @@ function transform_geometric_vector_global_to_local(
     face_idx ::Int,
     v_global ::StaticVector{3}
 )::SVector{3, Float64}
-    !has_roughness_model(shape, face_idx) &&
+    !has_roughness(shape, face_idx) &&
         throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform to local coordinates."))
     transform = get_roughness_model_transform(shape, face_idx)
     return transform.linear * v_global
@@ -623,11 +617,11 @@ use `transform_physical_vector_local_to_global` instead.
 
 !!! warning "Requires roughness model"
     This function requires the face to have an assigned roughness model.
-    Always check with `has_roughness_model(shape, face_idx)` before calling.
+    Always check with `has_roughness(shape, face_idx)` before calling.
 
 # Usage
 ```julia
-if has_roughness_model(shape, face_idx)
+if has_roughness(shape, face_idx)
     v_global = transform_geometric_vector_local_to_global(shape, face_idx, v_local)
 end
 ```
@@ -637,7 +631,7 @@ function transform_geometric_vector_local_to_global(
     face_idx ::Int,
     v_local  ::StaticVector{3}
 )::SVector{3, Float64}
-    !has_roughness_model(shape, face_idx) &&
+    !has_roughness(shape, face_idx) &&
         throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform from local coordinates."))
     transform = get_roughness_model_transform(shape, face_idx)
     return inv(transform.linear) * v_local
@@ -676,11 +670,11 @@ angular velocities, magnetic fields). For geometric vectors use
 
 !!! warning "Requires roughness model"
     This function requires the face to have an assigned roughness model.
-    Always check with `has_roughness_model(shape, face_idx)` before calling.
+    Always check with `has_roughness(shape, face_idx)` before calling.
 
 # Usage
 ```julia
-if has_roughness_model(shape, face_idx)
+if has_roughness(shape, face_idx)
     v_local = transform_physical_vector_global_to_local(shape, face_idx, v_global)
 end
 ```
@@ -690,7 +684,7 @@ function transform_physical_vector_global_to_local(
     face_idx ::Int,
     v_global ::StaticVector{3}
 )::SVector{3, Float64}
-    !has_roughness_model(shape, face_idx) &&
+    !has_roughness(shape, face_idx) &&
         throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform to local coordinates."))
     transform = get_roughness_model_transform(shape, face_idx)
     # transform.linear = (1/scale) * R'; multiply by scale to recover pure rotation R'
@@ -728,11 +722,11 @@ angular velocities, magnetic fields). For geometric vectors use
 
 !!! warning "Requires roughness model"
     This function requires the face to have an assigned roughness model.
-    Always check with `has_roughness_model(shape, face_idx)` before calling.
+    Always check with `has_roughness(shape, face_idx)` before calling.
 
 # Usage
 ```julia
-if has_roughness_model(shape, face_idx)
+if has_roughness(shape, face_idx)
     v_global = transform_physical_vector_local_to_global(shape, face_idx, v_local)
 end
 ```
@@ -742,7 +736,7 @@ function transform_physical_vector_local_to_global(
     face_idx ::Int,
     v_local  ::StaticVector{3}
 )::SVector{3, Float64}
-    !has_roughness_model(shape, face_idx) &&
+    !has_roughness(shape, face_idx) &&
         throw(ArgumentError("Face $face_idx has no roughness model. Cannot transform from local coordinates."))
     transform = get_roughness_model_transform(shape, face_idx)
     # transform.linear = (1/scale) * R'; multiply by scale to recover pure rotation R'

@@ -31,7 +31,8 @@ v0.6.0 unifies `HierarchicalShapeModel` into `ShapeModel`: surface roughness is 
 | `hier.global_shape` | The `shape` itself | Field no longer exists |
 | `hier.face_roughness_indices` / `hier.face_roughness_transforms` / `hier.roughness_models` | `shape.roughness.face_roughness_indices` etc. | `shape.roughness` may be `nothing` |
 | `add_roughness_models!(hier, ...)` / `clear_roughness_models!(hier, ...)` | First argument is a `ShapeModel` | Names unchanged; first `add_roughness_models!` call constructs `shape.roughness` |
-| `has_roughness_model(hier, i)` / `get_roughness_model(hier, i)` / `get_roughness_model_scale(hier, i)` / `get_roughness_model_transform(hier, i)` | First argument is a `ShapeModel` | If `shape.roughness === nothing`: `false` / `nothing` / error / error |
+| `has_roughness_model(hier, i)` | `has_roughness(shape, i)` | Renamed; `false` if `shape.roughness === nothing` |
+| `get_roughness_model(hier, i)` / `get_roughness_model_scale(hier, i)` / `get_roughness_model_transform(hier, i)` | First argument is a `ShapeModel` | If `shape.roughness === nothing`: `nothing` / error / error |
 | — | **New**: `has_roughness(shape)::Bool` | Whole-shape roughness check |
 | `transform_point_*` / `transform_geometric_vector_*` / `transform_physical_vector_*` | First argument is a `ShapeModel` | Names unchanged |
 | Delegation methods (`build_face_visibility_graph!(hier)` etc.) | Not needed; call the `ShapeModel` methods directly | Removed |

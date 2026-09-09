@@ -58,7 +58,7 @@ include("shape_model.jl")
 export AbstractShapeModel, ShapeModel, SurfaceRoughness, build_bvh!
 
 include("surface_roughness.jl")
-export has_roughness, has_roughness_model, get_roughness_model, get_roughness_model_scale, get_roughness_model_transform
+export has_roughness, get_roughness_model, get_roughness_model_scale, get_roughness_model_transform
 export clear_roughness_models!, add_roughness_models!
 export transform_point_global_to_local, transform_point_local_to_global
 export transform_geometric_vector_global_to_local, transform_geometric_vector_local_to_global

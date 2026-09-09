@@ -8,7 +8,6 @@ CurrentModule = AsteroidShapeModels
 
 ```@docs
 has_roughness
-has_roughness_model
 get_roughness_model
 get_roughness_model_scale
 get_roughness_model_transform

@@ -24,7 +24,7 @@ Tests cover:
         # A freshly constructed ShapeModel has no roughness data
         @test shape.roughness === nothing
         @test has_roughness(shape) == false
-        @test all(!has_roughness_model(shape, i) for i in 1:4)
+        @test all(!has_roughness(shape, i) for i in 1:4)
         @test get_roughness_model(shape, 1) === nothing
 
         # Scale/transform queries require roughness data
@@ -59,8 +59,8 @@ Tests cover:
             @test length(shape.roughness.face_roughness_transforms) == 4
             @test length(shape.roughness.roughness_models) == 1
 
-            @test has_roughness_model(shape, 1) == true
-            @test has_roughness_model(shape, 2) == false
+            @test has_roughness(shape, 1) == true
+            @test has_roughness(shape, 2) == false
             @test get_roughness_model(shape, 1) === roughness_model
             @test get_roughness_model(shape, 2) === nothing
             @test get_roughness_model_scale(shape, 1) ≈ 0.1
@@ -74,8 +74,8 @@ Tests cover:
             add_roughness_models!(shape, roughness_model, 2, scale=0.05)
             add_roughness_models!(shape, roughness_model, 3, scale=0.05)
 
-            @test has_roughness_model(shape, 2) == true
-            @test has_roughness_model(shape, 3) == true
+            @test has_roughness(shape, 2) == true
+            @test has_roughness(shape, 3) == true
             @test get_roughness_model_scale(shape, 2) ≈ 0.05
             @test get_roughness_model_scale(shape, 3) ≈ 0.05
 
@@ -86,14 +86,14 @@ Tests cover:
         @testset "clear_roughness_models!" begin
             # Clear specific face
             clear_roughness_models!(shape, 1)
-            @test has_roughness_model(shape, 1) == false
-            @test has_roughness_model(shape, 2) == true
+            @test has_roughness(shape, 1) == false
+            @test has_roughness(shape, 2) == true
 
             # Clear all faces; roughness data is reset to nothing
             clear_roughness_models!(shape)
             @test shape.roughness === nothing
             @test has_roughness(shape) == false
-            @test all(!has_roughness_model(shape, i) for i in 1:4)
+            @test all(!has_roughness(shape, i) for i in 1:4)
         end
 
         @testset "clear_roughness_models! - face-wise clearing resets to nothing" begin
@@ -116,7 +116,7 @@ Tests cover:
             add_roughness_models!(shape, roughness_model; scale=0.1)
 
             @test has_roughness(shape) == true
-            @test all(has_roughness_model(shape, i) for i in 1:4)
+            @test all(has_roughness(shape, i) for i in 1:4)
             @test all(get_roughness_model(shape, i) === roughness_model for i in 1:4)
             @test length(shape.roughness.roughness_models) == 1
 
