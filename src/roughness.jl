@@ -153,6 +153,7 @@ end
         scale = 1.0,
         with_face_visibility = false,
         with_bvh = false,
+        lattice = :square,
     ) -> ShapeModel
 
 Create a shape model representing a concave spherical crater.
@@ -172,6 +173,11 @@ This is a convenience wrapper that combines an internal crater-geometry helper
 - `scale::Real=1.0`                  : Scale factor applied to all coordinates after grid generation
 - `with_face_visibility::Bool=false` : Whether to build face-to-face visibility graph
 - `with_bvh::Bool=false`             : Whether to build BVH for ray tracing
+- `lattice::Symbol=:square`          : Mesh of the patch. `:square` splits a regular `Nx × Ny` grid
+  into right isosceles triangles; `:staggered` uses the near-equilateral staggered lattice of
+  [`load_shape_lattice`](@ref), which avoids the directional bias of the regular grid. With
+  `:staggered` the resolution is set by `Nx` alone (the number of rows follows from the
+  near-equilateral condition) and `Ny` is ignored.
 
 # Returns
 - `ShapeModel`: Shape model with computed geometric properties (centers, normals, areas)
@@ -199,9 +205,17 @@ function create_shape_crater(r::Real, h::Real;
     scale::Real = 1.0,
     with_face_visibility::Bool = false,
     with_bvh::Bool = false,
+    lattice::Symbol = :square,
 )::ShapeModel
-    xs, ys, zs = concave_spherical_segment_grid(r, h; xc, yc, Nx, Ny)
-    load_shape_grid(xs, ys, zs; scale, with_face_visibility, with_bvh)
+    if lattice === :square
+        xs, ys, zs = concave_spherical_segment_grid(r, h; xc, yc, Nx, Ny)
+        return load_shape_grid(xs, ys, zs; scale, with_face_visibility, with_bvh)
+    elseif lattice === :staggered
+        return load_shape_lattice((x, y) -> concave_spherical_segment_depth(r, h, xc, yc, x, y), Nx;
+            scale, with_face_visibility, with_bvh)
+    else
+        throw(ArgumentError("lattice must be :square or :staggered, got :$lattice"))
+    end
 end
 
 

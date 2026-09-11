@@ -83,6 +83,18 @@ Tests for surface roughness geometry functions:
             @test crater.face_visibility_graph !== nothing
         end
 
+        @testset "Staggered lattice" begin
+            crater_sq = create_shape_crater(0.4, 0.1; Nx=64, Ny=64)
+            crater_st = create_shape_crater(0.4, 0.1; Nx=64, lattice=:staggered)
+
+            # Same crater statistics on either mesh (within discretization differences)
+            @test rad2deg(rms_slope(crater_st)) ≈ rad2deg(rms_slope(crater_sq)) rtol=0.02
+            @test projected_area(crater_st) ≈ 1.0
+            @test minimum(p[3] for p in crater_st.nodes) ≈ -0.1 atol=1e-3
+
+            @test_throws ArgumentError create_shape_crater(0.4, 0.1; lattice=:hexagonal)
+        end
+
         @testset "No roughness by default" begin
             crater = create_shape_crater(0.4, 0.1)
             @test crater.roughness === nothing

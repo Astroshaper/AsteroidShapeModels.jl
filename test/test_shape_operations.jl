@@ -229,6 +229,91 @@ This file tests fundamental shape operations and calculations:
     end
 
     # ╔═══════════════════════════════════════════════════════════════════╗
+    # ║                       Staggered Lattice                           ║
+    # ╚═══════════════════════════════════════════════════════════════════╝
+
+    @testset "load_shape_lattice" begin
+        @testset "Counts, area, and orientation" begin
+            for n in (5, 8, 13)
+                shape = load_shape_lattice(n)
+                m = max(1, round(Int, 2n / √3))
+                @test length(shape.faces) == m * (2n + 1)
+                @test sum(shape.face_areas) ≈ 1.0
+                @test projected_area(shape) ≈ 1.0
+                # Flat patch: all normals point in +z
+                @test all(n̂[3] > 0.99 for n̂ in shape.face_normals)
+            end
+        end
+
+        # Interior triangles (excluding the half-width right triangles at the left/right
+        # edges, identified by their vertical edge at x = 0 or x = 1) are near-equilateral.
+        interior_angles(shape) = [
+            acosd(clamp((v[mod1(i+1, 3)] - v[i]) ⋅ (v[mod1(i+2, 3)] - v[i]) /
+                        (norm(v[mod1(i+1, 3)] - v[i]) * norm(v[mod1(i+2, 3)] - v[i])), -1, 1))
+            for v in (shape.nodes[f] for f in shape.faces)
+            if count(p -> p[1] < 1e-12, v) < 2 && count(p -> p[1] > 1 - 1e-12, v) < 2
+            for i in 1:3
+        ]
+
+        @testset "Interior triangles are near-equilateral" begin
+            # n = 13: 2n/√3 ≈ 15.01 is nearly integral, so the rows are almost exactly
+            # equilateral; a generic n is bounded by the rounding of the row count.
+            θs = interior_angles(load_shape_lattice(13))
+            @test all(θ -> abs(θ - 60) < 1, θs)
+            θs8 = interior_angles(load_shape_lattice(8))
+            @test all(θ -> 55 < θ < 65, θs8)
+        end
+
+        @testset "Height function and scale" begin
+            f(x, y) = 0.1x + 0.2y
+            shape = load_shape_lattice(f, 8)
+            @test all(p -> p[3] ≈ f(p[1], p[2]), shape.nodes)
+
+            scaled = load_shape_lattice(f, 8; scale=100.0)
+            @test all(n2 ≈ n1 * 100.0 for (n1, n2) in zip(shape.nodes, scaled.nodes))
+        end
+
+        @testset "Invalid arguments" begin
+            @test_throws ArgumentError load_shape_lattice(0)
+        end
+    end
+
+    @testset "refine_midpoint" begin
+        shape = load_shape_lattice(13)
+        nodes2, faces2 = AsteroidShapeModels.refine_midpoint(shape.nodes, shape.faces)
+
+        @testset "Counts" begin
+            @test length(faces2) == 4 * length(shape.faces)
+            n_edges = length(Set(minmax(f[i], f[mod1(i+1, 3)]) for f in shape.faces, i in 1:3))
+            @test length(nodes2) == length(shape.nodes) + n_edges
+        end
+
+        refined = ShapeModel(nodes2, faces2)
+
+        @testset "Area and orientation preserved" begin
+            @test sum(refined.face_areas) ≈ sum(shape.face_areas)
+            # Flat patch stays flat with +z normals (orientation preserved)
+            @test all(n̂[3] > 0.99 for n̂ in refined.face_normals)
+        end
+
+        @testset "Structure preserved (interior triangles stay near-equilateral)" begin
+            # Children of the boundary half-triangles are right triangles too, so exclude
+            # the whole half-pitch band at the left/right edges rather than only faces
+            # with a vertical boundary edge.
+            band = 1 / (2 * 13) + 1e-12
+            θs = [
+                acosd(clamp((v[mod1(i+1, 3)] - v[i]) ⋅ (v[mod1(i+2, 3)] - v[i]) /
+                            (norm(v[mod1(i+1, 3)] - v[i]) * norm(v[mod1(i+2, 3)] - v[i])), -1, 1))
+                for v in (refined.nodes[f] for f in refined.faces)
+                if all(p -> band < p[1] < 1 - band, v)
+                for i in 1:3
+            ]
+            @test !isempty(θs)
+            @test all(θ -> abs(θ - 60) < 1, θs)
+        end
+    end
+
+    # ╔═══════════════════════════════════════════════════════════════════╗
     # ║                    Optional-Field Predicates                      ║
     # ╚═══════════════════════════════════════════════════════════════════╝
 
