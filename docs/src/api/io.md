@@ -12,9 +12,10 @@ load_obj
 isobj
 ```
 
-## Grid Loading
+## Grid and Lattice Loading
 
 ```@docs
 load_shape_grid
 grid_to_faces
+load_shape_lattice
 ```

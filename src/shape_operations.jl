@@ -179,6 +179,168 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
+# ║                       Staggered Lattice                           ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+# Triangulate the strip between two x-sorted node rows (indices into `xy`), appending the
+# triangles to `faces` with counterclockwise orientation (+z normals; `bottom` has the
+# smaller y). At each step the pointer whose next diagonal is shorter advances, which keeps
+# the triangles as close to equilateral as the rows allow.
+function _triangulate_rows!(faces, xy, bottom::Vector{Int}, top::Vector{Int})
+    i, j = 1, 1
+    while i < length(bottom) || j < length(top)
+        advance_bottom = if j == length(top)
+            true
+        elseif i == length(bottom)
+            false
+        else
+            norm(xy[bottom[i+1]] - xy[top[j]]) ≤ norm(xy[top[j+1]] - xy[bottom[i]])
+        end
+        if advance_bottom
+            push!(faces, SA[bottom[i], bottom[i+1], top[j]])
+            i += 1
+        else
+            push!(faces, SA[bottom[i], top[j+1], top[j]])
+            j += 1
+        end
+    end
+    return nothing
+end
+
+# Nodes (2D) and faces of a staggered lattice on the unit square with `n` intervals in x:
+# `m = round(2n/√3)` rows spaced `1/m` (near-equilateral triangles of side `1/n`), every
+# other row shifted by half a pitch, with extra nodes at x = 0 and 1 on shifted rows so the
+# lattice fills the square exactly (half-width right triangles at the left/right edges).
+function _staggered_lattice_faces(n::Integer)
+    m = max(1, round(Int, 2n / √3))  # number of rows (intervals) in y
+
+    xy   = SVector{2, Float64}[]
+    rows = Vector{Int}[]
+    for j in 0:m
+        y = j / m
+        row = Int[]
+        if iseven(j)
+            for k in 0:n
+                push!(xy, SA[k / n, y]); push!(row, length(xy))
+            end
+        else
+            push!(xy, SA[0.0, y]); push!(row, length(xy))
+            for k in 0:n-1
+                push!(xy, SA[(2k + 1) / 2n, y]); push!(row, length(xy))
+            end
+            push!(xy, SA[1.0, y]); push!(row, length(xy))
+        end
+        push!(rows, row)
+    end
+
+    faces = SVector{3, Int}[]
+    for j in 1:m
+        _triangulate_rows!(faces, xy, rows[j], rows[j+1])
+    end
+
+    return xy, faces
+end
+
+"""
+    load_shape_lattice(z, n::Integer;
+        scale = 1.0,
+        with_face_visibility = false,
+        with_bvh = false,
+    ) -> ShapeModel
+    load_shape_lattice(n::Integer; ...) -> ShapeModel   # flat (z ≡ 0)
+
+Create a shape model on a staggered lattice covering the unit square `[0,1] × [0,1]`,
+with the height function `z(x, y)` evaluated at every node.
+
+Unlike the regular grid of [`load_shape_grid`](@ref), whose cells split into right
+isosceles triangles with all diagonals in the same direction, the staggered lattice
+consists of near-equilateral triangles: `n` intervals in x, `m = round(2n/√3)` rows
+spaced `1/m ≈ (√3/2)/n`, with every other row shifted by half a pitch. Shifted rows
+carry extra nodes at `x = 0` and `x = 1`, so the lattice fills the unit square exactly,
+at the cost of half-width right triangles along the left and right edges. The lattice
+has `m(2n + 1)` faces with +z-oriented normals, like `load_shape_grid`.
+
+Use it for statistical surface patches (roughness models), where the elongated
+triangles and uniform diagonal direction of a regular grid could bias
+direction-dependent quantities.
+
+# Arguments
+- `z` : Height function `(x, y) -> z`, evaluated at the lattice nodes. Omit for a flat patch.
+- `n::Integer` : Number of intervals in the x-direction (≥ 1)
+
+# Keyword Arguments
+- `scale::Real=1.0`                  : Scale factor to apply to all coordinates
+- `with_face_visibility::Bool=false` : Whether to build the face-to-face visibility graph
+- `with_bvh::Bool=false`             : Whether to build BVH for ray tracing
+
+# Returns
+- `ShapeModel`: Shape model with computed geometric properties
+
+# Example
+```julia
+# A crater patch on a staggered lattice (cf. create_shape_crater(...; lattice=:staggered))
+r, h = 0.4, 0.1
+shape = load_shape_lattice((x, y) -> AsteroidShapeModels.concave_spherical_segment_depth(r, h, 0.5, 0.5, x, y), 16)
+
+# A flat staggered patch
+flat = load_shape_lattice(16)
+```
+
+See also: [`load_shape_grid`](@ref), [`create_shape_crater`](@ref)
+"""
+function load_shape_lattice(z, n::Integer;
+    scale = 1.0,
+    with_face_visibility = false,
+    with_bvh = false,
+)::ShapeModel
+    n ≥ 1 || throw(ArgumentError("n must be at least 1, got $n"))
+
+    xy, faces = _staggered_lattice_faces(n)
+    nodes = [SVector(p[1], p[2], float(z(p[1], p[2]))) for p in xy]
+    nodes .*= scale
+
+    return ShapeModel(nodes, faces; with_face_visibility, with_bvh)
+end
+
+load_shape_lattice(n::Integer; kwargs...) = load_shape_lattice((x, y) -> 0.0, n; kwargs...)
+
+"""
+    refine_midpoint(nodes, faces) -> (new_nodes, new_faces)
+
+Refine a triangular mesh by splitting every triangle into four at its edge midpoints
+(1 → 4 subdivision). Edge midpoints are shared between adjacent faces, so the refined
+mesh has `length(nodes) + n_edges` nodes and `4 length(faces)` faces, and the face
+orientation is preserved. Internal function (not exported); the basis for the random
+midpoint displacement of fractal surfaces.
+
+# Arguments
+- `nodes` : Vector of node positions (3-vectors)
+- `faces` : Vector of triangular face definitions (vertex indices)
+
+# Returns
+- `new_nodes::Vector{SVector{3, Float64}}` : Refined node positions
+- `new_faces::Vector{SVector{3, Int}}`     : Refined face definitions
+"""
+function refine_midpoint(nodes::AbstractVector{<:StaticVector{3}}, faces::AbstractVector{<:StaticVector{3}})
+    new_nodes = SVector{3, Float64}[SVector{3, Float64}(v) for v in nodes]
+    midpoints = Dict{Tuple{Int, Int}, Int}()
+
+    midpoint(i, j) = get!(midpoints, minmax(i, j)) do
+        push!(new_nodes, (new_nodes[i] + new_nodes[j]) / 2)
+        length(new_nodes)
+    end
+
+    new_faces = SVector{3, Int}[]
+    for face in faces
+        a, b, c = face
+        ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
+        push!(new_faces, SA[a, ab, ca], SA[ab, b, bc], SA[ca, bc, c], SA[ab, bc, ca])
+    end
+
+    return new_nodes, new_faces
+end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
 # ║                      Geometric Properties                         ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 

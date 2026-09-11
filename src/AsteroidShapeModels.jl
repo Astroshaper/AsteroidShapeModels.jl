@@ -80,7 +80,7 @@ include("ray_sphere_intersection.jl")
 export intersect_ray_sphere
 
 include("shape_operations.jl")
-export load_shape_obj, load_shape_grid, grid_to_faces
+export load_shape_obj, load_shape_grid, load_shape_lattice, grid_to_faces
 export polyhedron_volume, equivalent_radius, maximum_radius, minimum_radius
 
 include("illumination.jl")
